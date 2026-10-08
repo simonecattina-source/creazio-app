@@ -300,7 +300,7 @@ export default function GraficiScreen() {
       <Text style={styles.title}>Analisi e Grafici</Text>
       
       <View style={styles.riepilogoCard}>
-        <Text style={styles.sectionLabel}>Panoramica Trimestrale (91 GG)</Text>
+        <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
         <View style={styles.containerRigaRiepilogo}>
           <View style={styles.infoBoxStat}>
             <Text style={styles.statLabel}>Media</Text>
@@ -319,7 +319,7 @@ export default function GraficiScreen() {
 
       <View style={styles.cardGraficoContenitore}>
         <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
-        <Text style={styles.subLabelSpiegazione}>Linea continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
+        <Text style={styles.subLabelSpiegazione}>Andamento Glicemia nell'arco delle 24h.</Text>
         {puntiGrafico24Ore.length > 0 ? renderizzaGraficoLinea24Ore() : (
           <View style={{ paddingVertical: 45, alignItems: 'center', width: '100%' }}>
             <Ionicons name="time-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
@@ -330,7 +330,7 @@ export default function GraficiScreen() {
 
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
-        <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
+        <Text style={styles.subLabelSpiegazione}>Media Giornaliera dentro al range ideale (70-180 mg/dL).</Text>
         {puntiGraficoLinea.length > 0 ? renderizzaGraficoLineaGiorni() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
             <Ionicons name="analytics-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
@@ -341,7 +341,7 @@ export default function GraficiScreen() {
 
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
-        <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
+        <Text style={styles.subLabelSpiegazione}>Analisi divisa per Colazione, Pranzo, Cena, Notte. Valori Pre e Dopo il pasto.</Text>
         {totaleMisurazioni > 0 ? renderizzaGraficoColonneMomenti() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
             <Ionicons name="bar-chart-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
