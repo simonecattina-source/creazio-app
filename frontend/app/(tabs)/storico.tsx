@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,11 +15,11 @@ const COLORS = {
   warning: "#FF9F0A",
   error: "#FF3B30",
 };
+
 export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
-  // Carica i dati reali dalla memoria ogni volta che l'utente apre questa schermata
   useFocusEffect(
     React.useCallback(() => {
       caricaDatiLocali();
@@ -37,7 +37,6 @@ export default function StoricoScreen() {
     }
   };
 
-  // Funzione per svuotare il diario se si desidera resettare i log
   const cancellaTuttoStorico = async () => {
     try {
       await AsyncStorage.removeItem('glicotrack_data');
@@ -48,14 +47,6 @@ export default function StoricoScreen() {
     }
   };
 
-  const rientraNelFiltro = (dataMisurazione: Date) => {
-    if (filtroAttivo === 'all') return true;
-    const oggi = new Date();
-    const differenzaInGiorni = (oggi.getTime() - dataMisurazione.getTime()) / (1000 * 3600 * 24);
-    return differenzaInGiorni <= parseInt(filtroAttivo);
-  };
-
-  // Raggruppa i dati reali per mostrare la Timeline visiva nell'interfaccia dell'app
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = { "Oggi": [] };
     datiReali.forEach(item => {
@@ -68,7 +59,6 @@ export default function StoricoScreen() {
       .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
       .filter(s => s.data.length > 0);
   };
-
   const generaEDesportaPDF = () => {
     const momentiColonne = [
       "Prima Colazione", "Dopo Colazione", "Spuntino", 
