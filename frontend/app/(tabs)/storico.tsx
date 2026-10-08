@@ -75,7 +75,6 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
-  // Funzione avanzata che unisce Data e Ora di una misurazione per calcolare un timestamp millisecondi preciso al minuto
   const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
     let giorno = 0, mese = 0, annoCompleto = 0;
     
@@ -93,7 +92,6 @@ export default function StoricoScreen() {
       return 0;
     }
 
-    // Estrae ore e minuti (default: 00:00 se assenti o malformati)
     let ore = 0, minuti = 0;
     if (stringaOra && stringaOra.includes(':')) {
       const [h, min] = stringaOra.split(':');
@@ -108,10 +106,9 @@ export default function StoricoScreen() {
     if (filtroAttivo === 'all') return true;
     const oggi = new Date();
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
-    // Calcola il timestamp base del giorno per il filtro di sottrazione
     const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
+    const BlackdifferenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    return BlackdifferenzaGiorni <= parseInt(filtroAttivo) && BlackdifferenzaGiorni >= -1;
   };
 
   const eliminaSingoloItem = async () => {
@@ -196,7 +193,6 @@ export default function StoricoScreen() {
     }
   };
 
-  // 🪄 MOTORE DI SMISTAMENTO SANATO: Ordina i giorni E ordina i singoli log interni per ORARIO decrescente
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = {};
     const datiFiltratiTemporali = datiReali.filter(item => rientraNelFiltro(item.dataTesto || "Oggi"));
@@ -208,9 +204,8 @@ export default function StoricoScreen() {
     });
 
     return Object.keys(sezioni)
-      .sort((a, b) => ottieniTimestampCompleto(b, "00:00") - ottieniTimestampCompleto(a, "00:00")) // Ordina i giorni
+      .sort((a, b) => ottieniTimestampCompleto(b, "00:00") - ottieniTimestampCompleto(a, "00:00")) 
       .map(chiave => {
-        // 🪄 ORDINA LE MISURAZIONI DELLO STESSO GIORNO DALL'ORA PIÙ RECENTE ALLA MENO RECENTE
         const elementiGiornoOrdinati = sezioni[chiave].sort((itemA, itemB) => {
           return ottieniTimestampCompleto(chiave, itemB.ora || "00:00") - ottieniTimestampCompleto(chiave, itemA.ora || "00:00");
         });
@@ -367,7 +362,6 @@ export default function StoricoScreen() {
               <View style={styles.cardHeader}>
                 <Text style={styles.valoreGlicemia}>{item.glicemia} <Text style={styles.unitaMisura}>mg/dL</Text></Text>
                 <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
-                  {/* L'orario intraday ora governa l'ordine dal più recente (in alto) al meno recente */}
                   <Text style={styles.oraTest}>{item.ora}</Text>
                   <Ionicons name="pencil-sharp" size={12} color={COLORS.muted} />
                 </View>
@@ -384,12 +378,14 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+      {/* 🎡 MODALE GESTIONE LOG CON SELETTORI DATA/ORA RIPRISTINATI (SFONDO BIANCO + TESTO BLU) */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
             
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
+              {/* 📅 MODIFICA DATA SANATA (Sfondo Bianco, Testo Blu) */}
               <Text style={styles.inputLabel}>Data Misurazione</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -400,24 +396,23 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E5EA',
+                    color: '#0A66C2', // 🔵 Testo blu
+                    backgroundColor: '#FFFFFF', // ⚪ Sfondo bianco
+                    border: '1px solid #E5E5EA', // 🔲 Bordo grigio originale
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
                     width: '100%',
                     boxSizing: 'border-box',
                     outline: 'none',
-                    cursor: 'pointer',
-                    filter: 'invert(1)',
-                    WebkitFilter: 'invert(1)'
+                    cursor: 'pointer'
                   }}
                 />
               ) : (
                 <TextInput style={styles.textInput} value={modDataISO} onChangeText={setModDataISO} />
               )}
 
+              {/* ⏰ MODIFICA ORA SANATA (Sfondo Bianco, Testo Blu) */}
               <Text style={styles.inputLabel}>Ora Misurazione (Verrà scritta nelle note)</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -428,18 +423,16 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E5EA',
+                    color: '#0A66C2', // 🔵 Testo blu
+                    backgroundColor: '#FFFFFF', // ⚪ Sfondo bianco
+                    border: '1px solid #E5E5EA', // 🔲 Bordo grigio originale
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
                     width: '100%',
                     boxSizing: 'border-box',
                     outline: 'none',
-                    cursor: 'pointer',
-                    filter: 'invert(1)',
-                    WebkitFilter: 'invert(1)'
+                    cursor: 'pointer'
                   }}
                 />
               ) : (
