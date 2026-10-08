@@ -61,7 +61,7 @@ export default function GraficiScreen() {
             })
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
 
-          setPuntiGrafico(andamentoCronologico.slice(-10));
+          setPuntiGrafico(andamentoCronologico.slice(-15));
         } else {
           setMediaGlicemia(0);
           setPuntiGrafico([]);
@@ -75,34 +75,25 @@ export default function GraficiScreen() {
   const renderizzaGraficoLineaNativa = () => {
     if (puntiGrafico.length === 0) return null;
 
-    const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 32;
-    const altezzaGrafico = 250;
-    
-    const margineSinistro = 45;
-    const margineDestro = 15;
-    const margineSuperiore = 20;
-    const margineInferiore = 25;
+    const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
+    const altezzaGrafico = 200;
+    const margineLaterale = 20;
+    const spazioUtileX = larghezzaGrafico - (margineLaterale * 2);
 
-    const spazioUtileX = larghezzaGrafico - margineSinistro - margineDestro;
-    const spazioUtileY = altezzaGrafico - margineSuperiore - margineInferiore;
-
-    const GLICEMIA_MIN = 10;
-    const GLICEMIA_MAX = 500;
+    const GLICEMIA_MIN = 40;
+    const GLICEMIA_MAX = 240;
     
     const calcolaY = (valore: number) => {
       const valoreProtetto = Math.max(GLICEMIA_MIN, Math.min(GLICEMIA_MAX, valore));
       const percentuale = (valoreProtetto - GLICEMIA_MIN) / (GLICEMIA_MAX - GLICEMIA_MIN);
-      return margineSuperiore + spazioUtileY - (percentuale * spazioUtileY);
+      return altezzaGrafico - (percentuale * altezzaGrafico);
     };
 
     const rigaSoglia180Y = calcolaY(180);
     const rigaSoglia70Y = calcolaY(70);
 
-    // 🪄 SOLUZIONE DI SICUREZZA ANTI-CANCELLAZIONE: Generato dinamicamente per superare i filtri del testo
-    const valoriAsseY = Array.from(new Set([10, 100, 200, 300, 400, 500]));
-
-    const coordinataPunti = puntiGrafico.map((punto, i) => {
-      const x = margineSinistro + (i * (spazioUtileX / (puntiGrafico.length - 1 || 1)));
+    const coordinataPunti = puntiGrafico.map((punto, indice) => {
+      const x = margineLaterale + (indice * (spazioUtileX / (puntiGrafico.length - 1 || 1)));
       const y = calcolaY(punto.media);
       return { x, y, ...punto };
     });
@@ -117,56 +108,86 @@ export default function GraficiScreen() {
     });
     return (
       <View style={styles.containerGraficoSvg}>
-        <svg width="100%" height={altezzaGrafico} style={{ display: 'block', overflow: 'visible' }}>
+        <svg width="100%" height="230" style={{ display: 'block', overflow: 'visible' }}>
           
-          {/* Sfondo del grafico in grigio chiaro */}
-          <rect x={margineSinistro} y={margineSuperiore} width={spazioUtileX} height={spazioUtileY} fill="#F4F4F6" rx="4" />
+          {/* AREA DI RANGE IDEALE (Sfondo scuro con fascia verde trasparente 70-180) */}
+          <rect
+            x={margineLaterale}
+            y={rigaSoglia180Y}
+            width={spazioUtileX}
+            height={rigaSoglia70Y - rigaSoglia180Y}
+            fill="rgba(52, 199, 89, 0.06)"
+          />
 
-          {/* Fascia verde di range ideale tra 70 e 180 mg/dL */}
-          <rect x={margineSinistro} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.12)" />
+          {/* LINEA TRATTEGGIATA SOGLIA ALTA (180 mg/dL) */}
+          <line
+            x1={margineLaterale}
+            y1={rigaSoglia180Y}
+            x2={larghezzaGrafico - margineLaterale}
+            y2={rigaSoglia180Y}
+            stroke={COLORS.error}
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+          />
+          <text x={larghezzaGrafico - 15} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">
+            180
+          </text>
 
-          {/* Disegno righe e valori dell'asse Y da 10 a 500 */}
-          {valoriAsseY.map((valore) => {
-            const yPos = calcolaY(valore);
-            return (
-              <g key={valore}>
-                <line x1={margineSinistro} y1={yPos} x2={larghezzaGrafico - margineDestro} y2={yPos} stroke="#E5E5EA" strokeWidth="1" />
-                <text x={margineSinistro - 8} y={yPos + 4} fill="#1C1C1E" fontSize="10" fontWeight="700" fontFamily="sans-serif" textAnchor="end">
-                  {valore}
-                </text>
-              </g>
-            );
-          })}
+          {/* LINEA TRATTEGGIATA SOGLIA BASSA (70 mg/dL) */}
+          <line
+            x1={margineLaterale}
+            y1={rigaSoglia70Y}
+            x2={larghezzaGrafico - margineLaterale}
+            y2={rigaSoglia70Y}
+            stroke={COLORS.warning}
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+          />
+          <text x={larghezzaGrafico - 15} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">
+            70
+          </text>
 
-          {/* Linea fissa 180 mg/dL */}
-          <line x1={margineSinistro} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineDestro} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1.5" strokeDasharray="3 3" />
-
-          {/* Linea fissa 70 mg/dL */}
-          <line x1={margineSinistro} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineDestro} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="3 3" />
-
-          {/* Linea continua dell'andamento */}
+          {/* TRACCIATO DELLA LINEA CONTINUA DELL'ANDAMENTO */}
           {percorsoLineaD !== "" && (
-            <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d={percorsoLineaD}
+              fill="none"
+              stroke={COLORS.brandPrimary}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           )}
 
-          {/* Puntini colorati e testi sui nodi */}
+          {/* NODI E VALORI GLICEMICI */}
           {coordinataPunti.map((p, i) => (
             <g key={i}>
-              <circle cx={p.x} cy={p.y} r="4.5" fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success} stroke="#FFFFFF" strokeWidth="1.5" />
-              <text x={p.x} y={p.y - 10} fill="#1C1C1E" fontSize="10" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">
-                {p.media}
-              </text>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="4.5"
+                fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success}
+                stroke="#1C1C1E"
+                strokeWidth="1.5"
+              />
+              {(coordinataPunti.length < 8 || i % 2 === 0) && (
+                <text x={p.x} y={p.y - 10} fill={COLORS.onSurface} fontSize="10" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">
+                  {p.media}
+                </text>
+              )}
             </g>
           ))}
         </svg>
 
-        {/* Date in basso sull'asse X */}
-        <View style={[styles.rigaEtichetteDate, { paddingLeft: margineSinistro, paddingRight: margineDestro }]}>
-          {puntiGrafico.map((p, i) => (
-            <Text key={i} style={styles.dataTestoLabel}>
-              {p.dataLabel.slice(0, 5)}
-            </Text>
-          ))}
+        <View style={styles.rigaEtichetteDate}>
+          {puntiGrafico.map((p, i) => {
+            const mostraData = i === 0 || i === Math.floor(puntiGrafico.length / 2) || i === puntiGrafico.length - 1;
+            return (
+              <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>
+                {p.dataLabel.slice(0, 5)}
+              </Text>
+            );
+          })}
         </View>
       </View>
     );
