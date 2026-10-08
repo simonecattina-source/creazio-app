@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -10,9 +9,9 @@ const COLORS = {
   onBrandPrimary: "#FFFFFF",
   onSurface: "#1C1C1E",
   muted: "#8E8E93",
-  success: "#34C759", // Verde normale
-  warning: "#FF9F0A", // Arancione basso (<70)
-  error: "#FF3B30",   // Rosso alto (>180)
+  success: "#34C759",
+  warning: "#FF9F0A",
+  error: "#FF3B30",
 };
 
 const MOMENTI = [
@@ -22,9 +21,6 @@ const MOMENTI = [
 ];
 
 export default function InserimentoScreen() {
-  const router = useRouter();
-  
-  // Genera automaticamente la data di oggi nel formato GG/MM/AA
   const ottieniDataOdiernaFormattata = () => {
     const oggi = new Date();
     const giorno = String(oggi.getDate()).padStart(2, '0');
@@ -33,7 +29,6 @@ export default function InserimentoScreen() {
     return `${giorno}/${mese}/${anno}`;
   };
 
-  // Stati del modulo di inserimento
   const [dataInserita, setDataInserita] = useState(ottieniDataOdiernaFormattata());
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
@@ -41,9 +36,8 @@ export default function InserimentoScreen() {
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  // 🪄 Inserisce automaticamente le barre divisorie / mentre l'utente digita i numeri
   const gestisciScritturaData = (testo: string) => {
-    const numeriPuri = testo.replace(/\D/g, ""); // Cancella le lettere
+    const numeriPuri = testo.replace(/\D/g, "");
     let testoFormattato = numeriPuri;
 
     if (numeriPuri.length > 2 && numeriPuri.length <= 4) {
@@ -51,7 +45,6 @@ export default function InserimentoScreen() {
     } else if (numeriPuri.length > 4) {
       testoFormattato = `${numeriPuri.slice(0, 2)}/${numeriPuri.slice(2, 4)}/${numeriPuri.slice(4, 6)}`;
     }
-    
     setDataInserita(testoFormattato);
   };
 
@@ -66,10 +59,9 @@ export default function InserimentoScreen() {
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     
-    // 🛠️ Controllo della data corretto: accetta lettere, numeri e barre nel formato GG/MM/AA
-    const regexDataPulita = /^\d{2}\/\d{2}\/\d{2}\$/;
-    if (!regexDataPulita.test(dataInserita) || dataInserita.length !== 8) {
-      alert("Inserisci la data nel formato corretto GG/MM/AA (es: 08/10/26).");
+    // Verifica logica e sicura della lunghezza della stringa (es: "01/10/26" = 8 caratteri)
+    if (dataInserita.length !== 8 || !dataInserita.includes('/')) {
+      alert("Inserisci la data nel formato corretto GG/MM/AA (es: 01/10/26).");
       return;
     }
 
@@ -86,7 +78,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: dataInserita // Invia la data reale (anche passata) allo storico e al PDF
+        dataTesto: dataInserita // Registra la data esatta modificata (es: 01/10/26)
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -95,12 +87,10 @@ export default function InserimentoScreen() {
       elencoDati.unshift(nuovaMisurazione);
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
-      // Pulisce i campi pronti per un nuovo log lasciando impostata la data scelta
       setGlicemia('');
       setInsulina('');
       setNote('');
       
-      // Attiva il messaggio a tendina verde sopra il pulsante
       setMostraNotifica(true);
       setTimeout(() => {
         setMostraNotifica(false);
@@ -110,11 +100,11 @@ export default function InserimentoScreen() {
       alert("Impossibile salvare i dati localmente.");
     }
   };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      {/* 📅 CASELLA DELLA DATA INIZIALE CON TASTIERA NUMERICA E MASCHERA AUTOMATICA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Data del Controllo (GG/MM/AA)</Text>
         <TextInput
@@ -128,7 +118,6 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* INPUT NUMERICO DELLA GLICEMIA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -141,7 +130,6 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* INPUT NUMERICO DELL'INSULINA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Insulina (Unità UI)</Text>
         <TextInput
@@ -154,7 +142,6 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* SELETTORE DEI 9 MOMENTI (FLEX-ROW CHIPS) */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -171,7 +158,6 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      {/* NOTE ALIMENTARI */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Note Alimentari / Sintomi</Text>
         <TextInput
@@ -183,7 +169,6 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* NOTIFICA A TENDINA VERDE A SCOMPARSA AUTOMATICA */}
       {mostraNotifica && (
         <View style={styles.notificaTendina}>
           <Text style={styles.notificaTesto}>✓ Misurazione salvata nel registro</Text>
@@ -218,3 +203,27 @@ const styles = StyleSheet.create({
   notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 }
 });
+  const ottieniDatiSezionati = () => {
+    const sezioni: Record<string, any[]> = {};
+    
+    datiReali.forEach(item => {
+      const dataChiave = item.dataTesto || "Oggi";
+      if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
+      sezioni[dataChiave].push(item);
+    });
+
+    // Riordina i gruppi di date in ordine cronologico decrescente (le più recenti in alto)
+    return Object.keys(sezioni)
+      .sort((a, b) => {
+        if (a === "Oggi") return -1;
+        if (b === "Oggi") return 1;
+        // Converte GG/MM/AA in un formato confrontabile AA/MM/GG
+        const convertiData = (str: string) => {
+          const [g, m, a] = str.split('/');
+          return `${a}/${m}/${g}`;
+        };
+        return convertiData(b).localeCompare(convertiData(a));
+      })
+      .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
+      .filter(s => s.data.length > 0);
+  };
