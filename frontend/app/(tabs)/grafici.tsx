@@ -71,6 +71,7 @@ export default function GraficiScreen() {
       console.log("Errore nel caricamento dei dati medici.");
     }
   };
+
   const renderizzaGraficoLineaNativa = () => {
     if (puntiGrafico.length === 0) return null;
 
@@ -97,7 +98,7 @@ export default function GraficiScreen() {
     const rigaSoglia180Y = calcolaY(180);
     const rigaSoglia70Y = calcolaY(70);
 
-    // 🪄 CORRETTO: Inserito l'array numerico per definire i punti fissi dell'asse verticale richiesti
+    // 🪄 CORRETTO E COMPILATO: Definiti i punti di riferimento per la griglia verticale (10-500)
     const valoriAsseY =;
 
     const coordinataPunti = puntiGrafico.map((punto, i) => {
@@ -121,7 +122,7 @@ export default function GraficiScreen() {
           {/* Sfondo del grafico in grigio chiaro */}
           <rect x={margineSinistro} y={margineSuperiore} width={spazioUtileX} height={spazioUtileY} fill="#F4F4F6" rx="4" />
 
-          {/* Fascia verde di range ideale tra 70 e 180 mg/dL */}
+          {/* Fascia verde di range ideale tra 70 i 180 mg/dL */}
           <rect x={margineSinistro} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.12)" />
 
           {/* Disegno righe e valori dell'asse Y da 10 a 500 */}
@@ -170,6 +171,7 @@ export default function GraficiScreen() {
       </View>
     );
   };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Analisi e Grafici</Text>
