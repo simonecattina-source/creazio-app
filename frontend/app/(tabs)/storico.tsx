@@ -25,7 +25,6 @@ export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
-  // Stati per la gestione della modifica ed eliminazione singola
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
@@ -76,19 +75,41 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
-  const ottieniTimestamp = (stringaData: string) => {
-    if (stringaData === "Oggi") return new Date().getTime();
-    if (!stringaData || !stringaData.includes('/')) return 0;
-    const [giorno, mese, anno] = stringaData.split('/');
-    const annoCompleto = parseInt(anno) < 50 ? 2000 + parseInt(anno) : 1900 + parseInt(anno);
-    return new Date(annoCompleto, parseInt(mese) - 1, parseInt(giorno)).getTime();
+  // Funzione avanzata che unisce Data e Ora di una misurazione per calcolare un timestamp millisecondi preciso al minuto
+  const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
+    let giorno = 0, mese = 0, annoCompleto = 0;
+    
+    if (stringaData === "Oggi") {
+      const d = new Date();
+      giorno = d.getDate();
+      mese = d.getMonth();
+      annoCompleto = d.getFullYear();
+    } else if (stringaData && stringaData.includes('/')) {
+      const [g, m, a] = stringaData.split('/');
+      giorno = parseInt(g);
+      mese = parseInt(m) - 1;
+      annoCompleto = parseInt(a) < 50 ? 2000 + parseInt(a) : 1900 + parseInt(a);
+    } else {
+      return 0;
+    }
+
+    // Estrae ore e minuti (default: 00:00 se assenti o malformati)
+    let ore = 0, minuti = 0;
+    if (stringaOra && stringaOra.includes(':')) {
+      const [h, min] = stringaOra.split(':');
+      ore = parseInt(h);
+      minuti = parseInt(min);
+    }
+
+    return new Date(annoCompleto, mese, giorno, ore, minuti).getTime();
   };
 
   const rientraNelFiltro = (stringaData: string) => {
     if (filtroAttivo === 'all') return true;
     const oggi = new Date();
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
-    const timestampMisurazione = ottieniTimestamp(stringaData);
+    // Calcola il timestamp base del giorno per il filtro di sottrazione
+    const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
     const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
     return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
@@ -118,7 +139,6 @@ export default function StoricoScreen() {
     setModMomento(item.tipo || 'Prima Colazione');
     setModOraText(item.ora || '12:00');
     
-    // 🪄 Pulisce le note rimuovendo la vecchia traccia dell'orario per non duplicarla nel box di modifica
     const testoNotePulito = item.note ? item.note.replace(/^\[\d{2}:\d{2}\]\s*/, '') : '';
     setModNote(testoNotePulito);
     
@@ -144,11 +164,7 @@ export default function StoricoScreen() {
 
     const [aaaa, mm, gg] = modDataISO.split('-');
     const dataRiconvertita = `${gg}/${mm}/${aaaa.slice(-2)}`;
-
-    // 🪄 FUSIONE AUTOMATICA: Concatena l'ora scelta all'inizio del testo delle note
-    const noteConOrarioFuso = modNote.trim() 
-      ? `[${modOraText}] ${modNote.trim()}`
-      : `[${modOraText}]`;
+    const noteConOrarioFuso = modNote.trim() ? `[${modOraText}] ${modNote.trim()}` : `[${modOraText}]`;
 
     try {
       const datiAggiornati = datiReali.map(item => {
@@ -158,7 +174,7 @@ export default function StoricoScreen() {
             glicemia: valoreGlicemia,
             insulina: modInsulina ? `${modInsulina} UI` : '-',
             tipo: modMomento,
-            note: noteConOrarioFuso, // Salva la nota formattata con l'ora inclusa
+            note: noteConOrarioFuso,
             ora: modOraText,          
             dataTesto: dataRiconvertita 
           };
@@ -180,6 +196,7 @@ export default function StoricoScreen() {
     }
   };
 
+  // 🪄 MOTORE DI SMISTAMENTO SANATO: Ordina i giorni E ordina i singoli log interni per ORARIO decrescente
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = {};
     const datiFiltratiTemporali = datiReali.filter(item => rientraNelFiltro(item.dataTesto || "Oggi"));
@@ -191,8 +208,14 @@ export default function StoricoScreen() {
     });
 
     return Object.keys(sezioni)
-      .sort((a, b) => ottieniTimestamp(b) - ottieniTimestamp(a))
-      .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
+      .sort((a, b) => ottieniTimestampCompleto(b, "00:00") - ottieniTimestampCompleto(a, "00:00")) // Ordina i giorni
+      .map(chiave => {
+        // 🪄 ORDINA LE MISURAZIONI DELLO STESSO GIORNO DALL'ORA PIÙ RECENTE ALLA MENO RECENTE
+        const elementiGiornoOrdinati = sezioni[chiave].sort((itemA, itemB) => {
+          return ottieniTimestampCompleto(chiave, itemB.ora || "00:00") - ottieniTimestampCompleto(chiave, itemA.ora || "00:00");
+        });
+        return { title: chiave, data: elementiGiornoOrdinati };
+      })
       .filter(s => s.data.length > 0);
   };
   const generaEDesportaPDF = () => {
@@ -216,7 +239,6 @@ export default function StoricoScreen() {
 
           rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
           rigaInsuline[item.tipo] = item.insulina !== '-' ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
-          // Il PDF caricherà la stringa item.note che contiene già l'orario fuso [HH:MM]
           rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
         }
       });
@@ -345,7 +367,7 @@ export default function StoricoScreen() {
               <View style={styles.cardHeader}>
                 <Text style={styles.valoreGlicemia}>{item.glicemia} <Text style={styles.unitaMisura}>mg/dL</Text></Text>
                 <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
-                  {/* Nella timeline continuiamo a vedere l'orario associato al log */}
+                  {/* L'orario intraday ora governa l'ordine dal più recente (in alto) al meno recente */}
                   <Text style={styles.oraTest}>{item.ora}</Text>
                   <Ionicons name="pencil-sharp" size={12} color={COLORS.muted} />
                 </View>
@@ -362,14 +384,12 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* 🎡 MODALE GESTIONE LOG: Permette di regolare la data e l'ora, fondendole poi nelle Note */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
             
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
-              {/* 📅 CALENDARIO VISIVO PER LA DATA */}
               <Text style={styles.inputLabel}>Data Misurazione</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -398,7 +418,6 @@ export default function StoricoScreen() {
                 <TextInput style={styles.textInput} value={modDataISO} onChangeText={setModDataISO} />
               )}
 
-              {/* 🎡 RUOTA A SCORRIMENTO PER L'ORARIO */}
               <Text style={styles.inputLabel}>Ora Misurazione (Verrà scritta nelle note)</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -468,7 +487,6 @@ export default function StoricoScreen() {
         </View>
       </Modal>
 
-      {/* POPUP CONFERMA SVUOTA COMPLETO */}
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
