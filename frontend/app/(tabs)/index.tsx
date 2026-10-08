@@ -114,11 +114,10 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 📅⏰ RIGHE TEMPORALI RIPRISTINATE: Sfondo Bianco + Scritta Blu */}
+      {/* 📅⏰ REGHE TEMPORALI CON LE SCELTE DEFINITIVE "Data del Test" e "Orario del Test" */}
       <View style={styles.containerRigaTemporale}>
-        {/* Casella Data */}
         <View style={styles.dataCardSinistra}>
-          <Text style={styles.labelLeft}>Data Controllo</Text>
+          <Text style={styles.labelLeft}>Data del Test</Text>
           {Platform.OS === 'web' ? (
             <input
               type="date"
@@ -129,9 +128,9 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', // 🔵 Testo interno rigorosamente BLU
-                backgroundColor: '#FFFFFF', // ⚪ Sfondo e cerchio ripristinati BIANCHI
-                border: '1px solid #E5E5EA', // 🔲 Bordo grigio chiaro originale
+                color: '#0A66C2', 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E5E5EA', 
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
@@ -146,9 +145,8 @@ export default function InserimentoScreen() {
           )}
         </View>
 
-        {/* Casella Ora */}
         <View style={styles.dataCardSinistra}>
-          <Text style={styles.labelLeft}>Ora Controllo</Text>
+          <Text style={styles.labelLeft}>Orario del Test</Text>
           {Platform.OS === 'web' ? (
             <input
               type="time"
@@ -158,9 +156,9 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', // 🔵 Testo interno rigorosamente BLU
-                backgroundColor: '#FFFFFF', // ⚪ Sfondo e cerchio ripristinati BIANCHI
-                border: '1px solid #E5E5EA', // 🔲 Bordo grigio chiaro originale
+                color: '#0A66C2', 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E5E5EA', 
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
@@ -176,7 +174,6 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* RIGA AFFIANCATA GLICEMIA + INSULINA */}
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
@@ -251,27 +248,21 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
-  
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
   containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
   dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
-  
   rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
   metaLarghezza: { flex: 1 }, 
-
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
-  
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
-  
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
   chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
   chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
-  
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
