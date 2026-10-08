@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
@@ -10,9 +10,9 @@ const COLORS = {
   onBrandPrimary: "#FFFFFF",
   onSurface: "#1C1C1E",
   muted: "#8E8E93",
-  success: "#34C759", // Verde normale
-  warning: "#FF9F0A", // Arancione basso (<70)
-  error: "#FF3B30",   // Rosso alto (>180)
+  success: "#34C759",
+  warning: "#FF9F0A",
+  error: "#FF3B30",
 };
 
 const MOMENTI = [
@@ -23,12 +23,22 @@ const MOMENTI = [
 
 export default function InserimentoScreen() {
   const router = useRouter();
+  
+  // Funzione per generare la data attuale nel formato GG/MM/AA
+  const ottieniDataOdiernaFormattata = () => {
+    const oggi = new Date();
+    const giorno = String(oggi.getDate()).padStart(2, '0');
+    const mese = String(oggi.getMonth() + 1).padStart(2, '0');
+    const anno = String(oggi.getFullYear()).slice(-2); // Estrae le ultime 2 cifre dell'anno (es: "26")
+    return `${giorno}/${mese}/${anno}`;
+  };
+
+  // Stati del form (con la Data inserita come primo elemento predefinito)
+  const [dataInserita, setDataInserita] = useState(ottieniDataOdiernaFormattata());
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
-  
-  // Stato aggiunto per controllare la comparsa automatica della tendina
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
   const ottieniColoreGlicemia = () => {
@@ -41,6 +51,14 @@ export default function InserimentoScreen() {
 
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
+    
+    // Validazione della data inserita
+    const regexData = /^\d{2}\/\d{2}\/\d{2}\$/;
+    if (!regexData.test(dataInserita)) {
+      alert("Inserisci la data nel formato corretto GG/MM/AA (es: 08/10/26).");
+      return;
+    }
+
     if (!valoreGlicemia || isNaN(valoreGlicemia)) {
       alert("Inserisci un valore di glicemia valido prima di salvare.");
       return;
@@ -54,7 +72,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: "Oggi"
+        dataTesto: dataInserita // Memorizza la vera data scelta dall'utente (GG/MM/AA)
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -63,15 +81,12 @@ export default function InserimentoScreen() {
       elencoDati.unshift(nuovaMisurazione);
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
-      // Reset immediato dei campi input
+      // Resetta i campi lasciando la data pronta per un eventuale altro inserimento nello stesso giorno
       setGlicemia('');
       setInsulina('');
       setNote('');
       
-      // 🔔 Mostra la tendina di notifica
       setMostraNotifica(true);
-      
-      // Avvia il timer per far scomparire la tendina da sola dopo 3 secondi
       setTimeout(() => {
         setMostraNotifica(false);
       }, 3000);
@@ -84,6 +99,20 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
+      {/* 📅 CASELLA DELLA DATA INIZIALE RICHIESTA (GG/MM/AA) */}
+      <View style={styles.cardInput}>
+        <Text style={styles.label}>Data del Controllo (GG/MM/AA)</Text>
+        <TextInput
+          style={styles.dataInput}
+          placeholder="GG/MM/AA"
+          placeholderTextColor="#C7C7CC"
+          value={dataInserita}
+          onChangeText={setDataInserita}
+          maxLength={8}
+        />
+      </View>
+
+      {/* INPUT NUMERICO DELLA GLICEMIA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -96,6 +125,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
+      {/* INPUT NUMERICO DELL'INSULINA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Insulina (Unità UI)</Text>
         <TextInput
@@ -108,6 +138,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
+      {/* SELETTORE DEI 9 MOMENTI */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -124,18 +155,18 @@ export default function InserimentoScreen() {
         })}
       </View>
 
+      {/* NOTE */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Note Alimentari / Sintomi</Text>
         <TextInput
           style={styles.noteInput}
-          placeholder="Es: Riso integrale, sintomi di stanchezza..."
+          placeholder="Es: Riso e pollo, pre-allenamento..."
           placeholderTextColor="#C7C7CC"
           value={note}
           onChangeText={setNote}
         />
       </View>
 
-      {/* 🟢 NOTIFICA A TENDINA COMPARSAbLE SOPRA IL PULSANTE */}
       {mostraNotifica && (
         <View style={styles.notificaTendina}>
           <Text style={styles.notificaTesto}>✓ Misurazione salvata nel registro</Text>
@@ -156,6 +187,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: COLORS.onSurface, marginTop: 15, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 16, padding: 16, marginBottom: 16 },
   label: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
+  dataInput: { fontFamily: 'Space Grotesk', fontSize: 22, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'center', paddingVertical: 4 },
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 48, fontWeight: '700', textAlign: 'center', paddingVertical: 10 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 28, fontWeight: '600', color: COLORS.onSurface, textAlign: 'center', paddingVertical: 5 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 5 },
@@ -166,19 +198,6 @@ const styles = StyleSheet.create({
   chipTextSelezionato: { color: COLORS.brandPrimary, fontWeight: '700' },
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  notificaTendina: {
-    backgroundColor: '#E6F4EA', // Sfondo verde tenue pulito
-    borderColor: COLORS.success,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  notificaTesto: {
-    fontFamily: 'Plus Jakarta Sans',
-    color: '#137333', // Testo verde scuro leggibile
-    fontWeight: '600',
-    fontSize: 14,
-  }
+  notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center' },
+  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 }
 });
