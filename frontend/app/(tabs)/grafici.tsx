@@ -97,7 +97,7 @@ export default function GraficiScreen() {
     const rigaSoglia180Y = calcolaY(180);
     const rigaSoglia70Y = calcolaY(70);
 
-    // 🪄 CORRETTO: Inserito l'array numerico per definire i punti fissi dell'asse verticale
+    // 🪄 CORRETTO: Inserito l'array numerico per definire i punti fissi dell'asse verticale richiesti
     const valoriAsseY =;
 
     const coordinataPunti = puntiGrafico.map((punto, i) => {
@@ -160,7 +160,7 @@ export default function GraficiScreen() {
         </svg>
 
         {/* Date in basso sull'asse X */}
-        <View style={styles.rigaEtichetteDate}, { paddingLeft: margineSinistro, paddingRight: margineDestro }]}>
+        <View style={[styles.rigaEtichetteDate, { paddingLeft: margineSinistro, paddingRight: margineDestro }]}>
           {puntiGrafico.map((p, i) => (
             <Text key={i} style={styles.dataTestoLabel}>
               {p.dataLabel.slice(0, 5)}
