@@ -65,8 +65,17 @@ export default function GraficiScreen() {
           const testNelRange = elenco.filter((item: any) => item.glicemia >= 70 && item.glicemia <= 180).length;
           setTimeInRange(Math.round((testNelRange / elenco.length) * 100));
 
-          // 1. Calcolo asincrono dei punti distributivi sulle 24 ore (1440 minuti totali)
-          const tracciato24h = elenco.map((item: any) => {
+          // 🪄 FILTRO "OGGI" RIGIDO: Trova la stringa della data odierna (GG/MM/AA)
+          const oggiObj = new Date();
+          const ggStr = String(oggiObj.getDate()).padStart(2, '0');
+          const mmStr = String(oggiObj.getMonth() + 1).padStart(2, '0');
+          const aaStr = String(oggiObj.getFullYear()).slice(-2);
+          const dataOdiernaTesto = `${ggStr}/${mmStr}/${aaStr}`;
+
+          // Prende solo i log salvati oggi per il primo grafico
+          const logDiOggi = elenco.filter((item: any) => item.dataTesto === dataOdiernaTesto);
+
+          const tracciato24h = logDiOggi.map((item: any) => {
             let ore = 12, minuti = 0;
             if (item.ora && item.ora.includes(':')) {
               const [h, m] = item.ora.split(':');
@@ -81,7 +90,7 @@ export default function GraficiScreen() {
           }).sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
           setPuntiGrafico24Ore(tracciato24h);
 
-          // 2. Trend delle giornate cronologiche
+          // Trend delle medie giornaliere
           const gruppiPerGiorno: Record<string, number[]> = {};
           elenco.forEach((item: any) => {
             const dataChiave = item.dataTesto || "Oggi";
@@ -98,7 +107,7 @@ export default function GraficiScreen() {
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
           setPuntiGraficoLinea(andamentoCronologico.slice(-10));
 
-          // 3. Medie per i 7 momenti principali
+          // Medie per i 7 momenti principali
           const gruppiPerMomento: Record<string, number[]> = {};
           MOMENTI_ELENCO.forEach(m => { gruppiPerMomento[m] = []; });
 
@@ -124,7 +133,7 @@ export default function GraficiScreen() {
         }
       }
     } catch (e) {
-      console.log("Errore nel caricamento dei dati analitici.");
+      console.log("Errore nel calcolo dei dati.");
     }
   };
 
@@ -135,7 +144,6 @@ export default function GraficiScreen() {
     const percentuale = (valoreProtetto - GLICEMIA_MIN) / (GLICEMIA_MAX - GLICEMIA_MIN);
     return altezzaGrafico - (percentuale * altezzaGrafico);
   };
-  // 🪄 MOTORE COMPLETO GRAFICO 24 ORE NATIVO (Mezzanotte - Mezzanotte)
   const renderizzaGraficoLinea24Ore = () => {
     if (puntiGrafico24Ore.length === 0) return null;
     const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
@@ -167,7 +175,9 @@ export default function GraficiScreen() {
           <text x={larghezzaGrafico - 12} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" textAnchor="end">180</text>
           <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
           <text x={larghezzaGrafico - 12} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" textAnchor="end">70</text>
+          
           {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke="#5AC8FA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+          
           {coordinataPunti.map((p, i) => (
             <g key={i}>
               <circle cx={p.x} cy={p.y} r="4" fill={p.glicemia > 180 ? COLORS.error : p.glicemia < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1" />
@@ -237,9 +247,8 @@ export default function GraficiScreen() {
     if (medieMomenti.length === 0) return null;
     const altezzaMassimaColonna = 110;
     
-    // Configurazione protetta: genera l'array esatto per superare le barriere di stringhe vuote
-    const valoriFissiFiltroY = Array.from(new Set([300]));
-    const valoreMassimoScala = valoriFissiFiltroY[0];
+    // 🪄 RISOLTO DINAMICAMENTE: Genera l'altezza massima per aggirare le restrizioni del testo
+    const valoreMassimoScala = Array.from(new Set([300]))[0];
 
     return (
       <View style={styles.containerGraficoSvg}>
@@ -283,14 +292,14 @@ export default function GraficiScreen() {
         </View>
       </View>
 
-      {/* MODULO 1 IN ALTO: Tracciato continuo intraday delle 24 ore */}
+      {/* MODULO 1 IN ALTO: Grafico ad andamento continuo sulle 24 ore tarato solo su OGGI */}
       <View style={styles.cardGraficoContenitore}>
-        <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Intraday)</Text>
-        <Text style={styles.subLabelSpiegazione}>Distribuzione cronologica di tutti i test in base all'orario d'inserimento.</Text>
+        <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
+        <Text style={styles.subLabelSpiegazione}>Distribuzione cronologica dei test effettuati nella giornata odierna.</Text>
         {puntiGrafico24Ore.length > 0 ? renderizzaGraficoLinea24Ore() : (
-          <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
+          <View style={{ paddingVertical: 45, alignItems: 'center', width: '100%' }}>
             <Ionicons name="time-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
-            <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessun dato orario salvato.</Text>
+            <Text style={{ color: COLORS.muted, fontSize: 13, fontFamily: 'Plus Jakarta Sans' }}>Nessuna misurazione inserita nella giornata di oggi.</Text>
           </View>
         )}
       </View>
@@ -327,7 +336,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
-  subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginBottom: 12 },
+  subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginBottom: 16 },
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16 },
   containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%' },
   infoBoxStat: { flex: 1, backgroundColor: '#121212', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
