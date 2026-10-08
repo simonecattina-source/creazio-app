@@ -59,6 +59,13 @@ export default function InserimentoScreen() {
     return `${giorno}/${mese}/${annoCorto}`;
   };
 
+  const ottieniTimestampDalTesto = (stringaData: string) => {
+    if (!stringaData || !stringaData.includes('/')) return 0;
+    const [giorno, mese, anno] = stringaData.split('/');
+    const annoCompleto = parseInt(anno) < 50 ? 2000 + parseInt(anno) : 1900 + parseInt(anno);
+    return new Date(annoCompleto, parseInt(mese) - 1, parseInt(giorno)).getTime();
+  };
+
   const ottieniColoreGlicemia = () => {
     const valore = parseInt(glicemia);
     if (!valore || isNaN(valore)) return COLORS.onSurface;
@@ -94,6 +101,24 @@ export default function InserimentoScreen() {
       let elencoDati = storicoEsistente ? JSON.parse(storicoEsistente) : [];
       
       elencoDati.unshift(nuovaMisurazione);
+
+      // 🪄 AUTO-PULIZIA ROTANTE TRIMESTRALE (91 GIORNI PRECAUZIONALI)
+      if (elencoDati.length > 0) {
+        let timestampPiuRecente = 0;
+        elencoDati.forEach((item: any) => {
+          const ts = ottieniTimestampDalTesto(item.dataTesto);
+          if (ts > timestampPiuRecente) timestampPiuRecente = ts;
+        });
+
+        const limite91GiorniMs = 91 * 24 * 60 * 60 * 1000;
+        const timestampSogliaMinima = timestampPiuRecente - limite91GiorniMs;
+
+        elencoDati = elencoDati.filter((item: any) => {
+          const tsItem = ottieniTimestampDalTesto(item.dataTesto);
+          return tsItem >= timestampSogliaMinima;
+        });
+      }
+
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
       setGlicemia('');
@@ -114,7 +139,6 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 📅⏰ REGHE TEMPORALI CON LE SCELTE DEFINITIVE "Data del Test" e "Orario del Test" */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
