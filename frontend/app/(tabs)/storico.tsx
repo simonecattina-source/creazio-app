@@ -22,7 +22,6 @@ const MOMENTI_COLONNE = [
 ];
 
 export default function StoricoScreen() {
-  // 🔘 Stato aggiornato per accettare anche il nuovo filtro stringa '90'
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | '90' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
@@ -109,8 +108,15 @@ export default function StoricoScreen() {
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
     const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
     const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    
-    // Elabora dinamicamente tutti i filtri numerici inclusi i nuovi 90 giorni selezionati
+    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
+  };
+
+  const RiverifyFiltro = (stringaData: string) => {
+    if (filtroAttivo === 'all') return true;
+    const oggi = new Date();
+    const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
+    const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
+    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
     return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
@@ -288,6 +294,7 @@ export default function StoricoScreen() {
       <html>
         <head>
           <meta charset="utf-8">
+          <title>Registro_Glicemico_Diabety</title>
           <style>
             @page { size: landscape; margin: 12mm; }
             body { font-family: sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
@@ -318,14 +325,38 @@ export default function StoricoScreen() {
         </body>
       </html>`;
 
-    const finestraStampa = window.open('', '_blank');
-    if (finestraStampa) {
-      finestraStampa.document.write(htmlTemplate);
-      finestraStampa.document.close();
-      finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
+    // 🪄 FORZATURA DOWNLOAD IPHONE: Impacchetta l'HTML come file binario per abilitare i comandi di condivisione di Safari
+    if (Platform.OS === 'web' && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      try {
+        const blobFile = new Blob([htmlTemplate], { type: 'text/html;charset=utf-8;' });
+        const urlBlob = URL.createObjectURL(blobFile);
+        
+        const linkDownloadVirtuale = document.createElement('a');
+        linkDownloadVirtuale.href = urlBlob;
+        linkDownloadVirtuale.setAttribute('download', 'Registro_Glicemico_Diabety.html');
+        document.body.appendChild(linkDownloadVirtuale);
+        
+        linkDownloadVirtuale.click();
+        
+        document.body.removeChild(linkDownloadVirtuale);
+        URL.revokeObjectURL(urlBlob);
+      } catch (errore) {
+        const finestraFallback = window.open('', '_blank');
+        if (finestraFallback) {
+          finestraFallback.document.write(htmlTemplate);
+          finestraFallback.document.close();
+        }
+      }
+    } else {
+      // Configurazione classica per computer PC/Mac
+      const finestraStampa = window.open('', '_blank');
+      if (finestraStampa) {
+        finestraStampa.document.write(htmlTemplate);
+        finestraStampa.document.close();
+        finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
+      }
     }
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -349,13 +380,12 @@ export default function StoricoScreen() {
         </View>
       )}
 
-      {/* 🔘 BARRA FILTRI AGGIORNATA A 5 PULSANTI (Inclusi i 90 Giorni) */}
       <View style={styles.filterBar}>
         {[
           { id: '7', etichetta: '7 GG' },
           { id: '14', etichetta: '14 GG' },
           { id: '30', etichetta: '30 GG' },
-          { id: '90', etichetta: '90 GG' }, // 🆕 Il nuovo tasto trimestrale richiesto
+          { id: '90', etichetta: '90 GG' }, 
           { id: 'all', etichetta: 'Tutti' }
         ].map((f) => (
           <TouchableOpacity 
@@ -400,7 +430,6 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* Popup 1: Modifica Avanzata Record con "Data del Test" e "Orario del Test" */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -499,8 +528,6 @@ export default function StoricoScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Popup 2: Richiesta di conferma per lo Svuotamento */}
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
@@ -530,10 +557,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: '#2C2C2E' },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontWeight: '600', fontSize: 14 },
-  
   exportButtonPDFRed: { backgroundColor: '#FF3B30', borderColor: '#FF3B30' },
   exportTextPDFWhite: { fontFamily: 'Plus Jakarta Sans', color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-
   filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 4, marginBottom: 16 },
   filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.brandPrimary },
@@ -552,7 +577,6 @@ const styles = StyleSheet.create({
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
   tipoPasto: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, marginTop: 4, fontWeight: '500' },
   noteTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, fontStyle: 'italic' },
-  
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
   modalContent: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2C2C2E' },
   modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
@@ -571,7 +595,6 @@ const styles = StyleSheet.create({
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
-  
   modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContentSvuota: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', borderWidth: 1, borderColor: '#2C2C2E' },
   iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#311718', padding: 10, borderRadius: 999 },
