@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react';
+import { useEffect } from "react";
 import { LogBox, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -23,7 +23,7 @@ export default function RootLayout() {
     Ionicons: require("@react-native-vector-icons/ionicons/fonts/Ionicons.ttf"),
   });
 
-  // 🔒 PROTEZIONE ANTIZOOM: Intercetta il browser di iPhone e blocca i gesti di zoom
+  // 🔒 Blocco dello zoom su browser mobili (Safari/Chrome per iPhone)
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       let metaViewport = document.querySelector('meta[name="viewport"]');
