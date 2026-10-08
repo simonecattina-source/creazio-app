@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Print from 'expo-print';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -43,76 +42,88 @@ export default function StoricoScreen() {
     return { ...sezione, data: elementiFiltrati };
   }).filter(sezione => sezione.data.length > 0);
 
-  const generaEDesportaPDF = async () => {
-    try {
-      let righeTabellaHtml = "";
-      datiFiltrati.forEach(sezione => {
-        sezione.data.forEach(item => {
-          let coloreGlicemia = '#34C759';
-          if (item.glicemia > 180) coloreGlicemia = '#FF3B30';
-          if (item.glicemia < 70) coloreGlicemia = '#FF9F0A';
+  // 🖨️ STAMPA ISOLATA WEB — Evita la cattura dello schermo dell'applicazione
+  const generaEDesportaPDF = () => {
+    let righeTabellaHtml = "";
+    datiFiltrati.forEach(sezione => {
+      sezione.data.forEach(item => {
+        let coloreGlicemia = '#34C759';
+        if (item.glicemia > 180) coloreGlicemia = '#FF3B30';
+        if (item.glicemia < 70) coloreGlicemia = '#FF9F0A';
 
-          righeTabellaHtml += `
-            <tr>
-              <td>${sezione.title}</td>
-              <td>${item.ora}</td>
-              <td style="font-weight: bold; color: ${coloreGlicemia};">${item.glicemia} mg/dL</td>
-              <td style="font-weight: 600;">${item.insulina || '-'}</td>
-              <td>${item.tipo}</td>
-              <td style="font-style: italic;">${item.note || '-'}</td>
-              <td>-</td><td>-</td><td>-</td><td>-</td>
-            </tr>
-          `;
-        });
+        righeTabellaHtml += `
+          <tr>
+            <td>${sezione.title}</td>
+            <td>${item.ora}</td>
+            <td style="font-weight: bold; color: ${coloreGlicemia};">${item.glicemia} mg/dL</td>
+            <td style="font-weight: 600;">${item.insulina || '-'}</td>
+            <td>${item.tipo}</td>
+            <td style="font-style: italic;">${item.note || '-'}</td>
+            <td>-</td><td>-</td><td>-</td><td>-</td>
+          </tr>`;
       });
+    });
 
-      const htmlTemplate = `
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              @page { size: landscape; margin: 15mm; }
-              body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; padding: 20px; background: #ffffff; }
-              .header-box { border-bottom: 3px solid #0A66C2; padding-bottom: 8px; margin-bottom: 20px; }
-              h1 { font-size: 24px; margin: 0; color: #0A66C2; font-weight: bold; }
-              p { font-size: 12px; margin: 5px 0 0 0; color: #8e8e93; }
-              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-              th, td { border: 1px solid #e5e5ea; padding: 10px; text-align: left; font-size: 11px; }
-              th { background-color: #f2f2f7; font-weight: bold; color: #1c1c1e; }
-              .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 12px; font-weight: bold; padding: 8px; }
-              tr:nth-child(even) { background-color: #f9f9f9; }
-            </style>
-          </head>
-          <body>
-            <div class="header-box">
-              <h1>GlicoTrack — Registro Clinico Diabete</h1>
-              <p>Esportazione del Registro Glicemico | Data: ${new Date().toLocaleDateString('it-IT')}</p>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th colspan="4" class="nested-header">PARAMETRI METABOLICI PRINCIPALI</th>
-                  <th colspan="2" class="nested-header">CONTESTO DIARIO</th>
-                  <th colspan="4" class="nested-header">INDICATORI CLINICI AGGIUNTIVI (MEDICO)</th>
-                </tr>
-                <tr>
-                  <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
-                  <th>Momento Pasto</th><th>Note Alimentari</th>
-                  <th>Carboidrati (g)</th><th>Attività (min)</th><th>Note Mediche</th><th>Firma Dottore</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${righeTabellaHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato registrato.</td></tr>'}
-              </tbody>
-            </table>
-          </body>
-        </html>
-      `;
+    const htmlTemplate = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>GlicoTrack — Report Medico</title>
+          <style>
+            @page { size: landscape; margin: 15mm; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #ffffff; }
+              .nested-header { background-color: #0A66C2 !important; color: #ffffff !important; }
+              th { background-color: #f2f2f7 !important; }
+            }
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
+            .header-box { border-bottom: 3px solid #0A66C2; padding-bottom: 8px; margin-bottom: 20px; }
+            h1 { font-size: 24px; margin: 0; color: #0A66C2; font-weight: bold; }
+            p { font-size: 12px; margin: 5px 0 0 0; color: #8e8e93; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #e5e5ea; padding: 10px; text-align: left; font-size: 11px; }
+            th { background-color: #f2f2f7; font-weight: bold; color: #1c1c1e; }
+            .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 12px; font-weight: bold; padding: 8px; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+          </style>
+        </head>
+        <body>
+          <div class="header-box">
+            <h1>GlicoTrack — Registro Clinico Diabete</h1>
+            <p>Esportazione del Registro Glicemico | Data: ${new Date().toLocaleDateString('it-IT')}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th colspan="4" class="nested-header">PARAMETRI METABOLICI PRINCIPALI</th>
+                <th colspan="2" class="nested-header">CONTESTO DIARIO</th>
+                <th colspan="4" class="nested-header">INDICATORI CLINICI AGGIUNTIVI (MEDICO)</th>
+              </tr>
+              <tr>
+                <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
+                <th>Momento Pasto</th><th>Note Alimentari</th>
+                <th>Carboidrati (g)</th><th>Attività (min)</th><th>Note Mediche</th><th>Firma Dottore</th>
+              </tr>
+            </thead>
+            <tbody>${righeTabellaHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato registrato.</td></tr>'}</tbody>
+          </table>
+        </body>
+      </html>`;
 
-      // Generazione del foglio di stampa/salvataggio PDF isolato
-      await Print.printAsync({ html: htmlTemplate });
-    } catch (errore) {
-      alert("Errore durante la generazione del documento.");
+    // Metodo puro per il web: apre una finestra separata contenente SOLO il codice dell'estratto tabellare
+    const finestraStampa = window.open('', '_blank');
+    if (finestraStampa) {
+      finestraStampa.document.write(htmlTemplate);
+      finestraStampa.document.close();
+      
+      // Attende il caricamento dei fogli di stile e lancia il gestore di sistema
+      finestraStampa.onload = () => {
+        finestraStampa.focus();
+        finestraStampa.print();
+      };
+    } else {
+      alert("Disattiva il blocco pop-up del browser per visualizzare la griglia del PDF.");
     }
   };
 
