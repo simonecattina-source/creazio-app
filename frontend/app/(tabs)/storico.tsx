@@ -26,7 +26,6 @@ export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
-  // Stati per la gestione della modifica ed eliminazione singola
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
@@ -36,7 +35,6 @@ export default function StoricoScreen() {
   const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
   const [testoNotifica, setTestoNotifica] = useState('✓ Modifica salvata nel registro');
 
-  // Nuovi stati per la finestra di conferma del comando Svuota
   const [mostraConfermaSvuota, setMostraConfermaSvuota] = useState(false);
   const [mostraNotificaSvuotato, setMostraNotificaSvuotato] = useState(false);
 
@@ -57,13 +55,10 @@ export default function StoricoScreen() {
     }
   };
 
-  // Funzione definitiva di svuotamento con feedback a comparsa automatica
-  const confermaCancellaTutto = async () => {
-    setMostraConfermaSvuota(false); 
+  const cancellaTuttoStorico = async () => {
     try {
       await AsyncStorage.removeItem('glicotrack_data');
       setDatiReali([]);
-      
       setMostraNotificaSvuotato(true);
       setTimeout(() => {
         setMostraNotificaSvuotato(false);
@@ -71,6 +66,27 @@ export default function StoricoScreen() {
     } catch (e) {
       alert("Impossibile cancellare i dati.");
     }
+  };
+
+  const confermaCancellaTutto = async () => {
+    setMostraConfermaSvuota(false);
+    await cancellaTuttoStorico();
+  };
+  const ottieniTimestamp = (stringaData: string) => {
+    if (stringaData === "Oggi") return new Date().getTime();
+    if (!stringaData || !stringaData.includes('/')) return 0;
+    const [giorno, mese, anno] = stringaData.split('/');
+    const annoCompleto = parseInt(anno) < 50 ? 2000 + parseInt(anno) : 1900 + parseInt(anno);
+    return new Date(annoCompleto, parseInt(mese) - 1, parseInt(giorno)).getTime();
+  };
+
+  const rientraNelFiltro = (stringaData: string) => {
+    if (filtroAttivo === 'all') return true;
+    const oggi = new Date();
+    const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
+    const timestampMisurazione = ottieniTimestamp(stringaData);
+    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
   const eliminaSingoloItem = async () => {
@@ -137,23 +153,16 @@ export default function StoricoScreen() {
 
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = {};
-    datiReali.forEach(item => {
+    const datiFiltratiTemporali = datiReali.filter(item => rientraNelFiltro(item.dataTesto || "Oggi"));
+
+    datiFiltratiTemporali.forEach(item => {
       const dataChiave = item.dataTesto || "Oggi";
       if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
       sezioni[dataChiave].push(item);
     });
 
     return Object.keys(sezioni)
-      .sort((a, b) => {
-        const ottieniTimestamp = (stringaData: string) => {
-          if (stringaData === "Oggi") return new Date().getTime();
-          if (!stringaData || !stringaData.includes('/')) return 0;
-          const [giorno, mese, anno] = stringaData.split('/');
-          const annoCompleto = parseInt(anno) < 50 ? 2000 + parseInt(anno) : 1900 + parseInt(anno);
-          return new Date(annoCompleto, parseInt(mese) - 1, parseInt(giorno)).getTime();
-        };
-        return ottieniTimestamp(b) - ottieniTimestamp(a);
-      })
+      .sort((a, b) => ottieniTimestamp(b) - ottieniTimestamp(a))
       .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
       .filter(s => s.data.length > 0);
   };
@@ -237,7 +246,7 @@ export default function StoricoScreen() {
               </tr>
             </thead>
             <tbody>
-              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato.</td></tr>'}
+              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato nel periodo selezionato.</td></tr>'}
             </tbody>
           </table>
         </body>
@@ -250,7 +259,6 @@ export default function StoricoScreen() {
       finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
     }
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -268,7 +276,6 @@ export default function StoricoScreen() {
         </View>
       </View>
 
-      {/* 🔴 TENDINA ROSSA A SCOMPARSA AUTOMATICA */}
       {mostraNotificaSvuotato && (
         <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#FCE8E6', borderColor: COLORS.error }]}>
           <Text style={[styles.notificaTesto, { color: '#A51D24' }]}>✕ Intero diario glicemico svuotato</Text>
@@ -314,12 +321,11 @@ export default function StoricoScreen() {
         )}
         ListEmptyComponent={
           <View style={{padding: 40, alignItems: 'center'}}>
-            <Text style={{color: COLORS.muted, fontFamily: 'Plus Jakarta Sans'}}>Nessuna misurazione salvata. Inserisci un valore dalla Home!</Text>
+            <Text style={{color: COLORS.muted, fontFamily: 'Plus Jakarta Sans'}}>Nessuna misurazione salvata in questo intervallo di tempo.</Text>
           </View>
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* 📝 POPUP MODIFICA/ELIMINAZIONE SINGOLA */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -361,7 +367,6 @@ export default function StoricoScreen() {
         </View>
       </Modal>
 
-      {/* ⚠️ NUOVO BOX BOX CENTRALE DI CONFERMA PER SVUOTA TUTTO */}
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
@@ -428,7 +433,6 @@ const styles = StyleSheet.create({
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 },
-  
   modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContentSvuota: { backgroundColor: '#FFF', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16 },
   iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#FCE8E6', padding: 10, borderRadius: 999 },
