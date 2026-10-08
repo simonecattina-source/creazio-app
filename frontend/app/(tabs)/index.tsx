@@ -91,7 +91,7 @@ export default function InserimentoScreen() {
   };
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>Nuovo Log Clinico</Text>
+      <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
       {/* 1. 📅 DATA: Riquadro rimpicciolito, vicino e auto-adattivo sul lato sinistro */}
       <View style={styles.dataCardSinistra}>
