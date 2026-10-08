@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -13,30 +15,38 @@ const COLORS = {
   warning: "#FF9F0A",
   error: "#FF3B30",
 };
-
-// Dati finti strutturati per testare l'allineamento perfetto delle colonne
-const DATI_LOG_MOCK = [
-  {
-    title: "Oggi",
-    data: [
-      { id: "1", glicemia: 110, insulina: "4 UI", tipo: "Prima Colazione", note: "Digiuno", dataDoc: new Date() },
-      { id: "2", glicemia: 145, insulina: "2 UI", tipo: "Dopo Colazione", note: "Fetta biscottata", dataDoc: new Date() },
-      { id: "3", glicemia: 95,  insulina: "6 UI", tipo: "Prima Pranzo", note: "", dataDoc: new Date() },
-      { id: "4", glicemia: 130, insulina: "3 UI", tipo: "Dopo Pranzo", note: "Riso", dataDoc: new Date() },
-      { id: "5", glicemia: 115, insulina: "5 UI", tipo: "Prima Cena", note: "", dataDoc: new Date() },
-      { id: "6", glicemia: 155, insulina: "2 UI", tipo: "Dopo Cena", note: "Pollo", dataDoc: new Date() }
-    ]
-  },
-  {
-    title: "Ieri",
-    data: [
-      { id: "7", glicemia: 125, insulina: "4 UI", tipo: "Prima Colazione", note: "", dataDoc: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      { id: "8", glicemia: 210, insulina: "8 UI", tipo: "Dopo Pranzo", note: "Dolce", dataDoc: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-    ]
-  }
-];
 export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
+  const [datiReali, setDatiReali] = useState<any[]>([]);
+
+  // Carica i dati reali dalla memoria ogni volta che l'utente apre questa schermata
+  useFocusEffect(
+    React.useCallback(() => {
+      caricaDatiLocali();
+    }, [])
+  );
+
+  const caricaDatiLocali = async () => {
+    try {
+      const datiSalvati = await AsyncStorage.getItem('glicotrack_data');
+      if (datiSalvati) {
+        setDatiReali(JSON.parse(datiSalvati));
+      }
+    } catch (e) {
+      console.log("Errore nel caricamento dei dati.");
+    }
+  };
+
+  // Funzione per svuotare il diario se si desidera resettare i log
+  const cancellaTuttoStorico = async () => {
+    try {
+      await AsyncStorage.removeItem('glicotrack_data');
+      setDatiReali([]);
+      alert("Diario glicemico svuotato.");
+    } catch (e) {
+      alert("Impossibile cancellare i dati.");
+    }
+  };
 
   const rientraNelFiltro = (dataMisurazione: Date) => {
     if (filtroAttivo === 'all') return true;
@@ -45,13 +55,21 @@ export default function StoricoScreen() {
     return differenzaInGiorni <= parseInt(filtroAttivo);
   };
 
-  const datiFiltrati = DATI_LOG_MOCK.map(sezione => {
-    const elementiFiltrati = sezione.data.filter(item => rientraNelFiltro(item.dataDoc));
-    return { ...sezione, data: elementiFiltrati };
-  }).filter(sezione => sezione.data.length > 0);
+  // Raggruppa i dati reali per mostrare la Timeline visiva nell'interfaccia dell'app
+  const ottieniDatiSezionati = () => {
+    const sezioni: Record<string, any[]> = { "Oggi": [] };
+    datiReali.forEach(item => {
+      const dataChiave = item.dataTesto || "Oggi";
+      if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
+      sezioni[dataChiave].push(item);
+    });
+
+    return Object.keys(sezioni)
+      .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
+      .filter(s => s.data.length > 0);
+  };
 
   const generaEDesportaPDF = () => {
-    // Definizione esatta delle colonne richieste
     const momentiColonne = [
       "Prima Colazione", "Dopo Colazione", "Spuntino", 
       "Prima Pranzo", "Dopo Pranzo", "Merenda", 
@@ -59,20 +77,17 @@ export default function StoricoScreen() {
     ];
 
     let corpoTabellaHtml = "";
+    const sezioniDati = ottieniDatiSezionati();
 
-    datiFiltrati.forEach(sezione => {
-      // Inizializziamo i contenitori vuoti per i 9 momenti di questo giorno
+    sezioniDati.forEach(sezione => {
       const rigaGlicemie: Record<string, string> = {};
       const rigaInsuline: Record<string, string> = {};
       const rigaNote: Record<string, string> = {};
 
       momentiColonne.forEach(m => {
-        rigaGlicemie[m] = "-";
-        rigaInsuline[m] = "-";
-        rigaNote[m] = "-";
+        rigaGlicemie[m] = "-"; rigaInsuline[m] = "-"; rigaNote[m] = "-";
       });
 
-      // Mappiamo i dati reali nei rispettivi momenti della giornata
       sezione.data.forEach(item => {
         if (momentiColonne.includes(item.tipo)) {
           let colore = '#34C759';
@@ -80,37 +95,30 @@ export default function StoricoScreen() {
           if (item.glicemia < 70) colore = '#FF9F0A';
 
           rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
-          rigaInsuline[item.tipo] = item.insulina ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
+          rigaInsuline[item.tipo] = item.insulina !== '-' ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
           rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
         }
       });
 
-      // Costruzione del blocco esatto di 4 righe per questo giorno
       corpoTabellaHtml += `
-        <!-- RIGA 1: GLICEMIE -->
         <tr>
           <td class="cell-data" rowspan="4">${sezione.title}</td>
           <td class="cell-label">Glicemia</td>
           ${momentiColonne.map(m => `<td>\${rigaGlicemie[m]}</td>`).join('')}
         </tr>
-        <!-- RIGA 2: INSULINE -->
         <tr>
           <td class="cell-label">Insulina</td>
           ${momentiColonne.map(m => `<td>\${rigaInsuline[m]}</td>`).join('')}
         </tr>
-        <!-- RIGA 3: NOTE -->
         <tr>
           <td class="cell-label">Note</td>
           ${momentiColonne.map(m => `<td>\${rigaNote[m]}</td>`).join('')}
         </tr>
-        <!-- RIGA 4: SEPARATORE / FIRMA -->
         <tr class="row-separator">
           <td class="cell-label">Firma / Note Mediche</td>
           ${momentiColonne.map(() => `<td></td>`).join('')}
-        </tr>
-      `;
+        </tr>`;
     });
-
     const htmlTemplate = `
       <!DOCTYPE html>
       <html>
@@ -118,7 +126,7 @@ export default function StoricoScreen() {
           <meta charset="utf-8">
           <style>
             @page { size: landscape; margin: 12mm; }
-            body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; margin: 0; padding: 10px; background: #ffffff; }
+            body { font-family: sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
             h1 { font-size: 22px; color: #0A66C2; margin: 0 0 15px 0; font-weight: bold; border-bottom: 2px solid #0A66C2; padding-bottom: 5px; }
             table { width: 100%; border-collapse: collapse; table-layout: fixed; }
             th, td { border: 1px solid #c7c7cc; padding: 8px 6px; font-size: 11px; text-align: center; vertical-align: middle; word-wrap: break-word; }
@@ -133,37 +141,24 @@ export default function StoricoScreen() {
           <table>
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Parametro</th>
-                <th>Prima Colazione</th>
-                <th>Dopo Colazione</th>
-                <th>Spuntino</th>
-                <th>Prima Pranzo</th>
-                <th>Dopo Pranzo</th>
-                <th>Merenda</th>
-                <th>Prima Cena</th>
-                <th>Dopo Cena</th>
-                <th>Notte</th>
+                <th>Data</th><th>Parametro</th>
+                <th>Prima Colazione</th><th>Dopo Colazione</th><th>Spuntino</th>
+                <th>Prima Pranzo</th><th>Dopo Pranzo</th><th>Merenda</th>
+                <th>Prima Cena</th><th>Dopo Cena</th><th>Notte</th>
               </tr>
             </thead>
             <tbody>
-              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato nel periodo selezionato.</td></tr>'}
+              ${corpoTabellaHtml || '<tr><td colspan="11" style="padding:20px;color:#8e8e93;">Nessun dato registrato.</td></tr>'}
             </tbody>
           </table>
         </body>
-      </html>
-    `;
+      </html>`;
 
     const finestraStampa = window.open('', '_blank');
     if (finestraStampa) {
       finestraStampa.document.write(htmlTemplate);
       finestraStampa.document.close();
-      finestraStampa.onload = () => {
-        finestraStampa.focus();
-        finestraStampa.print();
-      };
-    } else {
-      alert("Disattiva il blocco pop-up del browser per visualizzare il registro.");
+      finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
     }
   };
 
@@ -171,10 +166,17 @@ export default function StoricoScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Storico</Text>
-        <TouchableOpacity style={styles.exportButton} onPress={generaEDesportaPDF}>
-          <Ionicons name="document-text-outline" size={16} color={COLORS.brandPrimary} />
-          <Text style={styles.exportText}>Esporta in PDF</Text>
-        </TouchableOpacity>
+        <View style={{flexDirection:'row', gap: 8}}>
+          {datiReali.length > 0 && (
+            <TouchableOpacity style={[styles.exportButton, {backgroundColor:'#FFEEF0'}]} onPress={cancellaTuttoStorico}>
+              <Text style={[styles.exportText, {color: COLORS.error}]}>Svuota</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.exportButton} onPress={generaEDesportaPDF}>
+            <Ionicons name="document-text-outline" size={16} color={COLORS.brandPrimary} />
+            <Text style={styles.exportText}>Esporta PDF</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.filterBar}>
@@ -192,13 +194,13 @@ export default function StoricoScreen() {
       </View>
 
       <SectionList
-        sections={datiFiltrati}
+        sections={ottieniDatiSezionati()}
         keyExtractor={(item) => item.id}
         renderSectionHeader={({ section: { title } }) => <Text style={styles.sectionHeader}>{title}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <View style={styles.timelineContainer}>
-              <View style={[styles.timelineDot, { backgroundColor: COLORS[item.stato as keyof typeof COLORS] }]} />
+              <View style={[styles.timelineDot, { backgroundColor: item.glicemia > 180 ? COLORS.error : item.glicemia < 70 ? COLORS.warning : COLORS.success }]} />
               <View style={styles.timelineLine} />
             </View>
             <View style={styles.card}>
@@ -206,11 +208,16 @@ export default function StoricoScreen() {
                 <Text style={styles.valoreGlicemia}>{item.glicemia} <Text style={styles.unitaMisura}>mg/dL</Text></Text>
                 <Text style={styles.oraTest}>{item.ora}</Text>
               </View>
-              <Text style={styles.tipoPasto}>{item.tipo} {item.insulina ? `• Insulina: ${item.insulina}` : ''}</Text>
+              <Text style={styles.tipoPasto}>{item.tipo} {item.insulina !== '-' ? `• Insulina: ${item.insulina}` : ''}</Text>
               {item.note ? <Text style={styles.noteTest}>{item.note}</Text> : null}
             </View>
           </View>
         )}
+        ListEmptyComponent={
+          <View style={{padding: 40, alignItems: 'center'}}>
+            <Text style={{color: COLORS.muted, fontFamily: 'Plus Jakarta Sans'}}>Nessuna misurazione salvata. Inserisci un valore dalla Home!</Text>
+          </View>
+        }
         contentContainerStyle={styles.listContent}
       />
     </View>
