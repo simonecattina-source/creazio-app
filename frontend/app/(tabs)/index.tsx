@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -22,9 +21,17 @@ const MOMENTI = [
 ];
 
 export default function InserimentoScreen() {
-  // Stati per la gestione della data tramite calendario vero (Default: Oggi)
-  const [dataOggetto, setDataOggetto] = useState(new Date());
-  const [mostraCalendario, setMostraCalendario] = useState(false);
+  // Genera la data odierna nel formato ISO richiesto dal calendario web (AAAA-MM-GG)
+  const ottieniDataOdiernaISO = () => {
+    const oggi = new Date();
+    const g = String(oggi.getDate()).padStart(2, '0');
+    const m = String(oggi.getMonth() + 1).padStart(2, '0');
+    const a = oggi.getFullYear();
+    return `${a}-${m}-${g}`;
+  };
+
+  // Stato per la data in formato ISO (es: "2026-10-08")
+  const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
 
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
@@ -32,31 +39,12 @@ export default function InserimentoScreen() {
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  // Converte l'oggetto Data in testo GG/MM/AA per lo storico e per la visualizzazione dell'app
-  const ottieniDataFormattata = (date: Date) => {
-    const giorno = String(date.getDate()).padStart(2, '0');
-    const mese = String(date.getMonth() + 1).padStart(2, '0');
-    const anno = String(date.getFullYear()).slice(-2); 
-    return `${giorno}/${mese}/${a}`;
-  };
-
-  // 📅 Gestisce la selezione dal calendario
-  const alCambioData = (event: any, selectedDate?: Date) => {
-    // Su ambiente Web nasconde automaticamente il selettore dopo la scelta
-    if (Platform.OS === 'web') {
-      setMostraCalendario(false);
-    }
-    
-    if (selectedDate) {
-      const oggi = new Date();
-      // Blocco di sicurezza invalicabile: se la data scelta è superiore a oggi, forza la data odierna
-      if (selectedDate > oggi) {
-        setDataOggetto(oggi);
-        alert("Non è possibile registrare misurazioni per date future.");
-      } else {
-        setDataOggetto(selectedDate);
-      }
-    }
+  // Trasforma la data da AAAA-MM-GG al formato GG/MM/AA per lo storico e il PDF
+  const ottieniDataFormattataStorico = (stringaISO: string) => {
+    if (!stringaISO) return "";
+    const [anno, mese, giorno] = stringaISO.split('-');
+    const annoCorto = anno.slice(-2);
+    return `${giorno}/${mese}/${annoCorto}`;
   };
 
   const ottieniColoreGlicemia = () => {
@@ -83,7 +71,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: ottieniDataFormattata(dataOggetto) // Salva la data scelta dal calendario
+        dataTesto: ottieniDataFormattataStorico(dataISO) // Invia la data corretta nel formato GG/MM/AA
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -109,25 +97,35 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      {/* 1. 📅 SELETTORE A CALENDARIO (In alto a sinistra, interattivo) */}
+      {/* 1. 📅 SELETTORE CALENDARIO WEB NATIVO: Allineato a sinistra e privo di crash */}
       <View style={[styles.cardInput, styles.dataCardSinistra]}>
         <Text style={styles.labelLeft}>Data Controllo</Text>
         
-        <TouchableOpacity style={styles.containerPulsanteData} onPress={() => setMostraCalendario(true)}>
-          <Ionicons name="calendar-outline" size={16} color={COLORS.brandPrimary} style={{ marginRight: 6 }} />
-          <Text style={styles.testoPulsanteData}>{ottieniDataFormattata(dataOggetto)}</Text>
-        </TouchableOpacity>
-
-        {/* Mostra il componente Calendario del sistema operativo */}
-        {(mostraCalendario || Platform.OS !== 'web') && (
-          <DateTimePicker
-            value={dataOggetto}
-            mode="date"
-            display="default"
-            maximumDate={new Date()} // Forza il calendario a disattivare visivamente i giorni futuri
-            onChange={alCambioData}
-            style={styles.calendarioElemento}
+        {Platform.OS === 'web' ? (
+          // Inietta il tag input del browser per mostrare il calendario visivo standard
+          <input
+            type="date"
+            value={dataISO}
+            max={ottieniDataOdiernaISO()} // 🔒 Impedisce la selezione di date future
+            onChange={(e) => setDataISO(e.target.value)}
+            style={{
+              fontFamily: 'sans-serif',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: COLORS.brandPrimary,
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E5E5EA',
+              borderRadius: '10px',
+              padding: '8px 12px',
+              marginTop: '4px',
+              width: '100%',
+              boxSizing: 'border-box',
+              outline: 'none'
+            }}
           />
+        ) : (
+          // Testo di backup se visualizzato fuori dal browser
+          <Text style={styles.dataInput}>{ottieniDataFormattataStorico(dataISO)}</Text>
         )}
       </View>
 
@@ -159,7 +157,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 4. SELETTORE 9 MOMENTI */}
+      {/* 4. SELETTORE RAPIDO 9 MOMENTI */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -206,17 +204,12 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
-  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
+  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', width: '100%' },
   
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
-  dataCardSinistra: { width: '55%', marginBottom: 16, alignSelf: 'flex-start' },
+  dataCardSinistra: { width: '55%', marginBottom: 16, alignSelf: 'flex-start', backgroundColor: 'transparent', padding: 0 },
   
-  /* Stili pulsante Calendario interattivo */
-  containerPulsanteData: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', marginTop: 2, width: '100%' },
-  testoPulsanteData: { fontFamily: 'Space Grotesk', fontSize: 16, fontWeight: '600', color: COLORS.brandPrimary },
-  calendarioElemento: { marginTop: 8, alignSelf: 'flex-start' },
-
-  /* Input allineati a sinistra */
+  dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 44, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
@@ -227,7 +220,7 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.brandPrimary, fontWeight: '700' },
   
-  saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 }
