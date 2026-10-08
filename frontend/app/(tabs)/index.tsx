@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// 🎨 TOKEN COLORE AGGIORNATI PER LA DARK MODE
 const COLORS = {
-  surface: "#FFFFFF",
-  surfaceSecondary: "#F2F2F7",
-  brandPrimary: "#0A66C2",
-  onBrandPrimary: "#FFFFFF",
-  onSurface: "#1C1C1E",
-  muted: "#8E8E93",
-  success: "#34C759", 
-  warning: "#FF9F0A", 
-  error: "#FF3B30",   
+  background: "#121212",        // Sfondo principale nero profondo
+  surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite scuro
+  brandPrimary: "#0A66C2",      // Blu istituzionale per la data e azioni
+  onSurface: "#FFFFFF",         // Testo principale bianco puro
+  muted: "#8E8E93",             // Testo secondario grigio
+  success: "#34C759",           // Glicemia normale (Verde)
+  warning: "#FF9F0A",           // Glicemia bassa (Arancione)
+  error: "#FF3B30",             // Glicemia alta (Rosso)
 };
 
 const MOMENTI = [
@@ -45,7 +45,7 @@ export default function InserimentoScreen() {
 
   const ottieniColoreGlicemia = () => {
     const valore = parseInt(glicemia);
-    if (!valore || isNaN(valore)) return COLORS.onSurface;
+    if (!valore || isNaN(valore)) return COLORS.onSurface; // Ritorna Bianco in Dark Mode se vuoto
     if (valore < 70) return COLORS.warning;
     if (valore > 180) return COLORS.error;
     return COLORS.success;
@@ -93,10 +93,9 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 1. 📅 DATA: Riquadro rimpicciolito, vicino e auto-adattivo sul lato sinistro */}
+      {/* 1. DATA */}
       <View style={styles.dataCardSinistra}>
         <Text style={styles.labelLeft}>Data Controllo</Text>
-        
         {Platform.OS === 'web' ? (
           <input
             type="date"
@@ -108,12 +107,12 @@ export default function InserimentoScreen() {
               fontSize: '15px',
               fontWeight: '600',
               color: COLORS.brandPrimary,
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E5E5EA',
+              backgroundColor: '#1C1C1E', // Input scuro coerente
+              border: '1px solid #2C2C2E',
               borderRadius: '10px',
               padding: '6px 10px',
               marginTop: '4px',
-              width: 'auto', // Rende la linea vicina al testo e non troppo lunga
+              width: 'auto', 
               display: 'inline-block',
               outline: 'none',
               cursor: 'pointer'
@@ -130,7 +129,7 @@ export default function InserimentoScreen() {
         <TextInput
           style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
           placeholder="00"
-          placeholderTextColor="#C7C7CC"
+          placeholderTextColor="#48484A"
           keyboardType="numeric"
           value={glicemia}
           onChangeText={setGlicemia}
@@ -144,7 +143,7 @@ export default function InserimentoScreen() {
         <TextInput
           style={styles.insulinaInput}
           placeholder="0"
-          placeholderTextColor="#C7C7CC"
+          placeholderTextColor="#48484A"
           keyboardType="numeric"
           value={insulina}
           onChangeText={setInsulina}
@@ -175,7 +174,7 @@ export default function InserimentoScreen() {
         <TextInput
           style={styles.noteInput}
           placeholder="Es: Riso integrale, stanchezza..."
-          placeholderTextColor="#C7C7CC"
+          placeholderTextColor="#48484A"
           value={note}
           onChangeText={setNote}
         />
@@ -195,15 +194,13 @@ export default function InserimentoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: COLORS.background }, // Sfondo Dark globale
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', width: '100%' },
   
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
-  
-  /* Blocco data ristretto vicino al testo e non a tutta larghezza */
   dataCardSinistra: { width: 'auto', marginBottom: 16, alignSelf: 'flex-start', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
   
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
@@ -213,12 +210,12 @@ const styles = StyleSheet.create({
   
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
-  chipSelezionata: { backgroundColor: "#E6F0FA", borderWidth: 1, borderColor: COLORS.brandPrimary },
-  chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface, fontWeight: '500' },
-  chipTextSelezionato: { color: COLORS.brandPrimary, fontWeight: '700' },
+  chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, // Chip attiva scura coordinata
+  chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
+  chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
   
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
-  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 }
+  notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
+  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 }
 });
