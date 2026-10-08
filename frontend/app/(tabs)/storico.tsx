@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform, Modal, TextInput, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from 'expo-router';
 
 const COLORS = {
   background: "#121212",        
@@ -15,381 +13,269 @@ const COLORS = {
   error: "#FF3B30",             
 };
 
-const MOMENTI_COLONNE = [
+const MOMENTI = [
   "Prima Colazione", "Dopo Colazione", "Spuntino", 
   "Prima Pranzo", "Dopo Pranzo", "Merenda", 
   "Prima Cena", "Dopo Cena", "Notte"
 ];
 
-export default function StoricoScreen() {
-  const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
-  const [datiReali, setDatiReali] = useState<any[]>([]);
-
-  // Stati per la gestione della modifica ed eliminazione singola
-  const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
-  const [modGlicemia, setModGlicemia] = useState('');
-  const [modInsulina, setModInsulina] = useState('');
-  const [modNote, setModNote] = useState('');
-  const [modMomento, setModMomento] = useState('');
-  
-  const [modDataISO, setModDataISO] = useState('');
-  const [modOraText, setModOraText] = useState('');
-
-  const [mostraModalModifica, setMostraModalModifica] = useState(false);
-  const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
-  const [testoNotifica, setTestoNotifica] = useState('✓ Modifica salvata nel registro');
-
-  const [mostraConfermaSvuota, setMostraConfermaSvuota] = useState(false);
-  const [mostraNotificaSvuotato, setMostraNotificaSvuotato] = useState(false);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      caricaDatiLocali();
-    }, [])
-  );
-
-  const caricaDatiLocali = async () => {
-    try {
-      const datiSalvati = await AsyncStorage.getItem('glicotrack_data');
-      if (datiSalvati) {
-        setDatiReali(JSON.parse(datiSalvati));
-      }
-    } catch (e) {
-      console.log("Errore nel caricamento dei dati.");
-    }
-  };
-
-  const cancellaTuttoStorico = async () => {
-    try {
-      await AsyncStorage.removeItem('glicotrack_data');
-      setDatiReali([]);
-      setMostraNotificaSvuotato(true);
-      setTimeout(() => {
-        setMostraNotificaSvuotato(false);
-      }, 3000);
-    } catch (e) {
-      alert("Impossibile cancellare i dati.");
-    }
-  };
-
-  const confermaCancellaTutto = async () => {
-    setMostraConfermaSvuota(false);
-    await cancellaTuttoStorico();
-  };
-  // Funzione avanzata che calcola un timestamp preciso al minuto unendo data e ora
-  const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
-    let giorno = 0, mese = 0, annoCompleto = 0;
-    
-    if (stringaData === "Oggi") {
-      const d = new Date();
-      giorno = d.getDate();
-      mese = d.getMonth();
-      annoCompleto = d.getFullYear();
-    } else if (stringaData && stringaData.includes('/')) {
-      const [g, m, a] = stringaData.split('/');
-      giorno = parseInt(g);
-      mese = parseInt(m) - 1;
-      annoCompleto = parseInt(a) < 50 ? 2000 + parseInt(a) : 1900 + parseInt(a);
-    } else {
-      return 0;
-    }
-
-    let ore = 0, minuti = 0;
-    if (stringaOra && stringaOra.includes(':')) {
-      const [h, min] = stringaOra.split(':');
-      ore = parseInt(h);
-      minuti = parseInt(min);
-    }
-
-    return new Date(annoCompleto, mese, giorno, ore, minuti).getTime();
-  };
-
-  const rientraNelFiltro = (stringaData: string) => {
-    if (filtroAttivo === 'all') return true;
+export default function InserimentoScreen() {
+  const ottieniDataOdiernaISO = () => {
     const oggi = new Date();
-    const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
-    const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const BlackdifferenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return BlackdifferenzaGiorni <= parseInt(filtroAttivo) && BlackdifferenzaGiorni >= -1;
+    const g = String(oggi.getDate()).padStart(2, '0');
+    const m = String(oggi.getMonth() + 1).padStart(2, '0');
+    const a = oggi.getFullYear();
+    return `${a}-${m}-${g}`;
   };
 
-  const eliminaSingoloItem = async () => {
-    if (!itemSelezionato) return;
-    try {
-      const datiRimanenti = datiReali.filter(item => item.id !== itemSelezionato.id);
-      await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiRimanenti));
-      setDatiReali(datiRimanenti);
-      setTestoNotifica('✕ Misurazione eliminata dal registro');
-      setMostraNotificaModifica(true);
-      setTimeout(() => {
-        setMostraNotificaModifica(false);
-        setMostraModalModifica(false);
-        setItemSelezionato(null);
-      }, 1300);
-    } catch (e) {
-      alert("Errore durante l'eliminazione.");
-    }
+  const ottieniOraCorrente = () => {
+    const oggi = new Date();
+    const ore = String(oggi.getHours()).padStart(2, '0');
+    const minuti = String(oggi.getMinutes()).padStart(2, '0');
+    return `${ore}:${minuti}`;
   };
 
-  const apriModificaItem = (item: any) => {
-    setItemSelezionato(item);
-    setModGlicemia(item.glicemia.toString());
-    setModInsulina(item.insulina ? item.insulina.replace(' UI', '').replace('-', '') : '');
-    setModMomento(item.tipo || 'Prima Colazione');
-    setModOraText(item.ora || '12:00');
+  const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
+  const [oraInserita, setOraInserita] = useState(ottieniOraCorrente());
+  const [glicemia, setGlicemia] = useState('');
+  const [insulina, setInsulina] = useState('');
+  const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
+  const [note, setNote] = useState('');
+  const [mostraNotifica, setMostraNotifica] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (glicemia === '' && insulina === '' && note === '') {
+        setOraInserita(ottieniOraCorrente());
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [glicemia, insulina, note]);
+
+  const ottieniDataFormattataStorico = (stringaISO: string) => {
+    if (!stringaISO) return "";
+    const [anno, mese, giorno] = stringaISO.split('-');
+    const annoCorto = anno.slice(-2);
+    return `${giorno}/${mese}/${annoCorto}`;
+  };
+
+  const ottieniColoreGlicemia = () => {
+    const valore = parseInt(glicemia);
+    if (!valore || isNaN(valore)) return COLORS.onSurface;
+    if (valore < 70) return COLORS.warning;
+    if (valore > 180) return COLORS.error;
+    return COLORS.success;
+  };
+
+  const salvaMisurazione = async () => {
+    const valoreGlicemia = parseInt(glicemia);
     
-    const testoNotePulito = item.note ? item.note.replace(/^\[\d{2}:\d{2}\]\s*/, '') : '';
-    setModNote(testoNotePulito);
-    
-    if (item.dataTesto && item.dataTesto.includes('/')) {
-      const [g, m, a] = item.dataTesto.split('/');
-      setModDataISO(`20${a}-${m}-${g}`);
-    } else {
-      const d = new Date();
-      setModDataISO(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
-    }
-
-    setTestoNotifica('✓ Modifica salvata nel registro');
-    setMostraNotificaModifica(false); 
-    setMostraModalModifica(true);
-  };
-
-  const salvaModificaItem = async () => {
-    const valoreGlicemia = parseInt(modGlicemia);
     if (!valoreGlicemia || isNaN(valoreGlicemia)) {
-      alert("Inserisci un valore di glicemia valido.");
+      alert("Inserisci un valore di glicemia valido prima di salvare.");
       return;
     }
 
-    const [aaaa, mm, gg] = modDataISO.split('-');
-    const dataRiconvertita = `${gg}/${mm}/${aaaa.slice(-2)}`;
-    const noteConOrarioFuso = modNote.trim() ? `[${modOraText}] ${modNote.trim()}` : `[${modOraText}]`;
-
     try {
-      const datiAggiornati = datiReali.map(item => {
-        if (item.id === itemSelezionato.id) {
-          return {
-            ...item,
-            glicemia: valoreGlicemia,
-            insulina: modInsulina ? `${modInsulina} UI` : '-',
-            tipo: modMomento,
-            note: noteConOrarioFuso,
-            ora: modOraText,          
-            dataTesto: dataRiconvertita 
-          };
-        }
-        return item;
-      });
+      const noteConOrarioFuso = note.trim() 
+        ? `[${oraInserita}] ${note.trim()}`
+        : `[${oraInserita}]`;
 
-      await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
-      setDatiReali(datiAggiornati);
-      setTestoNotifica('✓ Modifica salvata nel registro');
-      setMostraNotificaModifica(true);
+      const nuovaMisurazione = {
+        id: Math.random().toString(),
+        glicemia: valoreGlicemia,
+        insulina: insulina ? `${insulina} UI` : '-',
+        tipo: momentoSelezionato,
+        note: noteConOrarioFuso, 
+        ora: oraInserita,        
+        dataTesto: ottieniDataFormattataStorico(dataISO)
+      };
+
+      const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
+      let elencoDati = storicoEsistente ? JSON.parse(storicoEsistente) : [];
+      
+      elencoDati.unshift(nuovaMisurazione);
+      await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
+
+      setGlicemia('');
+      setInsulina('');
+      setNote('');
+      setOraInserita(ottieniOraCorrente());
+      
+      setMostraNotifica(true);
       setTimeout(() => {
-        setMostraNotificaModifica(false);
-        setMostraModalModifica(false);
-        setItemSelezionato(null);
-      }, 1500);
-    } catch (e) {
-      alert("Errore durante il salvataggio.");
-    }
-  };
+        setMostraNotifica(false);
+      }, 3000);
 
-  // 🪄 Raggruppa e applica il doppio ordinamento cronologico temporale (Data + Ora)
-  const ottieniDatiSezionati = () => {
-    const sezioni: Record<string, any[]> = {};
-    const datiFiltratiTemporali = datiReali.filter(item => rientraNelFiltro(item.dataTesto || "Oggi"));
-
-    datiFiltratiTemporali.forEach(item => {
-      const dataChiave = item.dataTesto || "Oggi";
-      if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
-      sezioni[dataChiave].push(item);
-    });
-
-    return Object.keys(sezioni)
-      .sort((a, b) => ottieniTimestampCompleto(b, "00:00") - ottieniTimestampCompleto(a, "00:00")) 
-      .map(chiave => {
-        // 🪄 CORRETTO: Variabile allineata ed esatta per l'ordinamento intraday delle ore
-        const elementiGiornoOrdinati = sezioni[chiave].sort((itemA, itemB) => {
-          return ottieniTimestampCompleto(chiave, itemB.ora || "00:00") - ottieniTimestampCompleto(chiave, itemA.ora || "00:00");
-        });
-        return { title: chiave, data: elementiGiornoOrdinati };
-      })
-      .filter(s => s.data.length > 0);
-  };
-  const generaEDesportaPDF = () => {
-    let corpoTabellaHtml = "";
-    const sezioniDati = ottieniDatiSezionati();
-
-    sezioniDati.forEach(sezione => {
-      const rigaGlicemie: Record<string, string> = {};
-      const rigaInsuline: Record<string, string> = {};
-      const rigaNote: Record<string, string> = {};
-
-      MOMENTI_COLONNE.forEach(m => {
-        rigaGlicemie[m] = "-"; rigaInsuline[m] = "-"; rigaNote[m] = "-";
-      });
-
-      sezione.data.forEach(item => {
-        if (MOMENTI_COLONNE.includes(item.tipo)) {
-          let colore = '#34C759';
-          if (item.glicemia > 180) colore = '#FF3B30';
-          if (item.glicemia < 70) colore = '#FF9F0A';
-
-          rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
-          rigaInsuline[item.tipo] = item.insulina !== '-' ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
-          rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
-        }
-      });
-
-      let trGlicemieHtml = "";
-      let trInsulineHtml = "";
-      let trNoteHtml = "";
-
-      MOMENTI_COLONNE.forEach(m => {
-        trGlicemieHtml += `<td>${rigaGlicemie[m]}</td>`;
-        trInsulineHtml += `<td>${rigaInsuline[m]}</td>`;
-        trNoteHtml += `<td>${rigaNote[m]}</td>`;
-      });
-
-      corpoTabellaHtml += `
-        <tr>
-          <td class="cell-data" rowspan="3">${sezione.title}</td>
-          <td class="cell-label">Glicemia</td>
-          ${trGlicemieHtml}
-        </tr>
-        <tr>
-          <td class="cell-label">Insulina</td>
-          ${trInsulineHtml}
-        </tr>
-        <tr class="row-separator">
-          <td class="cell-label">Note</td>
-          ${trNoteHtml}
-        </tr>`;
-    });
-
-    const htmlTemplate = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            @page { size: landscape; margin: 12mm; }
-            body { font-family: sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
-            h1 { font-size: 22px; color: #0A66C2; margin: 0 0 15px 0; font-weight: bold; border-bottom: 2px solid #0A66C2; padding-bottom: 5px; }
-            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-            th, td { border: 1px solid #c7c7cc; padding: 8px 6px; font-size: 11px; text-align: center; vertical-align: middle; word-wrap: break-word; }
-            th { background-color: #f2f2f7; font-weight: bold; font-size: 10px; text-transform: uppercase; }
-            .cell-data { font-weight: bold; background-color: #f0f5fa; color: #0A66C2; font-size: 12px; width: 80px; }
-            .cell-label { font-weight: 600; background-color: #f2f2f7; text-align: left; padding-left: 8px; width: 90px; }
-            .row-separator td { background-color: #ffffff; }
-          </style>
-        </head>
-        <body>
-          <h1>Diabety - Registro Storile Giornaliero</h1>
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th><th>Parametro</th>
-                <th>Prima Colazione</th><th>Dopo Colazione</th><th>Spuntino</th>
-                <th>Prima Pranzo</th><th>Dopo Pranzo</th><th>Merenda</th>
-                <th>Prima Cena</th><th>Dopo Cena</th><th>Notte</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato nel periodo selezionato.</td></tr>'}
-            </tbody>
-          </table>
-        </body>
-      </html>`;
-
-    const finestraStampa = window.open('', '_blank');
-    if (finestraStampa) {
-      finestraStampa.document.write(htmlTemplate);
-      finestraStampa.document.close();
-      finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
+    } catch (error) {
+      alert("Impossibile salvare i dati localmente.");
     }
   };
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Storico</Text>
-        <View style={{flexDirection:'row', gap: 8}}>
-          {datiReali.length > 0 && (
-            <TouchableOpacity style={[styles.exportButton, {backgroundColor:'#FFEEF0'}]} onPress={() => setMostraConfermaSvuota(true)}>
-              <Text style={[styles.exportText, {color: COLORS.error}]}>Svuota</Text>
-            </TouchableOpacity>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Inserisci Nuovi Dati</Text>
+      
+      {/* 📅⏰ REGHE TEMPORALI CON LE SCELTE "Data del Test" e "Orario del Test" */}
+      <View style={styles.containerRigaTemporale}>
+        <View style={styles.dataCardSinistra}>
+          <Text style={styles.labelLeft}>Data del Test</Text>
+          {Platform.OS === 'web' ? (
+            <input
+              type="date"
+              value={dataISO}
+              max={ottieniDataOdiernaISO()} 
+              onChange={(e) => setDataISO(e.target.value)}
+              style={{
+                fontFamily: 'sans-serif',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#0A66C2', 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E5E5EA', 
+                borderRadius: '10px',
+                padding: '6px 10px',
+                marginTop: '4px',
+                width: 'auto', 
+                display: 'inline-block',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            />
+          ) : (
+            <Text style={styles.dataInput}>{ottieniDataFormattataStorico(dataISO)}</Text>
           )}
-          {/* Pulsante PDF Rosso e Bianco con i bordi originali */}
-          <TouchableOpacity style={[styles.exportButton, styles.exportButtonPDFRed]} onPress={generaEDesportaPDF}>
-            <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.exportTextPDFWhite}>Esporta PDF</Text>
-          </TouchableOpacity>
+        </View>
+
+        <View style={styles.dataCardSinistra}>
+          <Text style={styles.labelLeft}>Orario del Test</Text>
+          {Platform.OS === 'web' ? (
+            <input
+              type="time"
+              value={oraInserita}
+              onChange={(e) => setOraInserita(e.target.value)}
+              style={{
+                fontFamily: 'sans-serif',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#0A66C2', 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E5E5EA', 
+                borderRadius: '10px',
+                padding: '6px 10px',
+                marginTop: '4px',
+                width: 'auto', 
+                display: 'inline-block',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            />
+          ) : (
+            <TextInput style={styles.timeInputBackup} value={oraInserita} onChangeText={setOraInserita} maxLength={5} />
+          )}
         </View>
       </View>
 
-      {mostraNotificaSvuotato && (
-        <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#132D1B', borderColor: COLORS.success }]}>
-          <Text style={[styles.notificaTesto, { color: COLORS.success }]}>✓ Intero diario glicemico svuotato</Text>
+      <View style={styles.rigaDatiPrincipali}>
+        <View style={[styles.cardInput, styles.metaLarghezza]}>
+          <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
+          <TextInput
+            style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
+            placeholder="00"
+            placeholderTextColor="#48484A"
+            keyboardType="numeric"
+            value={glicemia}
+            onChangeText={setGlicemia}
+            maxLength={3}
+          />
+        </View>
+
+        <View style={[styles.cardInput, styles.metaLarghezza]}>
+          <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
+          <TextInput
+            style={styles.insulinaInput}
+            placeholder="0"
+            placeholderTextColor="#48484A"
+            keyboardType="numeric"
+            value={insulina}
+            onChangeText={setInsulina}
+            maxLength={2}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.sectionLabel}>Momento della Giornata</Text>
+      <View style={styles.chipsContainer}>
+        {MOMENTI.map((m) => {
+          const selezionato = momentoSelezionato === m;
+          return (
+            <TouchableOpacity
+              key={m}
+              style={[styles.chip, selezionato && styles.chipSelezionata]}
+              onPress={() => setMomentoSelezionato(m)}
+            >
+              <Text style={[styles.chipText, selezionato && styles.chipTextSelezionato]}>{m}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <View style={[styles.cardInput, { padding: 12, marginBottom: 16 }]}>
+        <Text style={styles.labelLeft}>Note Alimentari / Sintomi</Text>
+        <TextInput
+          style={styles.noteInput}
+          placeholder="Es: Riso integrale, stanchezza..."
+          placeholderTextColor="#48484A"
+          value={note}
+          onChangeText={setNote}
+        />
+      </View>
+
+      {mostraNotifica && (
+        <View style={styles.notificaTendina}>
+          <Text style={styles.notificaTesto}>✓ Misurazione salvata nel registro</Text>
         </View>
       )}
 
-      <View style={styles.filterBar}>
-        {[
-          { id: '7', etichetta: '7 GG' },
-          { id: '14', etichetta: '14 GG' },
-          { id: '30', etichetta: '30 GG' },
-          { id: 'all', etichetta: 'Tutti' }
-        ].map((f) => (
-          <TouchableOpacity 
-            key={f.id} 
-            style={[styles.filterButton, filtroAttivo === f.id && styles.filterButtonActive]}
-            onPress={() => setFiltroAttivo(f.id as any)}
-          >
-            <Text style={[styles.filterButtonText, filtroAttivo === f.id && styles.filterButtonTextActive]}>
-              {f.etichetta}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
+        <Text style={styles.saveButtonText}>Salva Misurazione</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
 
-      <SectionList
-        sections={ottieniDatiSezionati()}
-        keyExtractor={(item) => item.id}
-        renderSectionHeader={({ section: { title } }) => <Text style={styles.sectionHeader}>{title}</Text>}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} onPress={() => apriModificaItem(item)} activeOpacity={0.7}>
-            <View style={styles.timelineContainer}>
-              <View style={[styles.timelineDot, { backgroundColor: item.glicemia > 180 ? COLORS.error : item.glicemia < 70 ? COLORS.warning : COLORS.success }]} />
-              <View style={styles.timelineLine} />
-            </View>
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.valoreGlicemia}>{item.glicemia} <Text style={styles.unitaMisura}>mg/dL</Text></Text>
-                <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
-                  <Text style={styles.oraTest}>{item.ora}</Text>
-                  <Ionicons name="pencil-sharp" size={12} color={COLORS.muted} />
-                </View>
-              </View>
-              <Text style={styles.tipoPasto}>{item.tipo} {item.insulina !== '-' ? `• Insulina: ${item.insulina}` : ''}</Text>
-              {item.note ? <Text style={styles.noteTest}>{item.note}</Text> : null}
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={{padding: 40, alignItems: 'center'}}>
-            <Text style={{color: COLORS.muted, fontFamily: 'Plus Jakarta Sans'}}>Nessuna misurazione salvata in questo intervallo di tempo.</Text>
-          </View>
-        }
-        contentContainerStyle={styles.listContent}
-      />
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background }, 
+  content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
+  title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
+  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
+  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
+  labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
+  containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
+  dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
+  rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
+  metaLarghezza: { flex: 1 }, 
+  dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
+  timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
+  glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
+  insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
+  noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
+  chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
+  chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
+  chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
+  chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
+  chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
+  saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
+  saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
+  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 }
+});
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
             
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>Data Misurazione</Text>
+              {/* 🏷️ INTEDAZIONE AGGIORNATA */}
+              <Text style={styles.inputLabel}>Data del Test</Text>
               {Platform.OS === 'web' ? (
                 <input
                   type="date"
@@ -399,9 +285,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2', 
-                    backgroundColor: '#FFFFFF', 
-                    border: '1px solid #E5E5EA', 
+                    color: '#0A66C2',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E5E5EA',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -415,7 +301,8 @@ export default function StoricoScreen() {
                 <TextInput style={styles.textInput} value={modDataISO} onChangeText={setModDataISO} />
               )}
 
-              <Text style={styles.inputLabel}>Ora Misurazione (Verrà scritta nelle note)</Text>
+              {/* 🏷️ INTEDAZIONE AGGIORNATA */}
+              <Text style={styles.inputLabel}>Orario del Test (Verrà scritto nelle note)</Text>
               {Platform.OS === 'web' ? (
                 <input
                   type="time"
@@ -425,9 +312,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2', 
-                    backgroundColor: '#FFFFFF', 
-                    border: '1px solid #E5E5EA', 
+                    color: '#0A66C2',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E5E5EA',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -481,6 +368,7 @@ export default function StoricoScreen() {
           </View>
         </View>
       </Modal>
+
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
@@ -511,10 +399,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: '#2C2C2E' },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontWeight: '600', fontSize: 14 },
-  
   exportButtonPDFRed: { backgroundColor: '#FF3B30', borderColor: '#FF3B30' },
   exportTextPDFWhite: { fontFamily: 'Plus Jakarta Sans', color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-
   filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 16 },
   filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.brandPrimary },
@@ -533,7 +419,6 @@ const styles = StyleSheet.create({
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
   tipoPasto: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, marginTop: 4, fontWeight: '500' },
   noteTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, fontStyle: 'italic' },
-  
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
   modalContent: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2C2C2E' },
   modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
@@ -552,7 +437,6 @@ const styles = StyleSheet.create({
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
-  
   modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContentSvuota: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', borderWidth: 1, borderColor: '#2C2C2E' },
   iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#311718', padding: 10, borderRadius: 999 },
