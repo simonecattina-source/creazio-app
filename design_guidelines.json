@@ -1,0 +1,171 @@
+{
+  "app_name": "GlicoTrack",
+  "personality": "1 iOS-Native Clean",
+  "personality_one_liner": "A clinical, highly readable, and zero-friction tracking interface that prioritizes immediate data entry and clear status visibility.",
+  "color": {
+    "light": {
+      "surface": "#FFFFFF",
+      "onSurface": "#1C1C1E",
+      "surfaceSecondary": "#F2F2F7",
+      "onSurfaceSecondary": "#1C1C1E",
+      "surfaceTertiary": "#E5E5EA",
+      "onSurfaceTertiary": "#1C1C1E",
+      "surfaceInverse": "#1C1C1E",
+      "onSurfaceInverse": "#FFFFFF",
+      "brand": "#0A66C2",
+      "onBrand": "#FFFFFF",
+      "brandPrimary": "#0A66C2",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#E6F0FA",
+      "onBrandSecondary": "#0A66C2",
+      "brandTertiary": "#F0F5FA",
+      "onBrandTertiary": "#0A66C2",
+      "success": "#34C759",
+      "onSuccess": "#FFFFFF",
+      "warning": "#FF9F0A",
+      "onWarning": "#FFFFFF",
+      "error": "#FF3B30",
+      "onError": "#FFFFFF",
+      "info": "#007AFF",
+      "onInfo": "#FFFFFF",
+      "border": "#E5E5EA",
+      "borderStrong": "#C7C7CC",
+      "divider": "#E5E5EA",
+      "muted": "#8E8E93"
+    },
+    "dark": {
+      "surface": "#000000",
+      "onSurface": "#F2F2F7",
+      "surfaceSecondary": "#1C1C1E",
+      "onSurfaceSecondary": "#E5E5EA",
+      "surfaceTertiary": "#2C2C2E",
+      "onSurfaceTertiary": "#E5E5EA",
+      "surfaceInverse": "#F2F2F7",
+      "onSurfaceInverse": "#000000",
+      "brand": "#0A84FF",
+      "onBrand": "#FFFFFF",
+      "brandPrimary": "#0A84FF",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#1A3A5A",
+      "onBrandSecondary": "#66B2FF",
+      "brandTertiary": "#112233",
+      "onBrandTertiary": "#66B2FF",
+      "success": "#30D158",
+      "onSuccess": "#FFFFFF",
+      "warning": "#FF9F0A",
+      "onWarning": "#FFFFFF",
+      "error": "#FF453A",
+      "onError": "#FFFFFF",
+      "info": "#0A84FF",
+      "onInfo": "#FFFFFF",
+      "border": "#38383A",
+      "borderStrong": "#48484A",
+      "divider": "#38383A",
+      "muted": "#8E8E93"
+    }
+  },
+  "typography": {
+    "displayFontFamily": "Space Grotesk",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous vertical breathing room for forms. Safe-area clearance is mandatory. Use md (12) for inner component padding and lg (16) for screen edges.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Ionicons",
+  "glassmorphism": {
+    "enabled": "true",
+    "do's": [
+      "Use frosted glass on the bottom tab bar.",
+      "Use glass for sticky sticky headers over the history timeline.",
+      "Apply to the floating 'Esporta PDF' button container if pinned over scrolling content."
+    ],
+    "dont's": [
+      "Never blur standard form inputs or list rows.",
+      "Avoid applying glassmorphism to data cards inside the timeline."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Inserimento (Home)",
+      "purpose": "Rapid, single-screen logging of glucose, insulin, and meal context with immediate visual feedback on thresholds.",
+      "states": {
+        "loading": "Centered spinner (rare, mostly instantaneous local storage).",
+        "empty": "N/A - This is always an actionable form.",
+        "error": "Inline validation messages below the glucose input if value is impossible."
+      },
+      "layout": "Screen opens directly to this form. Top section: abstract medical blue header with current Date & Time pickers. Center: Massive numeric input for 'Glicemia (mg/dL)'. The text color of this input changes dynamically (Red if >180, Orange if <70, Green/Default if normal) for instant feedback. Below: Insulin units (numeric stepper or compact input). Next section: 9 Meal Moments rendered as a wrapping flex-row of pill-shaped chips (brandTertiary when selected, surfaceSecondary when inactive). Bottom: Optional text input for 'Note alimentari'. Sticky primary CTA at the bottom 'Salva Misurazione', anchored above the keyboard using KeyboardAvoidingView."
+    },
+    {
+      "name": "Storico",
+      "purpose": "A clear, stacked timeline of all historical measurements grouped by day, with a quick export function.",
+      "states": {
+        "loading": "Skeleton lines mimicking the timeline structure.",
+        "empty": "Clean clipboard illustration centered with text 'Nessuna misurazione registrata' and CTA 'Aggiungi ora'.",
+        "error": "Readable error message with a retry button to reload local data."
+      },
+      "layout": "Header: Title 'Storico' and a prominent 'Esporta in PDF' button. Body: SectionList grouped by Date. Each row uses a stacked timeline layout: a vertical line with a colored dot on the left (Red for high, Orange for low, Green for normal glucose) connecting to a data card. The data card (surfaceSecondary) contains the Glucose value (large text in Space Grotesk), Insulin units, Meal moment icon/text, and optional notes. Generous bottom padding to allow scrolling past the tab bar."
+    }
+  ],
+  "images": {
+    "header_abstract_medical": {
+      "url": "https://images.unsplash.com/photo-1743046813915-94cf6d5e6942?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1lZGljYWwlMjBjbGVhbiUyMGJhY2tncm91bmQlMjB3aGl0ZSUyMGJsdWV8ZW58MHx8fHwxNzkxMTQwOTY2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Soft abstract medical blue and white flowing background for the header"
+    },
+    "empty_clipboard": {
+      "url": "https://images.unsplash.com/photo-1651760680066-db9d32bd0357?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxlbXB0eSUyMGNsaXBib2FyZCUyMG9yJTIwZG9jdW1lbnQlMjBtZWRpY2FsJTIwY2xlYW58ZW58MHx8fHwxNzkxMTQwOTY2fDA&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1651760680066-db9d32bd0357?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxlbXB0eSUyMGNsaXBib2FyZCUyMG9yJTIwZG9jdW1lbnQlMjBtZWRpY2FsJTIwY2xlYW58ZW58MHx8fHwxNzkxMTQwOTY2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Clean clipboard representing an empty medical history state"
+    }
+  },
+  "haptics": {
+    "events": {
+      "save_measurement": "notification_success",
+      "select_meal_moment": "selection",
+      "change_glucose_value": "impact_light",
+      "export_pdf": "impact_medium"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Design specifically for iOS (iPhone optimized) natively, do not build web-based UI paradigms. No hover states.",
+    "Implement both Light and Dark mode strictly using the provided color tokens in the JSON.",
+    "On the 'Inserimento' screen, dynamically color the Glucose text input based on the value (<70 warning/orange, >180 error/red).",
+    "Use a wrapping flex-row of pill chips (flexDirection: 'row', flexWrap: 'wrap', gap: 8) for the 9 meal moments. Do not use a native picker as it takes too many taps.",
+    "The timeline in the 'Storico' screen must have visual connecting lines between items of the same day. Use the status colors (warning, error, success) for the timeline dots.",
+    "PDF Export must generate a landscape PDF with a professional 10-column nested header table, as explicitly requested by the user. Use expo-print and expo-sharing.",
+    "Keep navigation to Bottom Tabs: 'Inserisci' and 'Storico'. The app must default to the 'Inserisci' tab on launch."
+  ]
+}
