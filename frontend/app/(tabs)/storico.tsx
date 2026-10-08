@@ -22,7 +22,8 @@ const MOMENTI_COLONNE = [
 ];
 
 export default function StoricoScreen() {
-  const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
+  // 🔘 Stato aggiornato per accettare anche il nuovo filtro stringa '90'
+  const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | '90' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
@@ -75,7 +76,6 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
-
   const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
     let giorno = 0, mese = 0, annoCompleto = 0;
     
@@ -108,8 +108,10 @@ export default function StoricoScreen() {
     const oggi = new Date();
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
     const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const BlackdifferenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return BlackdifferenzaGiorni <= parseInt(filtroAttivo) && BlackdifferenzaGiorni >= -1;
+    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    
+    // Elabora dinamicamente tutti i filtri numerici inclusi i nuovi 90 giorni selezionati
+    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
   const eliminaSingoloItem = async () => {
@@ -180,7 +182,6 @@ export default function StoricoScreen() {
         return item;
       });
 
-      // 🪄 AUTO-PULIZIA ROTANTE TRIMESTRALE (91 GIORNI PRECAUZIONALI)
       if (datiAggiornati.length > 0) {
         let timestampPiuRecente = 0;
         datiAggiornati.forEach((item: any) => {
@@ -336,7 +337,7 @@ export default function StoricoScreen() {
             </TouchableOpacity>
           )}
           <TouchableOpacity style={[styles.exportButton, styles.exportButtonPDFRed]} onPress={generaEDesportaPDF}>
-            <Ionicons name="document-text-outline" size= {16} color="#FFFFFF" />
+            <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
             <Text style={styles.exportTextPDFWhite}>Esporta PDF</Text>
           </TouchableOpacity>
         </View>
@@ -348,11 +349,13 @@ export default function StoricoScreen() {
         </View>
       )}
 
+      {/* 🔘 BARRA FILTRI AGGIORNATA A 5 PULSANTI (Inclusi i 90 Giorni) */}
       <View style={styles.filterBar}>
         {[
           { id: '7', etichetta: '7 GG' },
           { id: '14', etichetta: '14 GG' },
           { id: '30', etichetta: '30 GG' },
+          { id: '90', etichetta: '90 GG' }, // 🆕 Il nuovo tasto trimestrale richiesto
           { id: 'all', etichetta: 'Tutti' }
         ].map((f) => (
           <TouchableOpacity 
@@ -397,7 +400,7 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* Popup 1: Modifica Avanzata Record con "Data del Test" e "Orario del Test" racchiusi nella radice */}
+      {/* Popup 1: Modifica Avanzata Record con "Data del Test" e "Orario del Test" */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -531,10 +534,10 @@ const styles = StyleSheet.create({
   exportButtonPDFRed: { backgroundColor: '#FF3B30', borderColor: '#FF3B30' },
   exportTextPDFWhite: { fontFamily: 'Plus Jakarta Sans', color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 
-  filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 16 },
+  filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 4, marginBottom: 16 },
   filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.brandPrimary },
-  filterButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted },
+  filterButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '600', color: COLORS.muted },
   filterButtonTextActive: { color: COLORS.onSurface, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
   sectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: COLORS.onSurface, backgroundColor: COLORS.background, paddingVertical: 8 },
