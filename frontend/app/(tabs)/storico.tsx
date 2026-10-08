@@ -48,11 +48,15 @@ export default function StoricoScreen() {
       let righeTabellaHtml = "";
       datiFiltrati.forEach(sezione => {
         sezione.data.forEach(item => {
+          let coloreGlicemia = '#34C759';
+          if (item.glicemia > 180) coloreGlicemia = '#FF3B30';
+          if (item.glicemia < 70) coloreGlicemia = '#FF9F0A';
+
           righeTabellaHtml += `
             <tr>
               <td>${sezione.title}</td>
               <td>${item.ora}</td>
-              <td style="font-weight: bold; color: ${item.glicemia > 180 ? '#FF3B30' : item.glicemia < 70 ? '#FF9F0A' : '#34C759'}">${item.glicemia} mg/dL</td>
+              <td style="font-weight: bold; color: ${coloreGlicemia};">${item.glicemia} mg/dL</td>
               <td style="font-weight: 600;">${item.insulina || '-'}</td>
               <td>${item.tipo}</td>
               <td style="font-style: italic;">${item.note || '-'}</td>
@@ -65,23 +69,25 @@ export default function StoricoScreen() {
       const htmlTemplate = `
         <html>
           <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <meta charset="utf-8">
             <style>
-              @page { size: landscape; margin: 20mm; }
-              body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
-              h1 { font-size: 24px; margin-bottom: 5px; color: #0A66C2; font-weight: bold; }
-              p { font-size: 12px; margin-bottom: 20px; color: #8e8e93; }
-              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              @page { size: landscape; margin: 15mm; }
+              body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; padding: 20px; background: #ffffff; }
+              .header-box { border-bottom: 3px solid #0A66C2; padding-bottom: 8px; margin-bottom: 20px; }
+              h1 { font-size: 24px; margin: 0; color: #0A66C2; font-weight: bold; }
+              p { font-size: 12px; margin: 5px 0 0 0; color: #8e8e93; }
+              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
               th, td { border: 1px solid #e5e5ea; padding: 10px; text-align: left; font-size: 11px; }
-              th { background-color: #f2f2f7; font-weight: bold; }
-              .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 12px; font-weight: bold; }
+              th { background-color: #f2f2f7; font-weight: bold; color: #1c1c1e; }
+              .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 12px; font-weight: bold; padding: 8px; }
               tr:nth-child(even) { background-color: #f9f9f9; }
             </style>
           </head>
           <body>
-            <h1>GlicoTrack — Report Clinico Glicemie</h1>
-            <p>Generato il: ${new Date().toLocaleDateString('it-IT')} | Filtro applicato: ${filtroAttivo === 'all' ? 'Tutto lo storico' : `Ultimi \${filtroAttivo} giorni`}</p>
-            
+            <div class="header-box">
+              <h1>GlicoTrack — Registro Clinico Diabete</h1>
+              <p>Esportazione del Registro Glicemico | Data: ${new Date().toLocaleDateString('it-IT')}</p>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -103,14 +109,10 @@ export default function StoricoScreen() {
         </html>
       `;
 
-      const { uri } = await Print.printToFileAsync({ html: htmlTemplate });
-      if (Platform.OS === 'web') {
-        const nuovaFinestra = window.open(uri, '_blank');
-        if (!nuovaFinestra) alert("Se il PDF non si apre, disattiva il blocco pop-up del browser.");
-      }
+      // Generazione del foglio di stampa/salvataggio PDF isolato
+      await Print.printAsync({ html: htmlTemplate });
     } catch (errore) {
-      console.error(errore);
-      alert("Errore durante la generazione del file PDF.");
+      alert("Errore durante la generazione del documento.");
     }
   };
 
@@ -166,7 +168,7 @@ export default function StoricoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.surface, paddingTop: 50 },
-  header: { flexDirection: 'row', justifyBetween: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F0FA', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6 },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontWeight: '600', fontSize: 14 },
@@ -182,7 +184,7 @@ const styles = StyleSheet.create({
   timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 18, zIndex: 2 },
   timelineLine: { position: 'absolute', top: 30, bottom: 0, width: 2, backgroundColor: COLORS.surfaceSecondary, zIndex: 1 },
   card: { flex: 1, backgroundColor: COLORS.surfaceSecondary, borderRadius: 12, padding: 12, marginBottom: 12, marginLeft: 8 },
-  cardHeader: { flexDirection: 'row', justifyBetween: 'space-between', alignItems: 'baseline' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   valoreGlicemia: { fontFamily: 'Space Grotesk', fontSize: 22, fontWeight: '700', color: COLORS.onSurface },
   unitaMisura: { fontSize: 12, color: COLORS.muted, fontWeight: '400' },
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
