@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COLORS = {
@@ -34,7 +35,6 @@ export default function InserimentoScreen() {
     const minuti = String(oggi.getMinutes()).padStart(2, '0');
     return `${ore}:${minuti}`;
   };
-
   const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
   const [oraInserita, setOraInserita] = useState(ottieniOraCorrente());
   const [glicemia, setGlicemia] = useState('');
@@ -42,6 +42,9 @@ export default function InserimentoScreen() {
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
+  
+  // ℹ️ Stato per gestire l'apertura e la chiusura della guida modale INFO
+  const [mostraModalInfo, setMostraModalInfo] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -102,7 +105,6 @@ export default function InserimentoScreen() {
       
       elencoDati.unshift(nuovaMisurazione);
 
-      // 🪄 AUTO-PULIZIA ROTANTE TRIMESTRALE (91 GIORNI PRECAUZIONALI)
       if (elencoDati.length > 0) {
         let timestampPiuRecente = 0;
         elencoDati.forEach((item: any) => {
@@ -137,8 +139,17 @@ export default function InserimentoScreen() {
   };
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
+      {/* 🏷️ INTESTAZIONE CON TITOLO A SINISTRA E TASTO INFO A DESTRA */}
+      <View style={styles.headerForm}>
+        <Text style={styles.title}>Inserisci Nuovi Dati</Text>
+        <TouchableOpacity style={styles.infoButton} onPress={() => setMostraModalInfo(true)}>
+          <Ionicons name="information-circle-outline" size={24} color={COLORS.brandPrimary} />
+          <Text style={styles.infoButtonText}>INFO</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {/* 📅⏰ RIGHE TEMPORALI CORRETTE */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
@@ -198,6 +209,7 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
+      {/* RIGA AFFIANCATA GLICEMIA + INSULINA */}
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
@@ -262,6 +274,56 @@ export default function InserimentoScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
+      {/* 🎪 POPUP MODALE SCURO GUIDA CLINICA DIABETY (INFO) */}
+      <Modal visible={mostraModalInfo} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeaderInfo}>
+              <Text style={styles.modalTitleInfo}>Guida all'Uso</Text>
+              <TouchableOpacity onPress={() => setMostraModalInfo(false)}>
+                <Ionicons name="close-circle" size={26} color={COLORS.muted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScrollInfo} showsVerticalScrollIndicator={false}>
+              
+              <View style={styles.infoBlock}>
+                <Text style={styles.infoBlockTitle}>🛡️ Archivio Rotante di 91 Giorni</Text>
+                <Text style={styles.infoBlockText}>
+                  L'app memorizza ed esegue il calcolo dei dati basandosi sull'ultimo trimestre completo (13 settimane). Ad ogni nuovo inserimento, i log antecedenti ai 90 giorni vengono eliminati automaticamente per salvaguardare spazio e privacy.
+                </Text>
+              </View>
+
+              <View style={styles.infoBlock}>
+                <Text style={styles.infoBlockTitle}>⏰ Tracciamento Orario Intraday</Text>
+                <Text style={styles.infoBlockText}>
+                  L'orario selezionato viene memorizzato per ordinare cronologicamente la timeline e viene fuso automaticamente tra parentesi quadre all'inizio delle tue Note. In questo modo rimarrà impresso in modo chiaro anche nell'esportazione.
+                </Text>
+              </View>
+
+              <View style={styles.infoBlock}>
+                <Text style={styles.infoBlockTitle}>📊 Codici Colore Medici</Text>
+                <Text style={styles.infoBlockText}>
+                  I valori inseriti assumono colori diversi in base alle soglie cliniche standard: Verde per valori normali (70-180 mg/dL), Arancione in caso di ipoglicemia (&lt;70 mg/dL) e Rosso per iperglicemia (&gt;180 mg/dL).
+                </Text>
+              </View>
+
+              <View style={styles.infoBlock}>
+                <Text style={styles.infoBlockTitle}>📄 Esportazione PDF Griglia Orizzontale</Text>
+                <Text style={styles.infoBlockText}>
+                  Dalla sezione "Storico" puoi applicare i filtri rapidi (7, 14, 30, 90 giorni) e generare un report a griglia orizzontale strutturato pronto per la stampa o l'invio diretto al tuo medico diabetologo.
+                </Text>
+              </View>
+
+            </ScrollView>
+
+            <TouchableOpacity style={styles.btnChiudiInfo} onPress={() => setMostraModalInfo(false)}>
+              <Text style={styles.btnChiudiInfoText}>Ho Capito</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -269,26 +331,47 @@ export default function InserimentoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background }, 
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
-  title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
+  
+  headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, width: '100%' },
+  title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
+  infoButton: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1C1C1E', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#2C2C2E' },
+  infoButtonText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontWeight: '700', fontSize: 13 },
+
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
   containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
   dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
+  
   rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
   metaLarghezza: { flex: 1 }, 
+
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
+  
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
+  
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
   chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
   chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
+  
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
-  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 }
+  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
+  modalContent: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2C2C2E', maxHeight: '85%' },
+  modalHeaderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#2C2C2E', paddingBottom: 10 },
+  modalTitleInfo: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
+  modalScrollInfo: { marginBottom: 16 },
+  infoBlock: { marginBottom: 16, backgroundColor: '#121212', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E' },
+  infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
+  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, lineHeight: 18, textAlign: 'left' },
+  btnChiudiInfo: { backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
+  btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#FFFFFF' }
 });
