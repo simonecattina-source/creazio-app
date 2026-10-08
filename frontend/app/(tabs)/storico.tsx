@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Print from 'expo-print';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -44,65 +43,90 @@ export default function StoricoScreen() {
     return { ...sezione, data: elementiFiltrati };
   }).filter(sezione => sezione.data.length > 0);
 
-  const generaEDesportaPDF = async () => {
-    try {
-      let righeHtml = "";
-      datiFiltrati.forEach(sezione => {
-        sezione.data.forEach(item => {
-          righeHtml += `
-            <tr>
-              <td>${sezione.title}</td>
-              <td>${item.ora}</td>
-              <td style="font-weight: bold; color: ${item.glicemia > 180 ? '#FF3B30' : item.glicemia < 70 ? '#FF9F0A' : '#34C759'}">${item.glicemia} mg/dL</td>
-              <td>${item.insulina || '-'}</td>
-              <td>${item.tipo}</td>
-              <td>${item.note || '-'}</td>
-              <td>-</td><td>-</td><td>-</td><td>-</td>
-            </tr>`;
-        });
+  // 📊 MOTORE DI GENERAZIONE PDF AVANZATO ED ISOLATO PER IL WEB
+  const generaEDesportaPDF = () => {
+    let righeHtml = "";
+    datiFiltrati.forEach(sezione => {
+      sezione.data.forEach(item => {
+        righeHtml += `
+          <tr>
+            <td>${sezione.title}</td>
+            <td>${item.ora}</td>
+            <td style="font-weight: bold; color: ${item.glicemia > 180 ? '#FF3B30' : item.glicemia < 70 ? '#FF9F0A' : '#34C759'}">${item.glicemia} mg/dL</td>
+            <td>${item.insulina || '-'}</td>
+            <td>${item.tipo}</td>
+            <td>${item.note || '-'}</td>
+            <td>-</td><td>-</td><td>-</td><td>-</td>
+          </tr>`;
       });
+    });
 
-      const htmlTemplate = `
-        <html>
-          <head>
-            <style>
-              @page { size: landscape; margin: 15mm; }
-              body { font-family: sans-serif; color: #1c1c1e; padding: 10px; }
-              h1 { color: #0A66C2; font-size: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-              th, td { border: 1px solid #e5e5ea; padding: 8px; font-size: 11px; text-align: left; }
-              th { background-color: #f2f2f7; font-weight: bold; }
-              .nested-header { text-align: center; background-color: #0A66C2; color: white; }
-            </style>
-          </head>
-          <body>
-            <h1>GlicoTrack - Registro Medico Orizzontale</h1>
-            <table>
-              <thead>
-                <tr>
-                  <th colspan="4" class="nested-header">PARAMETRI CLINICI</th>
-                  <th colspan="2" class="nested-header">DIARIO DI BORDO</th>
-                  <th colspan="4" class="nested-header">VALUTAZIONE MEDICA</th>
-                </tr>
-                <tr>
-                  <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
-                  <th>Momento Pasto</th><th>Note Alimentari</th>
-                  <th>Carboidrati (g)</th><th>Sport (min)</th><th>Note Medico</th><th>Firma</th>
-                </tr>
-              </thead>
-              <tbody>${righeHtml || '<tr><td colspan="10">Nessun dato.</td></tr>'}</tbody>
-            </table>
-          </body>
-        </html>`;
+    const htmlTemplate = `
+      <html>
+        <head>
+          <title>GlicoTrack - Registro Medico</title>
+          <style>
+            /* Forza l'orientamento orizzontale e i margini professionali di stampa */
+            @page { size: landscape; margin: 12mm; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              th { background-color: #f2f2f7 !important; }
+              .nested-header { background-color: #0A66C2 !important; color: white !important; }
+            }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1c1c1e; margin: 0; padding: 10px; }
+            h1 { color: #0A66C2; font-size: 22px; margin-bottom: 4px; }
+            p { font-size: 12px; color: #8e8e93; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #e5e5ea; padding: 10px; font-size: 11px; text-align: left; }
+            th { background-color: #f2f2f7; font-weight: bold; color: #1c1c1e; }
+            .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 11px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>GlicoTrack - Registro Medico Orizzontale</h1>
+          <p>Generato il: ${new Date().toLocaleDateString('it-IT')} | Filtro Temporale: ${filtroAttivo === 'all' ? 'Tutto lo storico' : `Ultimi \${filtroAttivo} giorni`}</p>
+          <table>
+            <thead>
+              <tr>
+                <th colspan="4" class="nested-header">PARAMETRI CLINICI</th>
+                <th colspan="2" class="nested-header">DIARIO DI BORDO</th>
+                <th colspan="4" class="nested-header">VALUTAZIONE SPECIALISTICA (MEDICO)</th>
+              </tr>
+              <tr>
+                <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
+                <th>Momento Pasto</th><th>Note Alimentari</th>
+                <th>Carboidrati (g)</th><th>Sport (min)</th><th>Note Medico</th><th>Firma Clinica</th>
+              </tr>
+            </thead>
+            <tbody>${righeHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato registrato.</td></tr>'}</tbody>
+          </table>
+        </body>
+      </html>`;
 
-      if (Platform.OS === 'web') {
-        const { uri } = await Print.printToFileAsync({ html: htmlTemplate });
-        window.open(uri, '_blank');
-      } else {
-        await Print.printAsync({ html: htmlTemplate });
+    if (Platform.OS === 'web') {
+      // Crea un frame nascosto nel browser per forzare la stampa del solo codice HTML puro
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(htmlTemplate);
+        doc.close();
+
+        // Attende il caricamento e lancia il comando di stampa pulito
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          document.body.removeChild(iframe); // Pulisce la pagina dopo la stampa
+        }, 500);
       }
-    } catch (e) {
-      alert("Impossibile generare il PDF.");
     }
   };
 
