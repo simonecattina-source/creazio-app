@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
+// 🎨 Palette colori coordinata in Dark Mode
 const COLORS = {
   background: "#121212",        
   surfaceSecondary: "#1C1C1E",  
@@ -25,6 +26,7 @@ export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
+  // Stati per la gestione della modifica ed eliminazione singola
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
@@ -75,6 +77,7 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
+  // Funzione avanzata che calcola un timestamp millisecondi preciso al minuto combinando data e ora
   const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
     let giorno = 0, mese = 0, annoCompleto = 0;
     
@@ -107,8 +110,17 @@ export default function StoricoScreen() {
     const oggi = new Date();
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
     const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const BlackdifferenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return BlackdifferenzaGiorni <= parseInt(filtroAttivo) && BlackdifferenzaGiorni >= -1;
+    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
+  };
+
+  const BlackdifferenzaGiorni = (stringaData: string) => {
+    if (filtroAttivo === 'all') return true;
+    const oggi = new Date();
+    const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
+    const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
+    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
   const eliminaSingoloItem = async () => {
@@ -136,6 +148,7 @@ export default function StoricoScreen() {
     setModMomento(item.tipo || 'Prima Colazione');
     setModOraText(item.ora || '12:00');
     
+    // Pulisce le note rimuovendo la traccia dell'orario fuso per non duplicarla nel box
     const testoNotePulito = item.note ? item.note.replace(/^\[\d{2}:\d{2}\]\s*/, '') : '';
     setModNote(testoNotePulito);
     
@@ -193,6 +206,7 @@ export default function StoricoScreen() {
     }
   };
 
+  // Raggruppa e applica il doppio ordinamento cronologico temporale (Data + Ora)
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = {};
     const datiFiltratiTemporali = datiReali.filter(item => rientraNelFiltro(item.dataTesto || "Oggi"));
@@ -209,7 +223,7 @@ export default function StoricoScreen() {
         const elementiGiornoOrdinati = sezioni[chiave].sort((itemA, itemB) => {
           return ottieniTimestampCompleto(chiave, itemB.ora || "00:00") - ottieniTimestampCompleto(chiave, itemA.ora || "00:00");
         });
-        return { title: chiave, data: elementiGiornoOrdinati };
+        return { title: chiave, data: elementosGiornoOrdinati };
       })
       .filter(s => s.data.length > 0);
   };
@@ -316,9 +330,10 @@ export default function StoricoScreen() {
               <Text style={[styles.exportText, {color: COLORS.error}]}>Svuota</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.exportButton} onPress={generaEDesportaPDF}>
-            <Ionicons name="document-text-outline" size={16} color={COLORS.brandPrimary} />
-            <Text style={styles.exportText}>Esporta PDF</Text>
+          {/* Pulsante PDF in Rosso e Bianco con i bordi originali mantenuti */}
+          <TouchableOpacity style={[styles.exportButton, styles.exportButtonPDFRed]} onPress={generaEDesportaPDF}>
+            <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.exportTextPDFWhite}>Esporta PDF</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -378,14 +393,12 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* 🎡 MODALE GESTIONE LOG CON SELETTORI DATA/ORA RIPRISTINATI (SFONDO BIANCO + TESTO BLU) */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
             
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
-              {/* 📅 MODIFICA DATA SANATA (Sfondo Bianco, Testo Blu) */}
               <Text style={styles.inputLabel}>Data Misurazione</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -396,9 +409,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2', // 🔵 Testo blu
-                    backgroundColor: '#FFFFFF', // ⚪ Sfondo bianco
-                    border: '1px solid #E5E5EA', // 🔲 Bordo grigio originale
+                    color: '#0A66C2', // Testo blu
+                    backgroundColor: '#FFFFFF', // Sfondo bianco ripristinato
+                    border: '1px solid #E5E5EA', // Bordo grigio originale
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -412,7 +425,6 @@ export default function StoricoScreen() {
                 <TextInput style={styles.textInput} value={modDataISO} onChangeText={setModDataISO} />
               )}
 
-              {/* ⏰ MODIFICA ORA SANATA (Sfondo Bianco, Testo Blu) */}
               <Text style={styles.inputLabel}>Ora Misurazione (Verrà scritta nelle note)</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -423,9 +435,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2', // 🔵 Testo blu
-                    backgroundColor: '#FFFFFF', // ⚪ Sfondo bianco
-                    border: '1px solid #E5E5EA', // 🔲 Bordo grigio originale
+                    color: '#0A66C2', // Testo blu
+                    backgroundColor: '#FFFFFF', // Sfondo bianco ripristinato
+                    border: '1px solid #E5E5EA', // Bordo grigio originale
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -510,6 +522,11 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: '#2C2C2E' },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontWeight: '600', fontSize: 14 },
+  
+  /* Nuove proprietà visive per il tasto esporta rosso e bianco */
+  exportButtonPDFRed: { backgroundColor: '#FF3B30', borderColor: '#FF3B30' },
+  exportTextPDFWhite: { fontFamily: 'Plus Jakarta Sans', color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+
   filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 16 },
   filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.brandPrimary },
