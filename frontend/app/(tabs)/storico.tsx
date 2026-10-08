@@ -4,16 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
-// 🎨 Palette colori coordinata in Dark Mode
 const COLORS = {
-  background: "#121212",        // Sfondo principale nero
-  surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite
-  brandPrimary: "#0A66C2",      // Blu per azioni principali
-  onSurface: "#FFFFFF",         // Testo principale bianco puro
-  muted: "#8E8E93",             // Testo secondario grigio
-  success: "#34C759",           // Verde soglia normale
-  warning: "#FF9F0A",           // Arancione soglia bassa
-  error: "#FF3B30",             // Rosso soglia alta
+  background: "#121212",        
+  surfaceSecondary: "#1C1C1E",  
+  brandPrimary: "#0A66C2",      
+  onSurface: "#FFFFFF",         
+  muted: "#8E8E93",             
+  success: "#34C759",           
+  warning: "#FF9F0A",           
+  error: "#FF3B30",             
 };
 
 const MOMENTI_COLONNE = [
@@ -33,7 +32,6 @@ export default function StoricoScreen() {
   const [modNote, setModNote] = useState('');
   const [modMomento, setModMomento] = useState('');
   
-  // 📅⏰ Nuovi stati per la modifica di Data e Ora dentro il popup
   const [modDataISO, setModDataISO] = useState('');
   const [modOraText, setModOraText] = useState('');
 
@@ -113,21 +111,21 @@ export default function StoricoScreen() {
     }
   };
 
-  // Carica i dati attuali inclusa la conversione della data in ISO per il calendario
   const apriModificaItem = (item: any) => {
     setItemSelezionato(item);
     setModGlicemia(item.glicemia.toString());
     setModInsulina(item.insulina ? item.insulina.replace(' UI', '').replace('-', '') : '');
-    setModNote(item.note || '');
     setModMomento(item.tipo || 'Prima Colazione');
     setModOraText(item.ora || '12:00');
     
-    // Converte GG/MM/AA in AAAA-MM-GG per caricarlo correttamente nell'input calendar
+    // 🪄 Pulisce le note rimuovendo la vecchia traccia dell'orario per non duplicarla nel box di modifica
+    const testoNotePulito = item.note ? item.note.replace(/^\[\d{2}:\d{2}\]\s*/, '') : '';
+    setModNote(testoNotePulito);
+    
     if (item.dataTesto && item.dataTesto.includes('/')) {
       const [g, m, a] = item.dataTesto.split('/');
       setModDataISO(`20${a}-${m}-${g}`);
     } else {
-      // Fallback su data odierna se indicato come "Oggi"
       const d = new Date();
       setModDataISO(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
     }
@@ -144,9 +142,13 @@ export default function StoricoScreen() {
       return;
     }
 
-    // Riconverte la data ISO modificata nel popup in formato GG/MM/AA per lo storico
     const [aaaa, mm, gg] = modDataISO.split('-');
     const dataRiconvertita = `${gg}/${mm}/${aaaa.slice(-2)}`;
+
+    // 🪄 FUSIONE AUTOMATICA: Concatena l'ora scelta all'inizio del testo delle note
+    const noteConOrarioFuso = modNote.trim() 
+      ? `[${modOraText}] ${modNote.trim()}`
+      : `[${modOraText}]`;
 
     try {
       const datiAggiornati = datiReali.map(item => {
@@ -156,9 +158,9 @@ export default function StoricoScreen() {
             glicemia: valoreGlicemia,
             insulina: modInsulina ? `${modInsulina} UI` : '-',
             tipo: modMomento,
-            note: modNote,
-            ora: modOraText,          // Salva l'orario modificato a scorrimento
-            dataTesto: dataRiconvertita // Salva la data modificata a calendario
+            note: noteConOrarioFuso, // Salva la nota formattata con l'ora inclusa
+            ora: modOraText,          
+            dataTesto: dataRiconvertita 
           };
         }
         return item;
@@ -214,6 +216,7 @@ export default function StoricoScreen() {
 
           rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
           rigaInsuline[item.tipo] = item.insulina !== '-' ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
+          // Il PDF caricherà la stringa item.note che contiene già l'orario fuso [HH:MM]
           rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
         }
       });
@@ -342,6 +345,7 @@ export default function StoricoScreen() {
               <View style={styles.cardHeader}>
                 <Text style={styles.valoreGlicemia}>{item.glicemia} <Text style={styles.unitaMisura}>mg/dL</Text></Text>
                 <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+                  {/* Nella timeline continuiamo a vedere l'orario associato al log */}
                   <Text style={styles.oraTest}>{item.ora}</Text>
                   <Ionicons name="pencil-sharp" size={12} color={COLORS.muted} />
                 </View>
@@ -358,12 +362,14 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+      {/* 🎡 MODALE GESTIONE LOG: Permette di regolare la data e l'ora, fondendole poi nelle Note */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
             
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
+              {/* 📅 CALENDARIO VISIVO PER LA DATA */}
               <Text style={styles.inputLabel}>Data Misurazione</Text>
               {Platform.OS === 'web' ? (
                 <input
@@ -392,7 +398,8 @@ export default function StoricoScreen() {
                 <TextInput style={styles.textInput} value={modDataISO} onChangeText={setModDataISO} />
               )}
 
-              <Text style={styles.inputLabel}>Ora Misurazione</Text>
+              {/* 🎡 RUOTA A SCORRIMENTO PER L'ORARIO */}
+              <Text style={styles.inputLabel}>Ora Misurazione (Verrà scritta nelle note)</Text>
               {Platform.OS === 'web' ? (
                 <input
                   type="time"
@@ -461,6 +468,7 @@ export default function StoricoScreen() {
         </View>
       </Modal>
 
+      {/* POPUP CONFERMA SVUOTA COMPLETO */}
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
