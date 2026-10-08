@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
@@ -20,14 +20,17 @@ const MOMENTI = [
   "Prima Pranzo", "Dopo Pranzo", "Merenda", 
   "Prima Cena", "Dopo Cena", "Notte"
 ];
+
 export default function InserimentoScreen() {
   const router = useRouter();
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
+  
+  // Stato aggiunto per controllare la comparsa automatica della tendina
+  const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  // 🎨 Calcola dinamicamente il colore dell'input in base alle soglie cliniche
   const ottieniColoreGlicemia = () => {
     const valore = parseInt(glicemia);
     if (!valore || isNaN(valore)) return COLORS.onSurface;
@@ -36,7 +39,6 @@ export default function InserimentoScreen() {
     return COLORS.success;
   };
 
-  // 💾 Funzione per salvare la misurazione nel database locale e inviarla allo Storico
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     if (!valoreGlicemia || isNaN(valoreGlicemia)) {
@@ -52,35 +54,36 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: "Oggi" // Mappa la misurazione corrente sotto la sezione odierna dello storico
+        dataTesto: "Oggi"
       };
 
-      // Carica lo storico esistente dalla memoria locale
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
       let elencoDati = storicoEsistente ? JSON.parse(storicoEsistente) : [];
       
-      // Aggiunge la nuova misurazione in cima alla lista
       elencoDati.unshift(nuovaMisurazione);
-      
-      // Salva l'elenco aggiornato nel database
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
-      // Resetta i campi del modulo per un nuovo inserimento
+      // Reset immediato dei campi input
       setGlicemia('');
       setInsulina('');
       setNote('');
       
-      alert("Misurazione registrata con successo!");
+      // 🔔 Mostra la tendina di notifica
+      setMostraNotifica(true);
+      
+      // Avvia il timer per far scomparire la tendina da sola dopo 3 secondi
+      setTimeout(() => {
+        setMostraNotifica(false);
+      }, 3000);
+
     } catch (error) {
       alert("Impossibile salvare i dati localmente.");
     }
   };
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      {/* 📊 INPUT NUMERICO GIGANTE DELLA GLICEMIA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -93,7 +96,6 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* INPUT NUMERICO DELL'INSULINA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Insulina (Unità UI)</Text>
         <TextInput
@@ -106,7 +108,6 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 🧩 SELETTORE RAPIDO DEI 9 MOMENTI (FLEX-ROW) */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -123,7 +124,6 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      {/* NOTE ALIMENTARI */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Note Alimentari / Sintomi</Text>
         <TextInput
@@ -135,7 +135,13 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* BOTTONE PRINCIPALE DI SALVATAGGIO */}
+      {/* 🟢 NOTIFICA A TENDINA COMPARSAbLE SOPRA IL PULSANTE */}
+      {mostraNotifica && (
+        <View style={styles.notificaTendina}>
+          <Text style={styles.notificaTesto}>✓ Misurazione salvata nel registro</Text>
+        </View>
+      )}
+
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
@@ -153,7 +159,6 @@ const styles = StyleSheet.create({
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 48, fontWeight: '700', textAlign: 'center', paddingVertical: 10 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 28, fontWeight: '600', color: COLORS.onSurface, textAlign: 'center', paddingVertical: 5 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 5 },
-  /* Griglia avvolgente flex-row per le chip dei momenti richiesti */
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999 },
   chipSelezionata: { backgroundColor: "#E6F0FA", borderWidth: 1, borderColor: COLORS.brandPrimary },
@@ -161,4 +166,19 @@ const styles = StyleSheet.create({
   chipTextSelezionato: { color: COLORS.brandPrimary, fontWeight: '700' },
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  notificaTendina: {
+    backgroundColor: '#E6F4EA', // Sfondo verde tenue pulito
+    borderColor: COLORS.success,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  notificaTesto: {
+    fontFamily: 'Plus Jakarta Sans',
+    color: '#137333', // Testo verde scuro leggibile
+    fontWeight: '600',
+    fontSize: 14,
+  }
 });
