@@ -33,6 +33,9 @@ export default function StoricoScreen() {
   const [modNote, setModNote] = useState('');
   const [modMomento, setModMomento] = useState('');
   const [mostraModalModifica, setMostraModalModifica] = useState(false);
+  
+  // Stato per controllare la comparsa della notifica verde nel popup
+  const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -67,6 +70,7 @@ export default function StoricoScreen() {
     setModInsulina(item.insulina ? item.insulina.replace(' UI', '').replace('-', '') : '');
     setModNote(item.note || '');
     setModMomento(item.tipo || 'Prima Colazione');
+    setMostraNotificaModifica(false); 
     setMostraModalModifica(true);
   };
 
@@ -93,9 +97,17 @@ export default function StoricoScreen() {
 
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
       setDatiReali(datiAggiornati);
-      setMostraModalModifica(false);
-      setItemSelezionato(null);
-      alert("Misurazione aggiornata correttamente!");
+      
+      // Attiva la tendina verde
+      setMostraNotificaModifica(true);
+      
+      // Attende 1.5 secondi per la lettura, poi chiude la modale da sola
+      setTimeout(() => {
+        setMostraNotificaModifica(false);
+        setMostraModalModifica(false);
+        setItemSelezionato(null);
+      }, 1500);
+
     } catch (e) {
       alert("Errore durante il salvataggio.");
     }
@@ -193,7 +205,7 @@ export default function StoricoScreen() {
               </tr>
             </thead>
             <tbody>
-              ${corpoTabellaHtml || '<tr><td colspan="11" style="padding:20px;color:#8e8e93;">Nessun dato registrato.</td></tr>'}
+              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato.</td></tr>'}
             </tbody>
           </table>
         </body>
@@ -273,44 +285,32 @@ export default function StoricoScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Modifica Misurazione</Text>
             
-            <ScrollView style={{maxHeight: 350}} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{maxHeight: 300}} showsVerticalScrollIndicator={false}>
               <Text style={styles.inputLabel}>Glicemia (mg/dL)</Text>
-              <TextInput 
-                style={styles.textInput} 
-                keyboardType="numeric" 
-                value={modGlicemia} 
-                onChangeText={setModGlicemia} 
-              />
+              <TextInput style={styles.textInput} keyboardType="numeric" value={modGlicemia} onChangeText={setModGlicemia} />
 
               <Text style={styles.inputLabel}>Insulina (Unità UI)</Text>
-              <TextInput 
-                style={styles.textInput} 
-                keyboardType="numeric" 
-                value={modInsulina} 
-                onChangeText={setModInsulina} 
-                placeholder="Nessuna"
-              />
+              <TextInput style={styles.textInput} keyboardType="numeric" value={modInsulina} onChangeText={setModInsulina} placeholder="Nessuna" />
 
               <Text style={styles.inputLabel}>Note / Pasti</Text>
-              <TextInput 
-                style={styles.textInput} 
-                value={modNote} 
-                onChangeText={setModNote} 
-              />
+              <TextInput style={styles.textInput} value={modNote} onChangeText={setModNote} />
 
               <Text style={styles.inputLabel}>Momento della Giornata</Text>
               <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4}}>
                 {MOMENTI_COLONNE.map(m => (
-                  <TouchableOpacity 
-                    key={m} 
-                    style={[styles.chipMomento, modMomento === m && styles.chipMomentoAttiva]} 
-                    onPress={() => setModMomento(m)}
-                  >
+                  <TouchableOpacity key={m} style={[styles.chipMomento, modMomento === m && styles.chipMomentoAttiva]} onPress={() => setModMomento(m)}>
                     <Text style={[styles.chipMomentoText, modMomento === m && styles.chipMomentoTextAttiva]}>{m}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
+
+            {/* NOTIFICA A TENDINA VERDE CONDIZIONALE */}
+            {mostraNotificaModifica && (
+              <View style={styles.notificaTendina}>
+                <Text style={styles.notificaTesto}>✓ Modifica salvata nel registro</Text>
+              </View>
+            )}
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnAnnulla} onPress={() => setMostraModalModifica(false)}>
@@ -360,9 +360,11 @@ const styles = StyleSheet.create({
   chipMomentoAttiva: { backgroundColor: '#E6F0FA', borderWidth: 1, borderColor: COLORS.brandPrimary },
   chipMomentoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface },
   chipMomentoTextAttiva: { color: COLORS.brandPrimary, fontWeight: '600' },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 24 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 20 },
   btnAnnulla: { flex: 1, backgroundColor: COLORS.surfaceSecondary, padding: 12, borderRadius: 12, alignItems: 'center' },
   btnAnnullaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
   btnSalva: { flex: 1, backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
+  notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
+  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 },
 });
