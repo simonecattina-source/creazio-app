@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
-// 🎨 Palette colori coordinata in Dark Mode
 const COLORS = {
   background: "#121212",        
   surfaceSecondary: "#1C1C1E",  
@@ -26,7 +25,6 @@ export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
-  // Stati per la gestione della modifica ed eliminazione singola
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
@@ -77,7 +75,7 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
-  // Calcola un timestamp preciso al minuto unendo data e ora delle misurazioni
+
   const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
     let giorno = 0, mese = 0, annoCompleto = 0;
     
@@ -139,7 +137,6 @@ export default function StoricoScreen() {
     setModMomento(item.tipo || 'Prima Colazione');
     setModOraText(item.ora || '12:00');
     
-    // Rimuove la vecchia parentesi quadra temporale dalle note prima di caricarle
     const testoNotePulito = item.note ? item.note.replace(/^\[\d{2}:\d{2}\]\s*/, '') : '';
     setModNote(testoNotePulito);
     
@@ -168,7 +165,7 @@ export default function StoricoScreen() {
     const noteConOrarioFuso = modNote.trim() ? `[${modOraText}] ${modNote.trim()}` : `[${modOraText}]`;
 
     try {
-      const datiAggiornati = datiReali.map(item => {
+      let datiAggiornati = datiReali.map(item => {
         if (item.id === itemSelezionato.id) {
           return {
             ...item,
@@ -182,6 +179,23 @@ export default function StoricoScreen() {
         }
         return item;
       });
+
+      // 🪄 AUTO-PULIZIA ROTANTE TRIMESTRALE (91 GIORNI PRECAUZIONALI)
+      if (datiAggiornati.length > 0) {
+        let timestampPiuRecente = 0;
+        datiAggiornati.forEach((item: any) => {
+          const ts = ottieniTimestampCompleto(item.dataTesto, "00:00");
+          if (ts > timestampPiuRecente) timestampPiuRecente = ts;
+        });
+
+        const limite91GiorniMs = 91 * 24 * 60 * 60 * 1000;
+        const timestampSogliaMinima = timestampPiuRecente - limite91GiorniMs;
+
+        datiAggiornati = datiAggiornati.filter((item: any) => {
+          const tsItem = ottieniTimestampCompleto(item.dataTesto, "00:00");
+          return tsItem >= timestampSogliaMinima;
+        });
+      }
 
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
       setDatiReali(datiAggiornati);
@@ -310,6 +324,7 @@ export default function StoricoScreen() {
       finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
     }
   };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -321,7 +336,7 @@ export default function StoricoScreen() {
             </TouchableOpacity>
           )}
           <TouchableOpacity style={[styles.exportButton, styles.exportButtonPDFRed]} onPress={generaEDesportaPDF}>
-            <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
+            <Ionicons name="document-text-outline" size= {16} color="#FFFFFF" />
             <Text style={styles.exportTextPDFWhite}>Esporta PDF</Text>
           </TouchableOpacity>
         </View>
@@ -382,7 +397,7 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* Popup 1: Modifica Avanzata Record con "Data del Test" e "Orario del Test" */}
+      {/* Popup 1: Modifica Avanzata Record con "Data del Test" e "Orario del Test" racchiusi nella radice */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -481,7 +496,8 @@ export default function StoricoScreen() {
           </View>
         </View>
       </Modal>
-      {/* Popup 2: Conferma Svuota Generale */}
+
+      {/* Popup 2: Richiesta di conferma per lo Svuotamento */}
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
