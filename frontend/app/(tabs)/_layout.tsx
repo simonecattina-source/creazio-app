@@ -20,10 +20,14 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Icon sf="list.bullet.rectangle" />
           <NativeTabs.Trigger.Label>Storico</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
+        {/* 📊 ABILITAZIONE SCHEDA 3: Icona Nativa Apple SF Symbols per i grafici */}
+        <NativeTabs.Trigger name="grafici">
+          <NativeTabs.Trigger.Icon sf="chart.bar.fill" />
+          <NativeTabs.Trigger.Label>Grafici</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
     );
   }
-
   return (
     <Tabs
       screenOptions={{
@@ -54,6 +58,16 @@ export default function TabsLayout() {
           title: "Storico",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list" size={size} color={color} />
+          ),
+        }}
+      />
+      {/* 📊 ABILITAZIONE SCHEDA 3: Icona Standard Ionicons per ambiente Web */}
+      <Tabs.Screen
+        name="grafici"
+        options={{
+          title: "Grafici",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart" size={size} color={color} />
           ),
         }}
       />
