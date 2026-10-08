@@ -63,17 +63,14 @@ export default function StoricoScreen() {
     }
   };
 
-  // Funzione per eliminare la singola misurazione
   const eliminaSingoloItem = async () => {
     if (!itemSelezionato) return;
     try {
       const datiRimanenti = datiReali.filter(item => item.id !== itemSelezionato.id);
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiRimanenti));
       setDatiReali(datiRimanenti);
-      
       setTestoNotifica('✕ Misurazione eliminata dal registro');
       setMostraNotificaModifica(true);
-      
       setTimeout(() => {
         setMostraNotificaModifica(false);
         setMostraModalModifica(false);
@@ -116,10 +113,8 @@ export default function StoricoScreen() {
       });
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
       setDatiReali(datiAggiornati);
-      
       setTestoNotifica('✓ Modifica salvata nel registro');
       setMostraNotificaModifica(true);
-      
       setTimeout(() => {
         setMostraNotificaModifica(false);
         setMostraModalModifica(false);
@@ -130,14 +125,26 @@ export default function StoricoScreen() {
     }
   };
 
+  // Funzione con algoritmo per l'ordinamento cronologico reale
   const ottieniDatiSezionati = () => {
-    const sezioni: Record<string, any[]> = { "Oggi": [] };
+    const sezioni: Record<string, any[]> = {};
+    
     datiReali.forEach(item => {
       const dataChiave = item.dataTesto || "Oggi";
       if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
       sezioni[dataChiave].push(item);
     });
+
     return Object.keys(sezioni)
+      .sort((a, b) => {
+        const ottieniTimestamp = (stringaData: string) => {
+          if (!stringaData || !stringaData.includes('/')) return 0;
+          const [giorno, mese, anno] = stringaData.split('/');
+          const annoCompleto = parseInt(anno) < 50 ? 2000 + parseInt(anno) : 1900 + parseInt(anno);
+          return new Date(annoCompleto, parseInt(mese) - 1, parseInt(giorno)).getTime();
+        };
+        return ottieniTimestamp(b) - ottieniTimestamp(a);
+      })
       .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
       .filter(s => s.data.length > 0);
   };
