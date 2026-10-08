@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 🎨 Palette colori coordinata Dark Mode
+// 🎨 Palette colori con sfondo Data ripristinato
 const COLORS = {
   background: "#121212",        // Sfondo principale nero
   surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite
@@ -93,7 +93,7 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 1. DATA: Compatta a sinistra con icona bianca invertita */}
+      {/* 1. DATA: Ripristinato lo sfondo BIANCO originale con icona del calendario BIANCA */}
       <View style={styles.dataCardSinistra}>
         <Text style={styles.labelLeft}>Data Controllo</Text>
         {Platform.OS === 'web' ? (
@@ -106,9 +106,9 @@ export default function InserimentoScreen() {
               fontFamily: 'sans-serif',
               fontSize: '15px',
               fontWeight: '600',
-              color: COLORS.onSurface, 
-              backgroundColor: '#1C1C1E', 
-              border: '1px solid #2C2C2E',
+              color: '#0A66C2', // Mantiene il bellissimo blu primario per il testo della data
+              backgroundColor: '#FFFFFF', // 🌟 RIPRISTINATO BIANCO ORIGINALE
+              border: '1px solid #E5E5EA', // 🌟 RIPRISTINATO BORDO GRIGIO CHIARO
               borderRadius: '10px',
               padding: '6px 10px',
               marginTop: '4px',
@@ -116,7 +116,7 @@ export default function InserimentoScreen() {
               display: 'inline-block',
               outline: 'none',
               cursor: 'pointer',
-              filter: 'invert(1)', // Rende bianca l'icona del calendario nativa
+              filter: 'invert(1)', // Mantiene l'icona bianca nativa
               WebkitFilter: 'invert(1)'
             }}
           />
@@ -125,7 +125,7 @@ export default function InserimentoScreen() {
         )}
       </View>
 
-      {/* 2. GLICEMIA: Allineata a sinistra */}
+      {/* 2. GLICEMIA */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -139,7 +139,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 3. INSULINA: Allineata a sinistra */}
+      {/* 3. INSULINA */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
         <TextInput
