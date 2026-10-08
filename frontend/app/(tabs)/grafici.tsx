@@ -15,11 +15,28 @@ const COLORS = {
   error: "#FF3B30",             
 };
 
+// 🛡️ Array ridotto rigorosamente ai soli 7 momenti principali richiesti
+const MOMENTI_ELENCO = [
+  "Prima Colazione", "Dopo Colazione",
+  "Prima Pranzo", "Dopo Pranzo",
+  "Prima Cena", "Dopo Cena", "Notte"
+];
+
+// Abbreviazioni ottimizzate per far stare i 7 titoli in modo largo e pulito su iPhone
+const MOMENTI_SHORT = {
+  "Prima Colazione": "Pr.Col", "Dopo Colazione": "Dp.Col",
+  "Prima Pranzo": "Pr.Prz", "Dopo Pranzo": "Dp.Prz",
+  "Prima Cena": "Pr.Cen", "Dopo Cena": "Dp.Cen", "Notte": "Notte"
+};
+
 export default function GraficiScreen() {
   const [datiReali, setDatiReali] = useState<any[]>([]);
   const [mediaGlicemia, setMediaGlicemia] = useState<number>(0);
   const [totaleMisurazioni, setTotaleMisurazioni] = useState<number>(0);
   const [puntiGrafico, setPuntiGrafico] = useState<{ dataLabel: string; media: number }[]>([]);
+  
+  // Stato per memorizzare le medie dei soli 7 momenti della giornata
+  const [medieMomenti, setMedieMomenti] = useState<{ momento: string; media: number }[]>([]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -43,9 +60,11 @@ export default function GraficiScreen() {
         setTotaleMisurazioni(elenco.length);
 
         if (elenco.length > 0) {
+          // 1. Media Totale Complessiva
           const somma = elenco.reduce((acc: number, item: any) => acc + item.glicemia, 0);
           setMediaGlicemia(Math.round(somma / elenco.length));
 
+          // 2. Grafico Linea: Raggruppamento per giorno
           const gruppiPerGiorno: Record<string, number[]> = {};
           elenco.forEach((item: any) => {
             const dataChiave = item.dataTesto || "Oggi";
@@ -61,10 +80,31 @@ export default function GraficiScreen() {
             })
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
 
-          setPuntiGrafico(andamentoCronologico.slice(-15));
+          setPuntiGrafico(andamentoCronologico.slice(-10));
+
+          // 3. 🪄 ALGORITMO MEDIE SUI 7 MOMENTI SELEZIONATI
+          const gruppiPerMomento: Record<string, number[]> = {};
+          MOMENTI_ELENCO.forEach(m => { gruppiPerMomento[m] = []; });
+
+          elenco.forEach((item: any) => {
+            if (gruppiPerMomento[item.tipo] !== undefined) {
+              gruppiPerMomento[item.tipo].push(item.glicemia);
+            }
+          });
+
+          const calcoloMedieMomenti = MOMENTI_ELENCO.map(m => {
+            const valori = gruppiPerMomento[m];
+            const media = valori.length > 0 
+              ? Math.round(valori.reduce((s, v) => s + v, 0) / valori.length)
+              : 0;
+            return { momento: m, media };
+          });
+          setMedieMomenti(calcoloMedieMomenti);
+
         } else {
           setMediaGlicemia(0);
           setPuntiGrafico([]);
+          setMedieMomenti([]);
         }
       }
     } catch (e) {
@@ -74,9 +114,8 @@ export default function GraficiScreen() {
 
   const renderizzaGraficoLineaNativa = () => {
     if (puntiGrafico.length === 0) return null;
-
     const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
-    const altezzaGrafico = 200;
+    const altezzaGrafico = 160;
     const margineLaterale = 20;
     const spazioUtileX = larghezzaGrafico - (margineLaterale * 2);
 
@@ -100,92 +139,61 @@ export default function GraficiScreen() {
 
     let percorsoLineaD = "";
     coordinataPunti.forEach((p, i) => {
-      if (i === 0) {
-        percorsoLineaD += `M ${p.x} ${p.y}`;
-      } else {
-        percorsoLineaD += ` L ${p.x} ${p.y}`;
-      }
+      if (i === 0) percorsoLineaD += `M ${p.x} ${p.y}`;
+      else percorsoLineaD += ` L ${p.x} ${p.y}`;
     });
     return (
       <View style={styles.containerGraficoSvg}>
-        <svg width="100%" height="230" style={{ display: 'block', overflow: 'visible' }}>
-          
-          {/* AREA DI RANGE IDEALE (Sfondo scuro con fascia verde trasparente 70-180) */}
-          <rect
-            x={margineLaterale}
-            y={rigaSoglia180Y}
-            width={spazioUtileX}
-            height={rigaSoglia70Y - rigaSoglia180Y}
-            fill="rgba(52, 199, 89, 0.06)"
-          />
-
-          {/* LINEA TRATTEGGIATA SOGLIA ALTA (180 mg/dL) */}
-          <line
-            x1={margineLaterale}
-            y1={rigaSoglia180Y}
-            x2={larghezzaGrafico - margineLaterale}
-            y2={rigaSoglia180Y}
-            stroke={COLORS.error}
-            strokeWidth="1.5"
-            strokeDasharray="4 4"
-          />
-          <text x={larghezzaGrafico - 15} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">
-            180
-          </text>
-
-          {/* LINEA TRATTEGGIATA SOGLIA BASSA (70 mg/dL) */}
-          <line
-            x1={margineLaterale}
-            y1={rigaSoglia70Y}
-            x2={larghezzaGrafico - margineLaterale}
-            y2={rigaSoglia70Y}
-            stroke={COLORS.warning}
-            strokeWidth="1.5"
-            strokeDasharray="4 4"
-          />
-          <text x={larghezzaGrafico - 15} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">
-            70
-          </text>
-
-          {/* TRACCIATO DELLA LINEA CONTINUA DELL'ANDAMENTO */}
-          {percorsoLineaD !== "" && (
-            <path
-              d={percorsoLineaD}
-              fill="none"
-              stroke={COLORS.brandPrimary}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
-          {/* NODI E VALORI GLICEMICI */}
+        <svg width="100%" height="185" style={{ display: 'block', overflow: 'visible' }}>
+          <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.06)" />
+          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1.5" strokeDasharray="4 4" />
+          <text x={larghezzaGrafico - 15} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">180</text>
+          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
+          <text x={larghezzaGrafico - 15} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">70</text>
+          {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
           {coordinataPunti.map((p, i) => (
             <g key={i}>
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r="4.5"
-                fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success}
-                stroke="#1C1C1E"
-                strokeWidth="1.5"
-              />
-              {(coordinataPunti.length < 8 || i % 2 === 0) && (
-                <text x={p.x} y={p.y - 10} fill={COLORS.onSurface} fontSize="10" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">
-                  {p.media}
-                </text>
-              )}
+              <circle cx={p.x} cy={p.y} r="4.5" fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1.5" />
+              {(coordinataPunti.length < 8 || i % 2 === 0) && <text x={p.x} y={p.y - 10} fill={COLORS.onSurface} fontSize="10" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">{p.media}</text>}
             </g>
           ))}
         </svg>
-
         <View style={styles.rigaEtichetteDate}>
           {puntiGrafico.map((p, i) => {
             const mostraData = i === 0 || i === Math.floor(puntiGrafico.length / 2) || i === puntiGrafico.length - 1;
+            return <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>{p.dataLabel.slice(0, 5)}</Text>;
+          })}
+        </View>
+      </View>
+    );
+  };
+
+  // 🪄 RENDERING NATIVO OTTIMIZZATO SULLE SOLIE DEI 7 MOMENTI DELLA GIORNATA
+  const renderizzaGraficoColonneMomenti = () => {
+    if (medieMomenti.length === 0) return null;
+    const altezzaMassimaColonna = 120;
+    const valoreMassimoScala = 300; 
+
+    return (
+      <View style={styles.containerGraficoSvg}>
+        <View style={styles.rigaColonneContainer}>
+          {medieMomenti.map((m, i) => {
+            const altezzaCalcolata = m.media > 0 ? Math.min(altezzaMassimaColonna, (m.media / valoreMassimoScala) * altezzaMassimaColonna) : 4;
+            const coloreColonna = m.media === 0 ? "#2C2C2E" : m.media > 180 ? COLORS.error : m.media < 70 ? COLORS.warning : COLORS.success;
+
             return (
-              <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>
-                {p.dataLabel.slice(0, 5)}
-              </Text>
+              <View key={i} style={styles.singolaColonnaWrapper}>
+                <Text style={[styles.valoreColonnaTesto, { color: m.media === 0 ? COLORS.muted : COLORS.onSurface }]}>
+                  {m.media > 0 ? m.media : '-'}
+                </Text>
+                
+                {/* Colonne più larghe (width: 18) per sfruttare al meglio i 7 spazi liberi dell'iPhone */}
+                <View style={[styles.colonnaRettangolo, { height: altezzaCalcolata, backgroundColor: coloreColonna }]} />
+                
+                <Text style={styles.etichettaColonnaMomento}>
+                  {MOMENTI_SHORT[m.momento as keyof typeof MOMENTI_SHORT]}
+                </Text>
+              </View>
             );
           })}
         </View>
@@ -199,15 +207,11 @@ export default function GraficiScreen() {
       
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (91 GG)</Text>
-        
         <View style={styles.containerRigaRiepilogo}>
           <View style={styles.infoBoxStat}>
             <Text style={styles.statLabel}>Media Glicemica</Text>
-            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : COLORS.success }]}>
-              {mediaGlicemia > 0 ? `${mediaGlicemia} mg/dL` : '-'}
-            </Text>
+            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : COLORS.success }]}>{mediaGlicemia > 0 ? `${mediaGlicemia} mg/dL` : '-'}</Text>
           </View>
-
           <View style={styles.infoBoxStat}>
             <Text style={styles.statLabel}>Test Totali</Text>
             <Text style={styles.statValue}>{totaleMisurazioni}</Text>
@@ -218,13 +222,21 @@ export default function GraficiScreen() {
       <View style={styles.cardGraficoContenitore}>
         <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
         <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
-        
-        {puntiGrafico.length > 0 ? (
-          renderizzaGraficoLineaNativa()
-        ) : (
-          <View style={{ paddingVertical: 40, alignItems: 'center', width: '100%' }}>
-            <Ionicons name="analytics-outline" size={32} color={COLORS.muted} style={{ marginBottom: 8 }} />
-            <Text style={{ color: COLORS.muted, fontFamily: 'Plus Jakarta Sans', fontSize: 13 }}>Nessun dato disponibile per generare il grafico.</Text>
+        {puntiGrafico.length > 0 ? renderizzaGraficoLineaNativa() : (
+          <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
+            <Ionicons name="analytics-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
+            <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessun dato disponibile.</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
+        <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
+        <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
+        {datiReali.length > 0 ? renderizzaGraficoColonneMomenti() : (
+          <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
+            <Ionicons name="bar-chart-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
+            <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessun dato inserito.</Text>
           </View>
         )}
       </View>
@@ -237,7 +249,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
-  subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginBottom: 16 },
+  subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginBottom: 12 },
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16 },
   containerRigaRiepilogo: { flexDirection: 'row', gap: 12, width: '100%' },
   infoBoxStat: { flex: 1, backgroundColor: '#121212', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
@@ -245,7 +257,14 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
   
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
-  containerGraficoSvg: { width: '100%', marginTop: 10, position: 'relative' },
-  rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10, paddingHorizontal: 2 },
-  dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted }
+  containerGraficoSvg: { width: '100%', marginTop: 6, position: 'relative' },
+  rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, paddingHorizontal: 2 },
+  dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted },
+
+  /* Stili ad alta leggibilità ottimizzati per le 7 colonne larghe */
+  rigaColonneContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', minHeight: 155, paddingTop: 15 },
+  singolaColonnaWrapper: { flex: 1, alignItems: 'center', gap: 6 },
+  valoreColonnaTesto: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '700' },
+  colonnaRettangolo: { width: 18, borderRadius: 5, minHeight: 4 }, // Colonne portate a 18px per una resa visiva eccellente
+  etichettaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '600', color: COLORS.muted, marginTop: 2 }
 });
