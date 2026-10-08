@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform, Modal, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
@@ -16,9 +16,23 @@ const COLORS = {
   error: "#FF3B30",
 };
 
+const MOMENTI_COLONNE = [
+  "Prima Colazione", "Dopo Colazione", "Spuntino", 
+  "Prima Pranzo", "Dopo Pranzo", "Merenda", 
+  "Prima Cena", "Dopo Cena", "Notte"
+];
+
 export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
+
+  // Stati per la gestione della modifica
+  const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
+  const [modGlicemia, setModGlicemia] = useState('');
+  const [modInsulina, setModInsulina] = useState('');
+  const [modNote, setModNote] = useState('');
+  const [modMomento, setModMomento] = useState('');
+  const [mostraModalModifica, setMostraModalModifica] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -47,6 +61,46 @@ export default function StoricoScreen() {
     }
   };
 
+  const apriModificaItem = (item: any) => {
+    setItemSelezionato(item);
+    setModGlicemia(item.glicemia.toString());
+    setModInsulina(item.insulina ? item.insulina.replace(' UI', '').replace('-', '') : '');
+    setModNote(item.note || '');
+    setModMomento(item.tipo || 'Prima Colazione');
+    setMostraModalModifica(true);
+  };
+
+  const salvaModificaItem = async () => {
+    const valoreGlicemia = parseInt(modGlicemia);
+    if (!valoreGlicemia || isNaN(valoreGlicemia)) {
+      alert("Inserisci un valore di glicemia valido.");
+      return;
+    }
+
+    try {
+      const datiAggiornati = datiReali.map(item => {
+        if (item.id === itemSelezionato.id) {
+          return {
+            ...item,
+            glicemia: valoreGlicemia,
+            insulina: modInsulina ? `${modInsulina} UI` : '-',
+            tipo: modMomento,
+            note: modNote
+          };
+        }
+        return item;
+      });
+
+      await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
+      setDatiReali(datiAggiornati);
+      setMostraModalModifica(false);
+      setItemSelezionato(null);
+      alert("Misurazione aggiornata correttamente!");
+    } catch (e) {
+      alert("Errore durante il salvataggio.");
+    }
+  };
+
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = { "Oggi": [] };
     datiReali.forEach(item => {
@@ -60,12 +114,6 @@ export default function StoricoScreen() {
       .filter(s => s.data.length > 0);
   };
   const generaEDesportaPDF = () => {
-    const momentiColonne = [
-      "Prima Colazione", "Dopo Colazione", "Spuntino", 
-      "Prima Pranzo", "Dopo Pranzo", "Merenda", 
-      "Prima Cena", "Dopo Cena", "Notte"
-    ];
-
     let corpoTabellaHtml = "";
     const sezioniDati = ottieniDatiSezionati();
 
@@ -74,12 +122,12 @@ export default function StoricoScreen() {
       const rigaInsuline: Record<string, string> = {};
       const rigaNote: Record<string, string> = {};
 
-      momentiColonne.forEach(m => {
+      MOMENTI_COLONNE.forEach(m => {
         rigaGlicemie[m] = "-"; rigaInsuline[m] = "-"; rigaNote[m] = "-";
       });
 
       sezione.data.forEach(item => {
-        if (momentiColonne.includes(item.tipo)) {
+        if (MOMENTI_COLONNE.includes(item.tipo)) {
           let colore = '#34C759';
           if (item.glicemia > 180) colore = '#FF3B30';
           if (item.glicemia < 70) colore = '#FF9F0A';
@@ -94,13 +142,12 @@ export default function StoricoScreen() {
       let trInsulineHtml = "";
       let trNoteHtml = "";
 
-      momentiColonne.forEach(m => {
+      MOMENTI_COLONNE.forEach(m => {
         trGlicemieHtml += `<td>${rigaGlicemie[m]}</td>`;
         trInsulineHtml += `<td>${rigaInsuline[m]}</td>`;
         trNoteHtml += `<td>${rigaNote[m]}</td>`;
       });
 
-      // Costruzione compatta a 3 righe (rowspan="3") senza la riga della firma
       corpoTabellaHtml += `
         <tr>
           <td class="cell-data" rowspan="3">${sezione.title}</td>
@@ -196,7 +243,7 @@ export default function StoricoScreen() {
         keyExtractor={(item) => item.id}
         renderSectionHeader={({ section: { title } }) => <Text style={styles.sectionHeader}>{title}</Text>}
         renderItem={({ item }) => (
-          <View style={styles.row}>
+          <TouchableOpacity style={styles.row} onPress={() => apriModificaItem(item)} activeOpacity={0.7}>
             <View style={styles.timelineContainer}>
               <View style={[styles.timelineDot, { backgroundColor: item.glicemia > 180 ? COLORS.error : item.glicemia < 70 ? COLORS.warning : COLORS.success }]} />
               <View style={styles.timelineLine} />
@@ -204,12 +251,15 @@ export default function StoricoScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.valoreGlicemia}>{item.glicemia} <Text style={styles.unitaMisura}>mg/dL</Text></Text>
-                <Text style={styles.oraTest}>{item.ora}</Text>
+                <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+                  <Text style={styles.oraTest}>{item.ora}</Text>
+                  <Ionicons name="pencil-sharp" size={12} color={COLORS.muted} />
+                </View>
               </View>
               <Text style={styles.tipoPasto}>{item.tipo} {item.insulina !== '-' ? `• Insulina: ${item.insulina}` : ''}</Text>
               {item.note ? <Text style={styles.noteTest}>{item.note}</Text> : null}
             </View>
-          </View>
+          </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={{padding: 40, alignItems: 'center'}}>
@@ -218,6 +268,61 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+      <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Modifica Misurazione</Text>
+            
+            <ScrollView style={{maxHeight: 350}} showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>Glicemia (mg/dL)</Text>
+              <TextInput 
+                style={styles.textInput} 
+                keyboardType="numeric" 
+                value={modGlicemia} 
+                onChangeText={setModGlicemia} 
+              />
+
+              <Text style={styles.inputLabel}>Insulina (Unità UI)</Text>
+              <TextInput 
+                style={styles.textInput} 
+                keyboardType="numeric" 
+                value={modInsulina} 
+                onChangeText={setModInsulina} 
+                placeholder="Nessuna"
+              />
+
+              <Text style={styles.inputLabel}>Note / Pasti</Text>
+              <TextInput 
+                style={styles.textInput} 
+                value={modNote} 
+                onChangeText={setModNote} 
+              />
+
+              <Text style={styles.inputLabel}>Momento della Giornata</Text>
+              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4}}>
+                {MOMENTI_COLONNE.map(m => (
+                  <TouchableOpacity 
+                    key={m} 
+                    style={[styles.chipMomento, modMomento === m && styles.chipMomentoAttiva]} 
+                    onPress={() => setModMomento(m)}
+                  >
+                    <Text style={[styles.chipMomentoText, modMomento === m && styles.chipMomentoTextAttiva]}>{m}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.btnAnnulla} onPress={() => setMostraModalModifica(false)}>
+                <Text style={styles.btnAnnullaText}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.btnSalva} onPress={salvaModificaItem}>
+                <Text style={styles.btnSalvaText}>Salva Modifica</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -246,4 +351,18 @@ const styles = StyleSheet.create({
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
   tipoPasto: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, marginTop: 4, fontWeight: '500' },
   noteTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, fontStyle: 'italic' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 16 },
+  modalContent: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12 },
+  modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
+  inputLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginTop: 12, marginBottom: 4 },
+  textInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 10, fontSize: 14, color: COLORS.onSurface, marginBottom: 4 },
+  chipMomento: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 14 },
+  chipMomentoAttiva: { backgroundColor: '#E6F0FA', borderWidth: 1, borderColor: COLORS.brandPrimary },
+  chipMomentoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface },
+  chipMomentoTextAttiva: { color: COLORS.brandPrimary, fontWeight: '600' },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 24 },
+  btnAnnulla: { flex: 1, backgroundColor: COLORS.surfaceSecondary, padding: 12, borderRadius: 12, alignItems: 'center' },
+  btnAnnullaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
+  btnSalva: { flex: 1, backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
+  btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
 });
