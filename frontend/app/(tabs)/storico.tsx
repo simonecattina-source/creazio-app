@@ -26,7 +26,7 @@ export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
-  // Stati per la gestione della modifica ed eliminazione
+  // Stati per la gestione della modifica ed eliminazione singola
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
@@ -35,6 +35,10 @@ export default function StoricoScreen() {
   const [mostraModalModifica, setMostraModalModifica] = useState(false);
   const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
   const [testoNotifica, setTestoNotifica] = useState('✓ Modifica salvata nel registro');
+
+  // Nuovi stati per la finestra di conferma del comando Svuota
+  const [mostraConfermaSvuota, setMostraConfermaSvuota] = useState(false);
+  const [mostraNotificaSvuotato, setMostraNotificaSvuotato] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -53,11 +57,17 @@ export default function StoricoScreen() {
     }
   };
 
-  const cancellaTuttoStorico = async () => {
+  // Funzione definitiva di svuotamento con feedback a comparsa automatica
+  const confermaCancellaTutto = async () => {
+    setMostraConfermaSvuota(false); 
     try {
       await AsyncStorage.removeItem('glicotrack_data');
       setDatiReali([]);
-      alert("Diario glicemico svuotato.");
+      
+      setMostraNotificaSvuotato(true);
+      setTimeout(() => {
+        setMostraNotificaSvuotato(false);
+      }, 3000);
     } catch (e) {
       alert("Impossibile cancellare i dati.");
     }
@@ -125,10 +135,8 @@ export default function StoricoScreen() {
     }
   };
 
-  // Funzione con algoritmo per l'ordinamento cronologico reale
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = {};
-    
     datiReali.forEach(item => {
       const dataChiave = item.dataTesto || "Oggi";
       if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
@@ -138,6 +146,7 @@ export default function StoricoScreen() {
     return Object.keys(sezioni)
       .sort((a, b) => {
         const ottieniTimestamp = (stringaData: string) => {
+          if (stringaData === "Oggi") return new Date().getTime();
           if (!stringaData || !stringaData.includes('/')) return 0;
           const [giorno, mese, anno] = stringaData.split('/');
           const annoCompleto = parseInt(anno) < 50 ? 2000 + parseInt(anno) : 1900 + parseInt(anno);
@@ -248,7 +257,7 @@ export default function StoricoScreen() {
         <Text style={styles.title}>Storico</Text>
         <View style={{flexDirection:'row', gap: 8}}>
           {datiReali.length > 0 && (
-            <TouchableOpacity style={[styles.exportButton, {backgroundColor:'#FFEEF0'}]} onPress={cancellaTuttoStorico}>
+            <TouchableOpacity style={[styles.exportButton, {backgroundColor:'#FFEEF0'}]} onPress={() => setMostraConfermaSvuota(true)}>
               <Text style={[styles.exportText, {color: COLORS.error}]}>Svuota</Text>
             </TouchableOpacity>
           )}
@@ -258,6 +267,13 @@ export default function StoricoScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* 🔴 TENDINA ROSSA A SCOMPARSA AUTOMATICA */}
+      {mostraNotificaSvuotato && (
+        <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#FCE8E6', borderColor: COLORS.error }]}>
+          <Text style={[styles.notificaTesto, { color: '#A51D24' }]}>✕ Intero diario glicemico svuotato</Text>
+        </View>
+      )}
 
       <View style={styles.filterBar}>
         {['7', '30', 'all'].map((f) => (
@@ -303,21 +319,18 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+      {/* 📝 POPUP MODIFICA/ELIMINAZIONE SINGOLA */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
-            
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
               <Text style={styles.inputLabel}>Glicemia (mg/dL)</Text>
               <TextInput style={styles.textInput} keyboardType="numeric" value={modGlicemia} onChangeText={setModGlicemia} />
-
               <Text style={styles.inputLabel}>Insulina (Unità UI)</Text>
               <TextInput style={styles.textInput} keyboardType="numeric" value={modInsulina} onChangeText={setModInsulina} placeholder="Nessuna" />
-
               <Text style={styles.inputLabel}>Note / Pasti</Text>
               <TextInput style={styles.textInput} value={modNote} onChangeText={setModNote} />
-
               <Text style={styles.inputLabel}>Momento della Giornata</Text>
               <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4}}>
                 {MOMENTI_COLONNE.map(m => (
@@ -327,25 +340,43 @@ export default function StoricoScreen() {
                 ))}
               </View>
             </ScrollView>
-
             {mostraNotificaModifica && (
               <View style={[styles.notificaTendina, testoNotifica.includes('eliminata') && {backgroundColor: '#FCE8E6', borderColor: COLORS.error}]}>
                 <Text style={[styles.notificaTesto, testoNotifica.includes('eliminata') && {color: '#A51D24'}]}>{testoNotifica}</Text>
               </View>
             )}
-
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnAnnulla} onPress={() => setMostraModalModifica(false)}>
                 <Text style={styles.btnAnnullaText}>Chiudi</Text>
               </TouchableOpacity>
-              
               <TouchableOpacity style={styles.btnElimina} onPress={eliminaSingoloItem}>
                 <Ionicons name="trash-outline" size={14} color="#FFF" style={{marginRight: 4}} />
                 <Text style={styles.btnEliminaText}>Elimina</Text>
               </TouchableOpacity>
-
               <TouchableOpacity style={styles.btnSalva} onPress={salvaModificaItem}>
                 <Text style={styles.btnSalvaText}>Salva</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ⚠️ NUOVO BOX BOX CENTRALE DI CONFERMA PER SVUOTA TUTTO */}
+      <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
+        <View style={styles.modalOverlayCentrato}>
+          <View style={styles.modalContentSvuota}>
+            <View style={styles.iconaAvvisoContainer}>
+              <Ionicons name="alert-circle" size={40} color={COLORS.error} />
+            </View>
+            <Text style={styles.modalTitleSvuota}>Svuotare il Diario?</Text>
+            <Text style={styles.modalSubtitleSvuota}>Sei sicuro di voler cancellare l'intero storico delle misurazioni? Questa azione è irreversibile.</Text>
+            
+            <View style={styles.modalActionsSvuota}>
+              <TouchableOpacity style={styles.btnAnnullaSvuota} onPress={() => setMostraConfermaSvuota(false)}>
+                <Text style={styles.btnAnnullaTextSvuota}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.btnConfermaSvuota} onPress={confermaCancellaTutto}>
+                <Text style={styles.btnConfermaTextSvuota}>Svuota Tutto</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -397,4 +428,16 @@ const styles = StyleSheet.create({
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 },
+  
+  modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContentSvuota: { backgroundColor: '#FFF', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16 },
+  iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#FCE8E6', padding: 10, borderRadius: 999 },
+  modalTitleSvuota: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
+  modalSubtitleSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.muted, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  modalActionsSvuota: { flexDirection: 'row', gap: 12, width: '100%' },
+  btnAnnullaSvuota: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  btnAnnullaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
+  btnConfermaSvuota: { flex: 1, backgroundColor: COLORS.error, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  btnConfermaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
+  notificaTendinaGenerale: { padding: 12, borderRadius: 12, borderWidth: 1, marginHorizontal: 16, marginBottom: 12, alignItems: 'center' }
 });
