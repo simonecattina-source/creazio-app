@@ -233,7 +233,7 @@ export default function StoricoScreen() {
     let corpoHtmlCompleto = "";
     const sezioniDati = ottieniDatiSezionati();
 
-    // 🪄 ALGORITMO DI PAGINAZIONE: Cicla le giornate a blocchi di 4
+    // 🪄 ALGORITMO DI PAGINAZIONE: Cicla le giornate raggruppandole a blocchi di 4 per pagina
     for (let i = 0; i < sezioniDati.length; i += 4) {
       const bloccoQuattroGiorni = sezioniDati.slice(i, i + 4);
       let righeTabellaBlocco = "";
@@ -285,12 +285,16 @@ export default function StoricoScreen() {
           </tr>`;
       });
 
-      // 🪄 Inserisce l'interruzione di pagina rigida se ci sono altri blocchi di giorni successivi
       const rigaInterruzionePagina = (i + 4 < sezioniDati.length) ? 'style="page-break-after: always;"' : '';
+
+      // 🪄 CONTROLLO DI COPERTINA RIGIDO: Se i === 0 inserisce il titolo blu, altrimenti lo omette sui fogli successivi
+      const htmlTitoloIntestazione = (i === 0) 
+        ? `<h1>Diabety - Registro Storico Giornaliero</h1>` 
+        : `<div style="height: 10px;"></div>`;
 
       corpoHtmlCompleto += `
         <div class="pagina-pdf" ${rigaInterruzionePagina}>
-          <h1>Diabety - Registro Storico Giornaliero</h1>
+          ${htmlTitoloIntestazione}
           <table>
             <thead>
               <tr>
@@ -331,7 +335,7 @@ export default function StoricoScreen() {
         </body>
       </html>`;
 
-    // 📱 CORSIA IPHONE BLOB OBJECT: Forza l'apparizione dei comandi nativi "Salva nei file" di iOS
+    // 📱 SBLOCCO DOWNLOAD NATIVO IPHONE VIA BLOB OBJECT
     if (Platform.OS === 'web' && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       try {
         const blobFile = new Blob([htmlTemplate], { type: 'text/html;charset=utf-8;' });
@@ -354,7 +358,6 @@ export default function StoricoScreen() {
         }
       }
     } else {
-      // 💻 Corsia classica per computer desktop PC/Mac
       const finestraStampa = window.open('', '_blank');
       if (finestraStampa) {
         finestraStampa.document.write(htmlTemplate);
