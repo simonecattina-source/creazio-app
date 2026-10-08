@@ -26,16 +26,15 @@ export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
-  // Stati per la gestione della modifica
+  // Stati per la gestione della modifica ed eliminazione
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
   const [modNote, setModNote] = useState('');
   const [modMomento, setModMomento] = useState('');
   const [mostraModalModifica, setMostraModalModifica] = useState(false);
-  
-  // Stato per controllare la comparsa della notifica verde nel popup
   const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
+  const [testoNotifica, setTestoNotifica] = useState('✓ Modifica salvata nel registro');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -64,12 +63,34 @@ export default function StoricoScreen() {
     }
   };
 
+  // Funzione per eliminare la singola misurazione
+  const eliminaSingoloItem = async () => {
+    if (!itemSelezionato) return;
+    try {
+      const datiRimanenti = datiReali.filter(item => item.id !== itemSelezionato.id);
+      await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiRimanenti));
+      setDatiReali(datiRimanenti);
+      
+      setTestoNotifica('✕ Misurazione eliminata dal registro');
+      setMostraNotificaModifica(true);
+      
+      setTimeout(() => {
+        setMostraNotificaModifica(false);
+        setMostraModalModifica(false);
+        setItemSelezionato(null);
+      }, 1300);
+    } catch (e) {
+      alert("Errore durante l'eliminazione.");
+    }
+  };
+
   const apriModificaItem = (item: any) => {
     setItemSelezionato(item);
     setModGlicemia(item.glicemia.toString());
     setModInsulina(item.insulina ? item.insulina.replace(' UI', '').replace('-', '') : '');
     setModNote(item.note || '');
     setModMomento(item.tipo || 'Prima Colazione');
+    setTestoNotifica('✓ Modifica salvata nel registro');
     setMostraNotificaModifica(false); 
     setMostraModalModifica(true);
   };
@@ -80,7 +101,6 @@ export default function StoricoScreen() {
       alert("Inserisci un valore di glicemia valido.");
       return;
     }
-
     try {
       const datiAggiornati = datiReali.map(item => {
         if (item.id === itemSelezionato.id) {
@@ -94,20 +114,17 @@ export default function StoricoScreen() {
         }
         return item;
       });
-
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
       setDatiReali(datiAggiornati);
       
-      // Attiva la tendina verde
+      setTestoNotifica('✓ Modifica salvata nel registro');
       setMostraNotificaModifica(true);
       
-      // Attende 1.5 secondi per la lettura, poi chiude la modale da sola
       setTimeout(() => {
         setMostraNotificaModifica(false);
         setMostraModalModifica(false);
         setItemSelezionato(null);
       }, 1500);
-
     } catch (e) {
       alert("Errore durante il salvataggio.");
     }
@@ -120,7 +137,6 @@ export default function StoricoScreen() {
       if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
       sezioni[dataChiave].push(item);
     });
-
     return Object.keys(sezioni)
       .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
       .filter(s => s.data.length > 0);
@@ -283,9 +299,9 @@ export default function StoricoScreen() {
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Modifica Misurazione</Text>
+            <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
             
-            <ScrollView style={{maxHeight: 300}} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
               <Text style={styles.inputLabel}>Glicemia (mg/dL)</Text>
               <TextInput style={styles.textInput} keyboardType="numeric" value={modGlicemia} onChangeText={setModGlicemia} />
 
@@ -305,19 +321,24 @@ export default function StoricoScreen() {
               </View>
             </ScrollView>
 
-            {/* NOTIFICA A TENDINA VERDE CONDIZIONALE */}
             {mostraNotificaModifica && (
-              <View style={styles.notificaTendina}>
-                <Text style={styles.notificaTesto}>✓ Modifica salvata nel registro</Text>
+              <View style={[styles.notificaTendina, testoNotifica.includes('eliminata') && {backgroundColor: '#FCE8E6', borderColor: COLORS.error}]}>
+                <Text style={[styles.notificaTesto, testoNotifica.includes('eliminata') && {color: '#A51D24'}]}>{testoNotifica}</Text>
               </View>
             )}
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnAnnulla} onPress={() => setMostraModalModifica(false)}>
-                <Text style={styles.btnAnnullaText}>Annulla</Text>
+                <Text style={styles.btnAnnullaText}>Chiudi</Text>
               </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.btnElimina} onPress={eliminaSingoloItem}>
+                <Ionicons name="trash-outline" size={14} color="#FFF" style={{marginRight: 4}} />
+                <Text style={styles.btnEliminaText}>Elimina</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.btnSalva} onPress={salvaModificaItem}>
-                <Text style={styles.btnSalvaText}>Salva Modifica</Text>
+                <Text style={styles.btnSalvaText}>Salva</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -353,17 +374,19 @@ const styles = StyleSheet.create({
   noteTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, fontStyle: 'italic' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 16 },
   modalContent: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12 },
-  modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
+  modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
   inputLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginTop: 12, marginBottom: 4 },
   textInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 10, fontSize: 14, color: COLORS.onSurface, marginBottom: 4 },
   chipMomento: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 14 },
   chipMomentoAttiva: { backgroundColor: '#E6F0FA', borderWidth: 1, borderColor: COLORS.brandPrimary },
   chipMomentoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface },
   chipMomentoTextAttiva: { color: COLORS.brandPrimary, fontWeight: '600' },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 20 },
-  btnAnnulla: { flex: 1, backgroundColor: COLORS.surfaceSecondary, padding: 12, borderRadius: 12, alignItems: 'center' },
+  modalActions: { flexDirection: 'row', gap: 8, marginTop: 24 },
+  btnAnnulla: { flex: 1, backgroundColor: COLORS.surfaceSecondary, padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnAnnullaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
-  btnSalva: { flex: 1, backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
+  btnElimina: { flex: 1.2, backgroundColor: COLORS.error, padding: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  btnEliminaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
+  btnSalva: { flex: 1.2, backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 },
