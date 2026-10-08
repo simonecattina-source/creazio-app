@@ -9,9 +9,9 @@ const COLORS = {
   onBrandPrimary: "#FFFFFF",
   onSurface: "#1C1C1E",
   muted: "#8E8E93",
-  success: "#34C759",
-  warning: "#FF9F0A",
-  error: "#FF3B30",
+  success: "#34C759", 
+  warning: "#FF9F0A", 
+  error: "#FF3B30",   
 };
 
 const MOMENTI = [
@@ -59,7 +59,6 @@ export default function InserimentoScreen() {
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     
-    // Verifica logica e sicura della lunghezza della stringa (es: "01/10/26" = 8 caratteri)
     if (dataInserita.length !== 8 || !dataInserita.includes('/')) {
       alert("Inserisci la data nel formato corretto GG/MM/AA (es: 01/10/26).");
       return;
@@ -78,7 +77,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: dataInserita // Registra la data esatta modificata (es: 01/10/26)
+        dataTesto: dataInserita
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -100,13 +99,13 @@ export default function InserimentoScreen() {
       alert("Impossibile salvare i dati localmente.");
     }
   };
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      <View style={styles.cardInput}>
-        <Text style={styles.label}>Data del Controllo (GG/MM/AA)</Text>
+      {/* 1. DATA: Titolo e valore a sinistra */}
+      <View style={[styles.cardInput, styles.dataCardSinistra]}>
+        <Text style={styles.labelLeft}>Data (GG/MM/AA)</Text>
         <TextInput
           style={styles.dataInput}
           placeholder="GG/MM/AA"
@@ -118,20 +117,23 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      <View style={styles.cardInput}>
-        <Text style={styles.label}>Glicemia (mg/dL)</Text>
+      {/* 2. GLICEMIA: Titolo e valore a sinistra */}
+      <View style={[styles.cardInput, { marginBottom: 12 }]}>
+        <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
         <TextInput
           style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
-          placeholder="000"
+          placeholder="00"
           placeholderTextColor="#C7C7CC"
           keyboardType="numeric"
           value={glicemia}
           onChangeText={setGlicemia}
+          maxLength={3}
         />
       </View>
 
-      <View style={styles.cardInput}>
-        <Text style={styles.label}>Insulina (Unità UI)</Text>
+      {/* 3. INSULINA: Titolo e valore a sinistra */}
+      <View style={[styles.cardInput, { marginBottom: 12 }]}>
+        <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
         <TextInput
           style={styles.insulinaInput}
           placeholder="0"
@@ -139,9 +141,11 @@ export default function InserimentoScreen() {
           keyboardType="numeric"
           value={insulina}
           onChangeText={setInsulina}
+          maxLength={2}
         />
       </View>
 
+      {/* 4. SELETTORE RAPIDO 9 MOMENTI */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -158,8 +162,9 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      <View style={styles.cardInput}>
-        <Text style={styles.label}>Note Alimentari / Sintomi</Text>
+      {/* 5. NOTE ALIMENTARI: Titolo e valore a sinistra */}
+      <View style={[styles.cardInput, { padding: 12, marginBottom: 16 }]}>
+        <Text style={styles.labelLeft}>Note Alimentari / Sintomi</Text>
         <TextInput
           style={styles.noteInput}
           placeholder="Es: Riso integrale, stanchezza..."
@@ -184,46 +189,29 @@ export default function InserimentoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { padding: 20, paddingTop: 50, paddingBottom: 40 },
-  title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface, marginBottom: 20 },
-  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: COLORS.onSurface, marginTop: 15, marginBottom: 10 },
-  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 16, padding: 16, marginBottom: 16 },
-  label: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
-  dataInput: { fontFamily: 'Space Grotesk', fontSize: 22, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'center', paddingVertical: 4 },
-  glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 48, fontWeight: '700', textAlign: 'center', paddingVertical: 10 },
-  insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 28, fontWeight: '600', color: COLORS.onSurface, textAlign: 'center', paddingVertical: 5 },
-  noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 5 },
-  chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 999 },
+  content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
+  title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
+  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
+  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
+  
+  /* Allineamento rigoroso a sinistra per tutte le scritte descrittive */
+  labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
+  dataCardSinistra: { width: '50%', marginBottom: 16, alignSelf: 'flex-start' },
+  
+  /* Campi di input testuali orientati a sinistra */
+  dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2, width: '100%' },
+  glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 44, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
+  insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
+  noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
+  
+  chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
+  chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
   chipSelezionata: { backgroundColor: "#E6F0FA", borderWidth: 1, borderColor: COLORS.brandPrimary },
-  chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.onSurface, fontWeight: '500' },
+  chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.brandPrimary, fontWeight: '700' },
-  saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 10 },
-  saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center' },
+  
+  saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 }
 });
-  const ottieniDatiSezionati = () => {
-    const sezioni: Record<string, any[]> = {};
-    
-    datiReali.forEach(item => {
-      const dataChiave = item.dataTesto || "Oggi";
-      if (!sezioni[dataChiave]) sezioni[dataChiave] = [];
-      sezioni[dataChiave].push(item);
-    });
-
-    // Riordina i gruppi di date in ordine cronologico decrescente (le più recenti in alto)
-    return Object.keys(sezioni)
-      .sort((a, b) => {
-        if (a === "Oggi") return -1;
-        if (b === "Oggi") return 1;
-        // Converte GG/MM/AA in un formato confrontabile AA/MM/GG
-        const convertiData = (str: string) => {
-          const [g, m, a] = str.split('/');
-          return `${a}/${m}/${g}`;
-        };
-        return convertiData(b).localeCompare(convertiData(a));
-      })
-      .map(chiave => ({ title: chiave, data: sezioni[chiave] }))
-      .filter(s => s.data.length > 0);
-  };
