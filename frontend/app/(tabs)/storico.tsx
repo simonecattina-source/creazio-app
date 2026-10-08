@@ -111,15 +111,6 @@ export default function StoricoScreen() {
     return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
-  const RiverifyFiltro = (stringaData: string) => {
-    if (filtroAttivo === 'all') return true;
-    const oggi = new Date();
-    const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
-    const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
-  };
-
   const eliminaSingoloItem = async () => {
     if (!itemSelezionato) return;
     try {
@@ -239,75 +230,66 @@ export default function StoricoScreen() {
       .filter(s => s.data.length > 0);
   };
   const generaEDesportaPDF = () => {
-    let corpoTabellaHtml = "";
+    let corpoHtmlCompleto = "";
     const sezioniDati = ottieniDatiSezionati();
 
-    sezioniDati.forEach(sezione => {
-      const rigaGlicemie: Record<string, string> = {};
-      const rigaInsuline: Record<string, string> = {};
-      const rigaNote: Record<string, string> = {};
+    // 🪄 ALGORITMO DI PAGINAZIONE: Cicla le giornate a blocchi di 4
+    for (let i = 0; i < sezioniDati.length; i += 4) {
+      const bloccoQuattroGiorni = sezioniDati.slice(i, i + 4);
+      let righeTabellaBlocco = "";
 
-      MOMENTI_COLONNE.forEach(m => {
-        rigaGlicemie[m] = "-"; rigaInsuline[m] = "-"; rigaNote[m] = "-";
+      bloccoQuattroGiorni.forEach(sezione => {
+        const rigaGlicemie: Record<string, string> = {};
+        const rigaInsuline: Record<string, string> = {};
+        const rigaNote: Record<string, string> = {};
+
+        MOMENTI_COLONNE.forEach(m => {
+          rigaGlicemie[m] = "-"; rigaInsuline[m] = "-"; rigaNote[m] = "-";
+        });
+
+        sezione.data.forEach(item => {
+          if (MOMENTI_COLONNE.includes(item.tipo)) {
+            let colore = '#34C759';
+            if (item.glicemia > 180) colore = '#FF3B30';
+            if (item.glicemia < 70) colore = '#FF9F0A';
+
+            rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
+            rigaInsuline[item.tipo] = item.insulina !== '-' ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
+            rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
+          }
+        });
+
+        let trGlicemieHtml = "";
+        let trInsulineHtml = "";
+        let trNoteHtml = "";
+
+        MOMENTI_COLONNE.forEach(m => {
+          trGlicemieHtml += `<td>${rigaGlicemie[m]}</td>`;
+          trInsulineHtml += `<td>${rigaInsuline[m]}</td>`;
+          trNoteHtml += `<td>${rigaNote[m]}</td>`;
+        });
+
+        righeTabellaBlocco += `
+          <tr>
+            <td class="cell-data" rowspan="3">${sezione.title}</td>
+            <td class="cell-label">Glicemia</td>
+            ${trGlicemieHtml}
+          </tr>
+          <tr>
+            <td class="cell-label">Insulina</td>
+            ${trInsulineHtml}
+          </tr>
+          <tr class="row-separator">
+            <td class="cell-label">Note</td>
+            ${trNoteHtml}
+          </tr>`;
       });
 
-      sezione.data.forEach(item => {
-        if (MOMENTI_COLONNE.includes(item.tipo)) {
-          let colore = '#34C759';
-          if (item.glicemia > 180) colore = '#FF3B30';
-          if (item.glicemia < 70) colore = '#FF9F0A';
+      // 🪄 Inserisce l'interruzione di pagina rigida se ci sono altri blocchi di giorni successivi
+      const rigaInterruzionePagina = (i + 4 < sezioniDati.length) ? 'style="page-break-after: always;"' : '';
 
-          rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
-          rigaInsuline[item.tipo] = item.insulina !== '-' ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
-          rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
-        }
-      });
-
-      let trGlicemieHtml = "";
-      let trInsulineHtml = "";
-      let trNoteHtml = "";
-
-      MOMENTI_COLONNE.forEach(m => {
-        trGlicemieHtml += `<td>${rigaGlicemie[m]}</td>`;
-        trInsulineHtml += `<td>${rigaInsuline[m]}</td>`;
-        trNoteHtml += `<td>${rigaNote[m]}</td>`;
-      });
-
-      corpoTabellaHtml += `
-        <tr>
-          <td class="cell-data" rowspan="3">${sezione.title}</td>
-          <td class="cell-label">Glicemia</td>
-          ${trGlicemieHtml}
-        </tr>
-        <tr>
-          <td class="cell-label">Insulina</td>
-          ${trInsulineHtml}
-        </tr>
-        <tr class="row-separator">
-          <td class="cell-label">Note</td>
-          ${trNoteHtml}
-        </tr>`;
-    });
-
-    const htmlTemplate = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Registro_Glicemico_Diabety</title>
-          <style>
-            @page { size: landscape; margin: 12mm; }
-            body { font-family: sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
-            h1 { font-size: 22px; color: #0A66C2; margin: 0 0 15px 0; font-weight: bold; border-bottom: 2px solid #0A66C2; padding-bottom: 5px; }
-            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-            th, td { border: 1px solid #c7c7cc; padding: 8px 6px; font-size: 11px; text-align: center; vertical-align: middle; word-wrap: break-word; }
-            th { background-color: #f2f2f7; font-weight: bold; font-size: 10px; text-transform: uppercase; }
-            .cell-data { font-weight: bold; background-color: #f0f5fa; color: #0A66C2; font-size: 12px; width: 80px; }
-            .cell-label { font-weight: 600; background-color: #f2f2f7; text-align: left; padding-left: 8px; width: 90px; }
-            .row-separator td { background-color: #ffffff; }
-          </style>
-        </head>
-        <body>
+      corpoHtmlCompleto += `
+        <div class="pagina-pdf" ${rigaInterruzionePagina}>
           <h1>Diabety - Registro Storico Giornaliero</h1>
           <table>
             <thead>
@@ -319,13 +301,37 @@ export default function StoricoScreen() {
               </tr>
             </thead>
             <tbody>
-              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato nel periodo selezionato.</td></tr>'}
+              ${righeTabellaBlocco}
             </tbody>
           </table>
+        </div>`;
+    }
+
+    const htmlTemplate = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Registro_Glicemico_Diabety</title>
+          <style>
+            @page { size: landscape; margin: 10mm; }
+            body { font-family: sans-serif; color: #1c1c1e; padding: 0; margin: 0; background: #ffffff; }
+            .pagina-pdf { box-sizing: border-box; width: 100%; }
+            h1 { font-size: 20px; color: #0A66C2; margin: 0 0 12px 0; font-weight: bold; border-bottom: 2px solid #0A66C2; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 5px; }
+            th, td { border: 1px solid #c7c7cc; padding: 7px 5px; font-size: 10.5px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+            th { background-color: #f2f2f7; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+            .cell-data { font-weight: bold; background-color: #f0f5fa; color: #0A66C2; font-size: 11px; width: 75px; }
+            .cell-label { font-weight: 600; background-color: #f2f2f7; text-align: left; padding-left: 6px; width: 85px; }
+            .row-separator td { background-color: #ffffff; }
+          </style>
+        </head>
+        <body>
+          ${corpoHtmlCompleto || '<div class="pagina-pdf"><h1>Diabety - Registro Storico Giornaliero</h1><table><tbody><tr><td>Nessun dato registrato nel periodo selezionato.</td></tr></tbody></table></div>'}
         </body>
       </html>`;
 
-    // 🪄 FORZATURA DOWNLOAD IPHONE: Impacchetta l'HTML come file binario per abilitare i comandi di condivisione di Safari
+    // 📱 CORSIA IPHONE BLOB OBJECT: Forza l'apparizione dei comandi nativi "Salva nei file" di iOS
     if (Platform.OS === 'web' && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       try {
         const blobFile = new Blob([htmlTemplate], { type: 'text/html;charset=utf-8;' });
@@ -348,7 +354,7 @@ export default function StoricoScreen() {
         }
       }
     } else {
-      // Configurazione classica per computer PC/Mac
+      // 💻 Corsia classica per computer desktop PC/Mac
       const finestraStampa = window.open('', '_blank');
       if (finestraStampa) {
         finestraStampa.document.write(htmlTemplate);
