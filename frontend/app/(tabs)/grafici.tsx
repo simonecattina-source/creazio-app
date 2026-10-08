@@ -15,14 +15,12 @@ const COLORS = {
   error: "#FF3B30",             
 };
 
-// 🛡️ Array ridotto rigorosamente ai soli 7 momenti principali richiesti
 const MOMENTI_ELENCO = [
   "Prima Colazione", "Dopo Colazione",
   "Prima Pranzo", "Dopo Pranzo",
   "Prima Cena", "Dopo Cena", "Notte"
 ];
 
-// Abbreviazioni ottimizzate per far stare i 7 titoli in modo largo e pulito su iPhone
 const MOMENTI_SHORT = {
   "Prima Colazione": "Pr.Col", "Dopo Colazione": "Dp.Col",
   "Prima Pranzo": "Pr.Prz", "Dopo Pranzo": "Dp.Prz",
@@ -30,13 +28,14 @@ const MOMENTI_SHORT = {
 };
 
 export default function GraficiScreen() {
-  const [datiReali, setDatiReali] = useState<any[]>([]);
+  const [datiReales, setDatiReales] = useState<any[]>([]);
   const [mediaGlicemia, setMediaGlicemia] = useState<number>(0);
   const [totaleMisurazioni, setTotaleMisurazioni] = useState<number>(0);
   const [puntiGrafico, setPuntiGrafico] = useState<{ dataLabel: string; media: number }[]>([]);
-  
-  // Stato per memorizzare le medie dei soli 7 momenti della giornata
   const [medieMomenti, setMedieMomenti] = useState<{ momento: string; media: number }[]>([]);
+  
+  // 📊 Nuovo stato per memorizzare la percentuale esatta di Time in Range
+  const [timeInRange, setTimeInRange] = useState<number>(0);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -56,15 +55,20 @@ export default function GraficiScreen() {
       const datiSalvati = await AsyncStorage.getItem('glicotrack_data');
       if (datiSalvati) {
         const elenco = JSON.parse(datiSalvati);
-        setDatiReali(elenco);
+        setDatiReales(elenco);
         setTotaleMisurazioni(elenco.length);
 
         if (elenco.length > 0) {
-          // 1. Media Totale Complessiva
+          // 1. Media Totale
           const somma = elenco.reduce((acc: number, item: any) => acc + item.glicemia, 0);
           setMediaGlicemia(Math.round(somma / elenco.length));
 
-          // 2. Grafico Linea: Raggruppamento per giorno
+          // 2. 🪄 CALCOLO MATEMATICO DEL TIME IN RANGE (Soglie cliniche rigide 70-180 mg/dL)
+          const testNelRange = elenco.filter((item: any) => item.glicemia >= 70 && item.glicemia <= 180).length;
+          const percentualeTIR = Math.round((testNelRange / elenco.length) * 100);
+          setTimeInRange(percentualeTIR);
+
+          // 3. Grafico Linea: Raggruppamento per giorno
           const gruppiPerGiorno: Record<string, number[]> = {};
           elenco.forEach((item: any) => {
             const dataChiave = item.dataTesto || "Oggi";
@@ -82,7 +86,7 @@ export default function GraficiScreen() {
 
           setPuntiGrafico(andamentoCronologico.slice(-10));
 
-          // 3. 🪄 ALGORITMO MEDIE SUI 7 MOMENTI SELEZIONATI
+          // 4. Algoritmo Medie sui 7 Momenti principali
           const gruppiPerMomento: Record<string, number[]> = {};
           MOMENTI_ELENCO.forEach(m => { gruppiPerMomento[m] = []; });
 
@@ -103,12 +107,13 @@ export default function GraficiScreen() {
 
         } else {
           setMediaGlicemia(0);
+          setTimeInRange(0);
           setPuntiGrafico([]);
           setMedieMomenti([]);
         }
       }
     } catch (e) {
-      console.log("Errore nel caricamento dei dati medici.");
+      console.log("Errore nel calcolo del Time in Range.");
     }
   };
 
@@ -168,7 +173,6 @@ export default function GraficiScreen() {
     );
   };
 
-  // 🪄 RENDERING NATIVO OTTIMIZZATO SULLE SOLIE DEI 7 MOMENTI DELLA GIORNATA
   const renderizzaGraficoColonneMomenti = () => {
     if (medieMomenti.length === 0) return null;
     const altezzaMassimaColonna = 120;
@@ -186,10 +190,7 @@ export default function GraficiScreen() {
                 <Text style={[styles.valoreColonnaTesto, { color: m.media === 0 ? COLORS.muted : COLORS.onSurface }]}>
                   {m.media > 0 ? m.media : '-'}
                 </Text>
-                
-                {/* Colonne più larghe (width: 18) per sfruttare al meglio i 7 spazi liberi dell'iPhone */}
                 <View style={[styles.colonnaRettangolo, { height: altezzaCalcolata, backgroundColor: coloreColonna }]} />
-                
                 <Text style={styles.etichettaColonnaMomento}>
                   {MOMENTI_SHORT[m.momento as keyof typeof MOMENTI_SHORT]}
                 </Text>
@@ -201,21 +202,42 @@ export default function GraficiScreen() {
     );
   };
 
+  // 🪄 Ritorna l'assegnazione colore in base alla percentuale clinica di Time in Range dell'utente
+  const ottieniColoreTIR = () => {
+    if (timeInRange === 0) return COLORS.onSurface;
+    if (timeInRange >= 70) return COLORS.success; // Sopra il 70% l'obiettivo medico è centrato eccellentemente
+    if (timeInRange >= 50) return COLORS.warning;
+    return COLORS.error;
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Analisi e Grafici</Text>
       
+      {/* 📊 PANNELLO RIEPILOGO STATISTICO AGGIORNATO CON 3 RIQUADRI AFFIANCATI */}
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (91 GG)</Text>
         <View style={styles.containerRigaRiepilogo}>
+          
           <View style={styles.infoBoxStat}>
-            <Text style={styles.statLabel}>Media Glicemica</Text>
-            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : COLORS.success }]}>{mediaGlicemia > 0 ? `${mediaGlicemia} mg/dL` : '-'}</Text>
+            <Text style={styles.statLabel}>Media</Text>
+            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : COLORS.success }]}>
+              {mediaGlicemia > 0 ? `${mediaGlicemia}` : '-'} <Text style={styles.unitaMisuraSub}>mg/dL</Text>
+            </Text>
           </View>
+
+          <View style={styles.infoBoxStat}>
+            <Text style={styles.statLabel}>In Range (TIR)</Text>
+            <Text style={[styles.statValue, { color: ottieniColoreTIR() }]}>
+              {totaleMisurazioni > 0 ? `${timeInRange}%` : '-'}
+            </Text>
+          </View>
+
           <View style={styles.infoBoxStat}>
             <Text style={styles.statLabel}>Test Totali</Text>
             <Text style={styles.statValue}>{totaleMisurazioni}</Text>
           </View>
+
         </View>
       </View>
 
@@ -233,7 +255,7 @@ export default function GraficiScreen() {
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
         <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
-        {datiReali.length > 0 ? renderizzaGraficoColonneMomenti() : (
+        {totaleMisurazioni > 0 ? renderizzaGraficoColonneMomenti() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
             <Ionicons name="bar-chart-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
             <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessun dato inserito.</Text>
@@ -251,20 +273,23 @@ const styles = StyleSheet.create({
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
   subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginBottom: 12 },
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16 },
-  containerRigaRiepilogo: { flexDirection: 'row', gap: 12, width: '100%' },
-  infoBoxStat: { flex: 1, backgroundColor: '#121212', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
-  statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
-  statValue: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
+  containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%' },
+  
+  /* Box riorganizzati a 3 colonne simmetriche ed eleganti */
+  infoBoxStat: { flex: 1, backgroundColor: '#121212', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
+  statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
+  statValue: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
+  unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
   
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
   containerGraficoSvg: { width: '100%', marginTop: 6, position: 'relative' },
   rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, paddingHorizontal: 2 },
   dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted },
 
-  /* Stili ad alta leggibilità ottimizzati per le 7 colonne larghe */
-  rigaColonneContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', minHeight: 155, paddingTop: 15 },
+  rigaColonneContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', minHeight: 155, paddingTop: 15, alignItems: 'flex-end' },
   singolaColonnaWrapper: { flex: 1, alignItems: 'center', gap: 6 },
   valoreColonnaTesto: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '700' },
-  colonnaRettangolo: { width: 18, borderRadius: 5, minHeight: 4 }, // Colonne portate a 18px per una resa visiva eccellente
+  colonnaRettangolo: { width: 18, borderRadius: 5, minHeight: 4 }, 
+  地にetaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '600', color: COLORS.muted, marginTop: 2 },
   etichettaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '600', color: COLORS.muted, marginTop: 2 }
 });
