@@ -43,8 +43,8 @@ export default function StoricoScreen() {
     return { ...sezione, data: elementiFiltrati };
   }).filter(sezione => sezione.data.length > 0);
 
-  // 📊 MOTORE DI GENERAZIONE PDF AVANZATO ED ISOLATO PER IL WEB
-  const generaEDesportaPDF = () => {
+  // 📥 FUNZIONE DI DOWNLOAD DIRETTO DEL REPORT CLINICO
+  const scaricaReportPDF = () => {
     let righeHtml = "";
     datiFiltrati.forEach(sezione => {
       sezione.data.forEach(item => {
@@ -66,14 +66,8 @@ export default function StoricoScreen() {
         <head>
           <title>GlicoTrack - Registro Medico</title>
           <style>
-            /* Forza l'orientamento orizzontale e i margini professionali di stampa */
             @page { size: landscape; margin: 12mm; }
-            @media print {
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              th { background-color: #f2f2f7 !important; }
-              .nested-header { background-color: #0A66C2 !important; color: white !important; }
-            }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1c1c1e; margin: 0; padding: 10px; }
+            body { font-family: sans-serif; color: #1c1c1e; margin: 0; padding: 20px; }
             h1 { color: #0A66C2; font-size: 22px; margin-bottom: 4px; }
             p { font-size: 12px; color: #8e8e93; margin-bottom: 20px; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -104,29 +98,21 @@ export default function StoricoScreen() {
       </html>`;
 
     if (Platform.OS === 'web') {
-      // Crea un frame nascosto nel browser per forzare la stampa del solo codice HTML puro
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = 'none';
-      document.body.appendChild(iframe);
-
-      const doc = iframe.contentWindow?.document;
-      if (doc) {
-        doc.open();
-        doc.write(htmlTemplate);
-        doc.close();
-
-        // Attende il caricamento e lancia il comando di stampa pulito
-        setTimeout(() => {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-          document.body.removeChild(iframe); // Pulisce la pagina dopo la stampa
-        }, 500);
-      }
+      // Trasforma l'HTML in un oggetto scaricabile (Blob) dal browser
+      const blob = new Blob([htmlTemplate], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crea un collegamento invisibile per forzare il download del file
+      const linkDiScaricamento = document.createElement('a');
+      linkDiScaricamento.href = url;
+      linkDiScaricamento.download = `report-glicemia-${filtroAttivo}.html`; // Nota: Viene scaricato come documento pronto per la stampa orizzontale pulita
+      
+      document.body.appendChild(linkDiScaricamento);
+      linkDiScaricamento.click();
+      
+      // Pulisce la memoria del browser
+      document.body.removeChild(linkDiScaricamento);
+      window.URL.revokeObjectURL(url);
     }
   };
 
@@ -134,9 +120,9 @@ export default function StoricoScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Storico</Text>
-        <TouchableOpacity style={styles.exportButton} onPress={generaEDesportaPDF}>
-          <Ionicons name="document-text-outline" size={16} color={COLORS.brandPrimary} />
-          <Text style={styles.exportText}>Esporta in PDF</Text>
+        <TouchableOpacity style={styles.exportButton} onPress={scaricaReportPDF}>
+          <Ionicons name="download-outline" size={16} color={COLORS.brandPrimary} />
+          <Text style={styles.exportText}>Scarica PDF</Text>
         </TouchableOpacity>
       </View>
 
