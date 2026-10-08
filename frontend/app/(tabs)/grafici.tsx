@@ -98,8 +98,8 @@ export default function GraficiScreen() {
     const rigaSoglia180Y = calcolaY(180);
     const rigaSoglia70Y = calcolaY(70);
 
-    // 🪄 CORRETTO E COMPILATO: Definiti i punti di riferimento per la griglia verticale (10-500)
-    const valoriAsseY =;
+    // 🪄 SOLUZIONE DI SICUREZZA ANTI-CANCELLAZIONE: Generato dinamicamente per superare i filtri del testo
+    const valoriAsseY = Array.from(new Set([10, 100, 200, 300, 400, 500]));
 
     const coordinataPunti = puntiGrafico.map((punto, i) => {
       const x = margineSinistro + (i * (spazioUtileX / (puntiGrafico.length - 1 || 1)));
@@ -122,7 +122,7 @@ export default function GraficiScreen() {
           {/* Sfondo del grafico in grigio chiaro */}
           <rect x={margineSinistro} y={margineSuperiore} width={spazioUtileX} height={spazioUtileY} fill="#F4F4F6" rx="4" />
 
-          {/* Fascia verde di range ideale tra 70 i 180 mg/dL */}
+          {/* Fascia verde di range ideale tra 70 e 180 mg/dL */}
           <rect x={margineSinistro} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.12)" />
 
           {/* Disegno righe e valori dell'asse Y da 10 a 500 */}
