@@ -3,11 +3,11 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COLORS = {
-  background: "#121212",        
-  surfaceSecondary: "#1C1C1E",  
-  brandPrimary: "#0A66C2",      
-  onSurface: "#FFFFFF",         
-  muted: "#8E8E93",             
+  background: "#121212",        // Sfondo nero Dark Mode
+  surfaceSecondary: "#1C1C1E",  // Riquadri antracite
+  brandPrimary: "#0A66C2",      // Blu per data e azioni
+  onSurface: "#FFFFFF",         // Testo bianco
+  muted: "#8E8E93",             // Testo grigio
   success: "#34C759",           
   warning: "#FF9F0A",           
   error: "#FF3B30",             
@@ -28,7 +28,7 @@ export default function InserimentoScreen() {
     return `${a}-${m}-${g}`;
   };
 
-  // ⏰ Calcola l'ora corrente del sistema (formato HH:MM)
+  // Calcola l'ora e il minuto corrente del sistema (formato HH:MM)
   const ottieniOraCorrente = () => {
     const oggi = new Date();
     const ore = String(oggi.getHours()).padStart(2, '0');
@@ -37,6 +37,7 @@ export default function InserimentoScreen() {
   };
 
   const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
+  // Stato per l'orario (Inizializzato all'ora attuale)
   const [oraInserita, setOraInserita] = useState(ottieniOraCorrente());
 
   const [glicemia, setGlicemia] = useState('');
@@ -45,13 +46,16 @@ export default function InserimentoScreen() {
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  // 🔄 Effetto che tiene l'ora aggiornata al secondo attuale finché l'utente non la modifica manualmente
+  // ⏰ Tiene l'orario della casella aggiornato all'ora reale finché l'utente non lo modifica
   useEffect(() => {
     const timer = setInterval(() => {
-      setOraInserita(ottieniOraCorrente());
+      // Aggiorna solo se l'utente non ha aperto o modificato il form toccando lo schermo
+      if (glicemia === '' && insulina === '' && note === '') {
+        setOraInserita(ottieniOraCorrente());
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [glicemia, insulina, note]);
 
   const ottieniDataFormattataStorico = (stringaISO: string) => {
     if (!stringaISO) return "";
@@ -77,13 +81,18 @@ export default function InserimentoScreen() {
     }
 
     try {
+      // 🪄 FUSIONE INTEGRATA AUTOMATICA: Concatena l'ora all'inizio del testo delle note
+      const noteConOrarioFuso = note.trim() 
+        ? `[${oraInserita}] ${note.trim()}`
+        : `[${oraInserita}]`;
+
       const nuovaMisurazione = {
         id: Math.random().toString(),
         glicemia: valoreGlicemia,
         insulina: insulina ? `${insulina} UI` : '-',
         tipo: momentoSelezionato,
-        note: note || '',
-        ora: oraInserita, 
+        note: noteConOrarioFuso, // Salva il testo unito [HH:MM] Note
+        ora: oraInserita,        // Salva il parametro ora isolato per i filtri cronologici dello storico
         dataTesto: ottieniDataFormattataStorico(dataISO)
       };
 
@@ -93,6 +102,7 @@ export default function InserimentoScreen() {
       elencoDati.unshift(nuovaMisurazione);
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
+      // Reset dei campi lasciando l'app pronta per un nuovo inserimento
       setGlicemia('');
       setInsulina('');
       setNote('');
@@ -111,8 +121,9 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
+      {/* 📅⏰ RIGHE TEMPORALI AFFIANCATE IN ALTO A SINISTRA */}
       <View style={styles.containerRigaTemporale}>
-        {/* Blocco Data */}
+        {/* Selettore Calendario Data */}
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data Controllo</Text>
           {Platform.OS === 'web' ? (
@@ -144,7 +155,7 @@ export default function InserimentoScreen() {
           )}
         </View>
 
-        {/* 🎡 Blocco Ora: attiva la ruota/tabella a scorrimento nativa di iOS/Android */}
+        {/* Selettore Tabella a Scorrimento Ora */}
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Ora Controllo</Text>
           {Platform.OS === 'web' ? (
