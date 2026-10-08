@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SectionList, Alert, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 
-// Palette colori ufficiale iOS Clean
 const COLORS = {
   surface: "#FFFFFF",
   surfaceSecondary: "#F2F2F7",
@@ -17,13 +15,10 @@ const COLORS = {
   error: "#FF3B30",
 };
 
-// Dati finti di esempio per il database
 const DATI_LOG_MOCK = [
   {
     title: "Oggi",
-    data: [
-      { id: "1", glicemia: 145, insulina: "4 UI", tipo: "Post-Pranzo", note: "Pasta integrale", stato: "success", ora: "14:15", dataDoc: new Date() }
-    ]
+    data: [{ id: "1", glicemia: 145, insulina: "4 UI", tipo: "Post-Pranzo", note: "Pasta integrale", stato: "success", ora: "14:15", dataDoc: new Date() }]
   },
   {
     title: "Ieri",
@@ -33,6 +28,7 @@ const DATI_LOG_MOCK = [
     ]
   }
 ];
+
 export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
 
@@ -48,13 +44,12 @@ export default function StoricoScreen() {
     return { ...sezione, data: elementiFiltrati };
   }).filter(sezione => sezione.data.length > 0);
 
-  // Generatore del documento clinico orizzontale a 10 colonne
   const generaEDesportaPDF = async () => {
     try {
-      let righeTabellaHtml = "";
+      let righeHtml = "";
       datiFiltrati.forEach(sezione => {
         sezione.data.forEach(item => {
-          righeTabellaHtml += `
+          righeHtml += `
             <tr>
               <td>${sezione.title}</td>
               <td>${item.ora}</td>
@@ -62,71 +57,51 @@ export default function StoricoScreen() {
               <td>${item.insulina || '-'}</td>
               <td>${item.tipo}</td>
               <td>${item.note || '-'}</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-              <td>-</td>
-            </tr>
-          `;
+              <td>-</td><td>-</td><td>-</td><td>-</td>
+            </tr>`;
         });
       });
 
       const htmlTemplate = `
         <html>
           <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             <style>
               @page { size: landscape; margin: 15mm; }
-              body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; }
-              h1 { font-size: 22px; color: #0A66C2; margin-bottom: 2px; }
-              p { font-size: 12px; color: #8e8e93; margin-bottom: 15px; }
-              table { width: 100%; border-collapse: collapse; }
-              th, td { border: 1px solid #e5e5ea; padding: 8px; text-align: left; font-size: 11px; }
+              body { font-family: sans-serif; color: #1c1c1e; padding: 10px; }
+              h1 { color: #0A66C2; font-size: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+              th, td { border: 1px solid #e5e5ea; padding: 8px; font-size: 11px; text-align: left; }
               th { background-color: #f2f2f7; font-weight: bold; }
-              .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 11px; font-weight: bold; }
+              .nested-header { text-align: center; background-color: #0A66C2; color: white; }
             </style>
           </head>
           <body>
-            <h1>GlicoTrack - Registro Medico</h1>
-            <p>Generato il: ${new Date().toLocaleDateString('it-IT')} | Filtro: ${filtroAttivo === 'all' ? 'Tutto' : `\${filtroAttivo} giorni`}</p>
+            <h1>GlicoTrack - Registro Medico Orizzontale</h1>
             <table>
               <thead>
                 <tr>
                   <th colspan="4" class="nested-header">PARAMETRI CLINICI</th>
                   <th colspan="2" class="nested-header">DIARIO DI BORDO</th>
-                  <th colspan="4" class="nested-header">VALUTAZIONE SPECIALISTICA (MEDICO)</th>
+                  <th colspan="4" class="nested-header">VALUTAZIONE MEDICA</th>
                 </tr>
                 <tr>
-                  <th>Data</th>
-                  <th>Ora</th>
-                  <th>Glicemia</th>
-                  <th>Insulina</th>
-                  <th>Momento Pasto</th>
-                  <th>Note Alimentari</th>
-                  <th>Carboidrati (g)</th>
-                  <th>Sport (min)</th>
-                  <th>Note Medico</th>
-                  <th>Firma Clinica</th>
+                  <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
+                  <th>Momento Pasto</th><th>Note Alimentari</th>
+                  <th>Carboidrati (g)</th><th>Sport (min)</th><th>Note Medico</th><th>Firma</th>
                 </tr>
               </thead>
-              <tbody>
-                ${righeTabellaHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato.</td></tr>'}
-              </tbody>
+              <tbody>${righeHtml || '<tr><td colspan="10">Nessun dato.</td></tr>'}</tbody>
             </table>
           </body>
-        </html>
-      `;
+        </html>`;
 
       if (Platform.OS === 'web') {
         const { uri } = await Print.printToFileAsync({ html: htmlTemplate });
-        const nuovaFinestra = window.open(uri, '_blank');
-        if (!nuovaFinestra) alert("Sblocca i pop-up del browser per visualizzare il file PDF.");
+        window.open(uri, '_blank');
       } else {
-        const { uri } = await Print.printToFileAsync({ html: htmlTemplate });
-        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Esporta Report' });
+        await Print.printAsync({ html: htmlTemplate });
       }
-    } catch (errore) {
-      console.error(errore);
+    } catch (e) {
       alert("Impossibile generare il PDF.");
     }
   };
@@ -142,14 +117,14 @@ export default function StoricoScreen() {
       </View>
 
       <View style={styles.filterBar}>
-        {['7', '30', 'all'].map((filtro) => (
+        {['7', '30', 'all'].map((f) => (
           <TouchableOpacity 
-            key={filtro}
-            style={[styles.filterButton, filtroAttivo === filtro && styles.filterButtonActive]}
-            onPress={() => setFiltroAttivo(filtro as any)}
+            key={f} 
+            style={[styles.filterButton, filtroAttivo === f && styles.filterButtonActive]}
+            onPress={() => setFiltroAttivo(f as any)}
           >
-            <Text style={[styles.filterButtonText, filtroAttivo === filtro && styles.filterButtonTextActive]}>
-              {filtro === 'all' ? 'Tutti' : `${filtro} GG`}
+            <Text style={[styles.filterButtonText, filtroAttivo === f && styles.filterButtonTextActive]}>
+              {f === 'all' ? 'Tutti' : `${f} GG`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -158,9 +133,7 @@ export default function StoricoScreen() {
       <SectionList
         sections={datiFiltrati}
         keyExtractor={(item) => item.id}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.sectionHeader}>{title}</Text>
-        )}
+        renderSectionHeader={({ section: { title } }) => <Text style={styles.sectionHeader}>{title}</Text>}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <View style={styles.timelineContainer}>
