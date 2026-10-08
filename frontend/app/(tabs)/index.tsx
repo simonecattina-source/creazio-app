@@ -288,7 +288,7 @@ export default function InserimentoScreen() {
             <ScrollView style={styles.modalScrollInfo} showsVerticalScrollIndicator={false}>
               
               <View style={styles.infoBlock}>
-                <Text style={styles.infoBlockTitle}>🛡️ Archivio Rotante di 91 Giorni</Text>
+                <Text style={styles.infoBlockTitle}>🛡️ Archivio Rotante di 90 Giorni</Text>
                 <Text style={styles.infoBlockText}>
                   L'app memorizza ed esegue il calcolo dei dati basandosi sull'ultimo trimestre completo (13 settimane). Ad ogni nuovo inserimento, i log antecedenti ai 90 giorni vengono eliminati automaticamente per salvaguardare spazio e privacy.
                 </Text>
