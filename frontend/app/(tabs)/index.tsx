@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -21,31 +22,41 @@ const MOMENTI = [
 ];
 
 export default function InserimentoScreen() {
-  const ottieniDataOdiernaFormattata = () => {
-    const oggi = new Date();
-    const giorno = String(oggi.getDate()).padStart(2, '0');
-    const mese = String(oggi.getMonth() + 1).padStart(2, '0');
-    const anno = String(oggi.getFullYear()).slice(-2); 
-    return `${giorno}/${mese}/${anno}`;
-  };
+  // Stati per la gestione della data tramite calendario vero (Default: Oggi)
+  const [dataOggetto, setDataOggetto] = useState(new Date());
+  const [mostraCalendario, setMostraCalendario] = useState(false);
 
-  const [dataInserita, setDataInserita] = useState(ottieniDataOdiernaFormattata());
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  const gestisciScritturaData = (testo: string) => {
-    const numeriPuri = testo.replace(/\D/g, "");
-    let testoFormattato = numeriPuri;
+  // Converte l'oggetto Data in testo GG/MM/AA per lo storico e per la visualizzazione dell'app
+  const ottieniDataFormattata = (date: Date) => {
+    const giorno = String(date.getDate()).padStart(2, '0');
+    const mese = String(date.getMonth() + 1).padStart(2, '0');
+    const anno = String(date.getFullYear()).slice(-2); 
+    return `${giorno}/${mese}/${a}`;
+  };
 
-    if (numeriPuri.length > 2 && numeriPuri.length <= 4) {
-      testoFormattato = `${numeriPuri.slice(0, 2)}/${numeriPuri.slice(2)}`;
-    } else if (numeriPuri.length > 4) {
-      testoFormattato = `${numeriPuri.slice(0, 2)}/${numeriPuri.slice(2, 4)}/${numeriPuri.slice(4, 6)}`;
+  // 📅 Gestisce la selezione dal calendario
+  const alCambioData = (event: any, selectedDate?: Date) => {
+    // Su ambiente Web nasconde automaticamente il selettore dopo la scelta
+    if (Platform.OS === 'web') {
+      setMostraCalendario(false);
     }
-    setDataInserita(testoFormattato);
+    
+    if (selectedDate) {
+      const oggi = new Date();
+      // Blocco di sicurezza invalicabile: se la data scelta è superiore a oggi, forza la data odierna
+      if (selectedDate > oggi) {
+        setDataOggetto(oggi);
+        alert("Non è possibile registrare misurazioni per date future.");
+      } else {
+        setDataOggetto(selectedDate);
+      }
+    }
   };
 
   const ottieniColoreGlicemia = () => {
@@ -59,11 +70,6 @@ export default function InserimentoScreen() {
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     
-    if (dataInserita.length !== 8 || !dataInserita.includes('/')) {
-      alert("Inserisci la data nel formato corretto GG/MM/AA (es: 01/10/26).");
-      return;
-    }
-
     if (!valoreGlicemia || isNaN(valoreGlicemia)) {
       alert("Inserisci un valore di glicemia valido prima di salvare.");
       return;
@@ -77,7 +83,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: dataInserita
+        dataTesto: ottieniDataFormattata(dataOggetto) // Salva la data scelta dal calendario
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -103,21 +109,29 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      {/* 1. DATA: Titolo e valore a sinistra */}
+      {/* 1. 📅 SELETTORE A CALENDARIO (In alto a sinistra, interattivo) */}
       <View style={[styles.cardInput, styles.dataCardSinistra]}>
-        <Text style={styles.labelLeft}>Data (GG/MM/AA)</Text>
-        <TextInput
-          style={styles.dataInput}
-          placeholder="GG/MM/AA"
-          placeholderTextColor="#C7C7CC"
-          keyboardType="numeric"
-          value={dataInserita}
-          onChangeText={gestisciScritturaData}
-          maxLength={8}
-        />
+        <Text style={styles.labelLeft}>Data Controllo</Text>
+        
+        <TouchableOpacity style={styles.containerPulsanteData} onPress={() => setMostraCalendario(true)}>
+          <Ionicons name="calendar-outline" size={16} color={COLORS.brandPrimary} style={{ marginRight: 6 }} />
+          <Text style={styles.testoPulsanteData}>{ottieniDataFormattata(dataOggetto)}</Text>
+        </TouchableOpacity>
+
+        {/* Mostra il componente Calendario del sistema operativo */}
+        {(mostraCalendario || Platform.OS !== 'web') && (
+          <DateTimePicker
+            value={dataOggetto}
+            mode="date"
+            display="default"
+            maximumDate={new Date()} // Forza il calendario a disattivare visivamente i giorni futuri
+            onChange={alCambioData}
+            style={styles.calendarioElemento}
+          />
+        )}
       </View>
 
-      {/* 2. GLICEMIA: Titolo e valore a sinistra */}
+      {/* 2. GLICEMIA (Titolo e valore a sinistra) */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -131,7 +145,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 3. INSULINA: Titolo e valore a sinistra */}
+      {/* 3. INSULINA (Titolo e valore a sinistra) */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
         <TextInput
@@ -145,7 +159,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 4. SELETTORE RAPIDO 9 MOMENTI */}
+      {/* 4. SELETTORE 9 MOMENTI */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -162,7 +176,7 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      {/* 5. NOTE ALIMENTARI: Titolo e valore a sinistra */}
+      {/* 5. NOTE ALIMENTARI */}
       <View style={[styles.cardInput, { padding: 12, marginBottom: 16 }]}>
         <Text style={styles.labelLeft}>Note Alimentari / Sintomi</Text>
         <TextInput
@@ -194,12 +208,15 @@ const styles = StyleSheet.create({
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
   
-  /* Allineamento rigoroso a sinistra per tutte le scritte descrittive */
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
-  dataCardSinistra: { width: '50%', marginBottom: 16, alignSelf: 'flex-start' },
+  dataCardSinistra: { width: '55%', marginBottom: 16, alignSelf: 'flex-start' },
   
-  /* Campi di input testuali orientati a sinistra */
-  dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2, width: '100%' },
+  /* Stili pulsante Calendario interattivo */
+  containerPulsanteData: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', marginTop: 2, width: '100%' },
+  testoPulsanteData: { fontFamily: 'Space Grotesk', fontSize: 16, fontWeight: '600', color: COLORS.brandPrimary },
+  calendarioElemento: { marginTop: 8, alignSelf: 'flex-start' },
+
+  /* Input allineati a sinistra */
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 44, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
