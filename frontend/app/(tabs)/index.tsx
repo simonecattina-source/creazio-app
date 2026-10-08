@@ -114,8 +114,9 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 📅⏰ RIGHE TEMPORALI AFFIANCATE */}
+      {/* 📅⏰ RIGHE TEMPORALI CON CORREZIONE CROMATICA BLU */}
       <View style={styles.containerRigaTemporale}>
+        {/* Casella Data */}
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data Controllo</Text>
           {Platform.OS === 'web' ? (
@@ -128,7 +129,7 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', 
+                color: '#0A66C2', // Forza la scritta in blu
                 backgroundColor: '#FFFFFF', 
                 border: '1px solid #E5E5EA', 
                 borderRadius: '10px',
@@ -138,8 +139,9 @@ export default function InserimentoScreen() {
                 display: 'inline-block',
                 outline: 'none',
                 cursor: 'pointer',
-                filter: 'invert(1)', 
-                WebkitFilter: 'invert(1)'
+                // 🪄 Matrice di filtri CSS tarata per convertire l'icona interna in BLU nativo anziché arancione
+                filter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)',
+                WebkitFilter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)'
               }}
             />
           ) : (
@@ -147,6 +149,7 @@ export default function InserimentoScreen() {
           )}
         </View>
 
+        {/* Casella Ora */}
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Ora Controllo</Text>
           {Platform.OS === 'web' ? (
@@ -158,7 +161,7 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', 
+                color: '#0A66C2', // Forza la scritta in blu
                 backgroundColor: '#FFFFFF', 
                 border: '1px solid #E5E5EA', 
                 borderRadius: '10px',
@@ -168,8 +171,9 @@ export default function InserimentoScreen() {
                 display: 'inline-block',
                 outline: 'none',
                 cursor: 'pointer',
-                filter: 'invert(1)', 
-                WebkitFilter: 'invert(1)'
+                // 🪄 Stesso filtro per rendere anche l'icona dell'orologio BLU
+                filter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)',
+                WebkitFilter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)'
               }}
             />
           ) : (
@@ -178,9 +182,8 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* 📊 NUOVA RIGA: Glicemia e Insulina affiancate (Larghezza 50% ciascuna con gap) */}
+      {/* RIGA AFFIANCATA GLICEMIA + INSULINA */}
       <View style={styles.rigaDatiPrincipali}>
-        {/* Blocco Glicemia */}
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
           <TextInput
@@ -194,7 +197,6 @@ export default function InserimentoScreen() {
           />
         </View>
 
-        {/* Blocco Insulina */}
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
           <TextInput
@@ -209,7 +211,6 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* 🧩 SELETTORE RAPIDO 9 MOMENTI */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -226,7 +227,6 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      {/* 📝 NOTE ALIMENTARI */}
       <View style={[styles.cardInput, { padding: 12, marginBottom: 16 }]}>
         <Text style={styles.labelLeft}>Note Alimentari / Sintomi</Text>
         <TextInput
@@ -262,14 +262,12 @@ const styles = StyleSheet.create({
   containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
   dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
   
-  /* Stili per la nuova riga affiancata Glicemia + Insulina */
   rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
-  metaLarghezza: { flex: 1 }, // Divide lo spazio perfettamente a metà (50% ciascuno)
+  metaLarghezza: { flex: 1 }, 
 
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
   
-  /* Input allineati a sinistra all'interno del proprio box */
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
