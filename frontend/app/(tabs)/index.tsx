@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 🎨 TOKEN COLORE AGGIORNATI PER LA DARK MODE
+// 🎨 Palette colori coordinata Dark Mode
 const COLORS = {
-  background: "#121212",        // Sfondo principale nero profondo
-  surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite scuro
-  brandPrimary: "#0A66C2",      // Blu istituzionale per la data e azioni
+  background: "#121212",        // Sfondo principale nero
+  surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite
+  brandPrimary: "#0A66C2",      // Blu per data e azioni principali
   onSurface: "#FFFFFF",         // Testo principale bianco puro
   muted: "#8E8E93",             // Testo secondario grigio
-  success: "#34C759",           // Glicemia normale (Verde)
-  warning: "#FF9F0A",           // Glicemia bassa (Arancione)
-  error: "#FF3B30",             // Glicemia alta (Rosso)
+  success: "#34C759",           // Verde soglia normale
+  warning: "#FF9F0A",           // Arancione soglia bassa
+  error: "#FF3B30",             // Rosso soglia alta
 };
 
 const MOMENTI = [
@@ -45,7 +45,7 @@ export default function InserimentoScreen() {
 
   const ottieniColoreGlicemia = () => {
     const valore = parseInt(glicemia);
-    if (!valore || isNaN(valore)) return COLORS.onSurface; // Ritorna Bianco in Dark Mode se vuoto
+    if (!valore || isNaN(valore)) return COLORS.onSurface;
     if (valore < 70) return COLORS.warning;
     if (valore > 180) return COLORS.error;
     return COLORS.success;
@@ -93,7 +93,7 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 1. DATA */}
+      {/* 1. DATA: Compatta a sinistra con icona bianca invertita */}
       <View style={styles.dataCardSinistra}>
         <Text style={styles.labelLeft}>Data Controllo</Text>
         {Platform.OS === 'web' ? (
@@ -106,8 +106,8 @@ export default function InserimentoScreen() {
               fontFamily: 'sans-serif',
               fontSize: '15px',
               fontWeight: '600',
-              color: COLORS.brandPrimary,
-              backgroundColor: '#1C1C1E', // Input scuro coerente
+              color: COLORS.onSurface, 
+              backgroundColor: '#1C1C1E', 
               border: '1px solid #2C2C2E',
               borderRadius: '10px',
               padding: '6px 10px',
@@ -115,7 +115,9 @@ export default function InserimentoScreen() {
               width: 'auto', 
               display: 'inline-block',
               outline: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              filter: 'invert(1)', // Rende bianca l'icona del calendario nativa
+              WebkitFilter: 'invert(1)'
             }}
           />
         ) : (
@@ -123,7 +125,7 @@ export default function InserimentoScreen() {
         )}
       </View>
 
-      {/* 2. GLICEMIA */}
+      {/* 2. GLICEMIA: Allineata a sinistra */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -137,7 +139,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 3. INSULINA */}
+      {/* 3. INSULINA: Allineata a sinistra */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
         <TextInput
@@ -194,7 +196,7 @@ export default function InserimentoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background }, // Sfondo Dark globale
+  container: { flex: 1, backgroundColor: COLORS.background }, 
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
   
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
-  chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, // Chip attiva scura coordinata
+  chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
   chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
   
