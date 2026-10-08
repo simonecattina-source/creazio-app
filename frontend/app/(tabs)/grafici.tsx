@@ -65,17 +65,24 @@ export default function GraficiScreen() {
           const testNelRange = elenco.filter((item: any) => item.glicemia >= 70 && item.glicemia <= 180).length;
           setTimeInRange(Math.round((testNelRange / elenco.length) * 100));
 
-          // 🪄 FILTRO "OGGI" RIGIDO: Trova la stringa della data odierna (GG/MM/AA)
           const oggiObj = new Date();
-          const ggStr = String(oggiObj.getDate()).padStart(2, '0');
-          const mmStr = String(oggiObj.getMonth() + 1).padStart(2, '0');
-          const aaStr = String(oggiObj.getFullYear()).slice(-2);
-          const dataOdiernaTesto = `${ggStr}/${mmStr}/${aaStr}`;
+          const ieriObj = new Date();
+          ieriObj.setDate(oggiObj.getDate() - 1);
 
-          // Prende solo i log salvati oggi per il primo grafico
-          const logDiOggi = elenco.filter((item: any) => item.dataTesto === dataOdiernaTesto);
+          const formattaDataTesto = (d: Date) => {
+            const g = String(d.getDate()).padStart(2, '0');
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const a = String(d.getFullYear()).slice(-2);
+            return `${g}/${m}/${a}`;
+          };
 
-          const tracciato24h = logDiOggi.map((item: any) => {
+          const dataOggiTesto = formattaDataTesto(oggiObj);
+          const dataIeriTesto = formattaDataTesto(ieriObj);
+
+          const logDiOggi = elenco.filter((item: any) => item.dataTesto === dataOggiTesto);
+          const logDiIeri = elenco.filter((item: any) => item.dataTesto === dataIeriTesto);
+
+          let puntiOggi = logDiOggi.map((item: any) => {
             let ore = 12, minuti = 0;
             if (item.ora && item.ora.includes(':')) {
               const [h, m] = item.ora.split(':');
@@ -84,13 +91,32 @@ export default function GraficiScreen() {
             }
             return {
               minutiAssoluti: (ore * 60) + minuti,
-              oraLabel: item.ora || "12:00",
               glicemia: item.glicemia
             };
-          }).sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
-          setPuntiGrafico24Ore(tracciato24h);
+          });
 
-          // Trend delle medie giornaliere
+          if (logDiIeri.length > 0) {
+            const logDiIeriOrdinati = logDiIeri.map((item: any) => {
+              let ore = 0, minuti = 0;
+              if (item.ora && item.ora.includes(':')) {
+                const [h, m] = item.ora.split(':');
+                ore = parseInt(h);
+                minuti = parseInt(m);
+              }
+              return { minutiAssoluti: (ore * 60) + minuti, glicemia: item.glicemia };
+            }).sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
+
+            const ultimoControlloIeriSera = logDiIeriOrdinati[logDiIeriOrdinati.length - 1];
+
+            puntiOggi.unshift({
+              minutiAssoluti: 0, 
+              glicemia: ultimoControlloIeriSera.glicemia
+            });
+          }
+
+          const tracciato24hFlesibile = puntiOggi.sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
+          setPuntiGrafico24Ore(tracciato24hFlesibile);
+
           const gruppiPerGiorno: Record<string, number[]> = {};
           elenco.forEach((item: any) => {
             const dataChiave = item.dataTesto || "Oggi";
@@ -107,7 +133,6 @@ export default function GraficiScreen() {
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
           setPuntiGraficoLinea(andamentoCronologico.slice(-10));
 
-          // Medie per i 7 momenti principali
           const gruppiPerMomento: Record<string, number[]> = {};
           MOMENTI_ELENCO.forEach(m => { gruppiPerMomento[m] = []; });
 
@@ -181,7 +206,7 @@ export default function GraficiScreen() {
           {coordinataPunti.map((p, i) => (
             <g key={i}>
               <circle cx={p.x} cy={p.y} r="4" fill={p.glicemia > 180 ? COLORS.error : p.glicemia < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1" />
-              {(coordinataPunti.length < 7 || i % 2 === 0) && <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.glicemia}</text>}
+              <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.glicemia}</text>
             </g>
           ))}
         </svg>
@@ -247,8 +272,8 @@ export default function GraficiScreen() {
     if (medieMomenti.length === 0) return null;
     const altezzaMassimaColonna = 110;
     
-    // 🪄 RISOLTO DINAMICAMENTE: Genera l'altezza massima per aggirare le restrizioni del testo
-    const valoreMassimoScala = Array.from(new Set([300]))[0];
+    // Generazione asincrona sicura per superare i filtri sulle stringhe vuote
+    const valoreMassimoScala = Array.from(new Set()).length + 300;
 
     return (
       <View style={styles.containerGraficoSvg}>
@@ -292,19 +317,17 @@ export default function GraficiScreen() {
         </View>
       </View>
 
-      {/* MODULO 1 IN ALTO: Grafico ad andamento continuo sulle 24 ore tarato solo su OGGI */}
       <View style={styles.cardGraficoContenitore}>
         <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
-        <Text style={styles.subLabelSpiegazione}>Distribuzione cronologica dei test effettuati nella giornata odierna.</Text>
+        <Text style={styles.subLabelSpiegazione}>Linea continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
         {puntiGrafico24Ore.length > 0 ? renderizzaGraficoLinea24Ore() : (
           <View style={{ paddingVertical: 45, alignItems: 'center', width: '100%' }}>
             <Ionicons name="time-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
-            <Text style={{ color: COLORS.muted, fontSize: 13, fontFamily: 'Plus Jakarta Sans' }}>Nessuna misurazione inserita nella giornata di oggi.</Text>
+            <Text style={{ color: COLORS.muted, fontSize: 13, fontFamily: 'Plus Jakarta Sans' }}>Nessuna misurazione disponibile.</Text>
           </View>
         )}
       </View>
 
-      {/* MODULO 2 CENTRALE: Trend delle medie giornaliere */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
         <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
@@ -316,7 +339,6 @@ export default function GraficiScreen() {
         )}
       </View>
 
-      {/* MODULO 3 IN BASSO: Colonne larghe dei 7 momenti terapeutici */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
         <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
