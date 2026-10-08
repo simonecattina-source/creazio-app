@@ -3,11 +3,11 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COLORS = {
-  background: "#121212",        // Sfondo nero Dark Mode
-  surfaceSecondary: "#1C1C1E",  // Riquadri antracite
-  brandPrimary: "#0A66C2",      // Blu per data e azioni
-  onSurface: "#FFFFFF",         // Testo bianco
-  muted: "#8E8E93",             // Testo grigio
+  background: "#121212",        
+  surfaceSecondary: "#1C1C1E",  
+  brandPrimary: "#0A66C2",      
+  onSurface: "#FFFFFF",         
+  muted: "#8E8E93",             
   success: "#34C759",           
   warning: "#FF9F0A",           
   error: "#FF3B30",             
@@ -28,7 +28,6 @@ export default function InserimentoScreen() {
     return `${a}-${m}-${g}`;
   };
 
-  // Calcola l'ora e il minuto corrente del sistema (formato HH:MM)
   const ottieniOraCorrente = () => {
     const oggi = new Date();
     const ore = String(oggi.getHours()).padStart(2, '0');
@@ -37,19 +36,15 @@ export default function InserimentoScreen() {
   };
 
   const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
-  // Stato per l'orario (Inizializzato all'ora attuale)
   const [oraInserita, setOraInserita] = useState(ottieniOraCorrente());
-
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  // ⏰ Tiene l'orario della casella aggiornato all'ora reale finché l'utente non lo modifica
   useEffect(() => {
     const timer = setInterval(() => {
-      // Aggiorna solo se l'utente non ha aperto o modificato il form toccando lo schermo
       if (glicemia === '' && insulina === '' && note === '') {
         setOraInserita(ottieniOraCorrente());
       }
@@ -81,7 +76,6 @@ export default function InserimentoScreen() {
     }
 
     try {
-      // 🪄 FUSIONE INTEGRATA AUTOMATICA: Concatena l'ora all'inizio del testo delle note
       const noteConOrarioFuso = note.trim() 
         ? `[${oraInserita}] ${note.trim()}`
         : `[${oraInserita}]`;
@@ -91,8 +85,8 @@ export default function InserimentoScreen() {
         glicemia: valoreGlicemia,
         insulina: insulina ? `${insulina} UI` : '-',
         tipo: momentoSelezionato,
-        note: noteConOrarioFuso, // Salva il testo unito [HH:MM] Note
-        ora: oraInserita,        // Salva il parametro ora isolato per i filtri cronologici dello storico
+        note: noteConOrarioFuso, 
+        ora: oraInserita,        
         dataTesto: ottieniDataFormattataStorico(dataISO)
       };
 
@@ -102,7 +96,6 @@ export default function InserimentoScreen() {
       elencoDati.unshift(nuovaMisurazione);
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
-      // Reset dei campi lasciando l'app pronta per un nuovo inserimento
       setGlicemia('');
       setInsulina('');
       setNote('');
@@ -121,9 +114,8 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 📅⏰ RIGHE TEMPORALI AFFIANCATE IN ALTO A SINISTRA */}
+      {/* 📅⏰ RIGHE TEMPORALI AFFIANCATE */}
       <View style={styles.containerRigaTemporale}>
-        {/* Selettore Calendario Data */}
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data Controllo</Text>
           {Platform.OS === 'web' ? (
@@ -155,7 +147,6 @@ export default function InserimentoScreen() {
           )}
         </View>
 
-        {/* Selettore Tabella a Scorrimento Ora */}
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Ora Controllo</Text>
           {Platform.OS === 'web' ? (
@@ -182,45 +173,43 @@ export default function InserimentoScreen() {
               }}
             />
           ) : (
-            <TextInput
-              style={styles.timeInputBackup}
-              value={oraInserita}
-              onChangeText={setOraInserita}
-              maxLength={5}
-            />
+            <TextInput style={styles.timeInputBackup} value={oraInserita} onChangeText={setOraInserita} maxLength={5} />
           )}
         </View>
       </View>
 
-      {/* 2. GLICEMIA */}
-      <View style={[styles.cardInput, { marginBottom: 12 }]}>
-        <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
-        <TextInput
-          style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
-          placeholder="00"
-          placeholderTextColor="#48484A"
-          keyboardType="numeric"
-          value={glicemia}
-          onChangeText={setGlicemia}
-          maxLength={3}
-        />
+      {/* 📊 NUOVA RIGA: Glicemia e Insulina affiancate (Larghezza 50% ciascuna con gap) */}
+      <View style={styles.rigaDatiPrincipali}>
+        {/* Blocco Glicemia */}
+        <View style={[styles.cardInput, styles.metaLarghezza]}>
+          <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
+          <TextInput
+            style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
+            placeholder="00"
+            placeholderTextColor="#48484A"
+            keyboardType="numeric"
+            value={glicemia}
+            onChangeText={setGlicemia}
+            maxLength={3}
+          />
+        </View>
+
+        {/* Blocco Insulina */}
+        <View style={[styles.cardInput, styles.metaLarghezza]}>
+          <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
+          <TextInput
+            style={styles.insulinaInput}
+            placeholder="0"
+            placeholderTextColor="#48484A"
+            keyboardType="numeric"
+            value={insulina}
+            onChangeText={setInsulina}
+            maxLength={2}
+          />
+        </View>
       </View>
 
-      {/* 3. INSULINA */}
-      <View style={[styles.cardInput, { marginBottom: 12 }]}>
-        <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
-        <TextInput
-          style={styles.insulinaInput}
-          placeholder="0"
-          placeholderTextColor="#48484A"
-          keyboardType="numeric"
-          value={insulina}
-          onChangeText={setInsulina}
-          maxLength={2}
-        />
-      </View>
-
-      {/* 4. SELETTORE RAPIDO 9 MOMENTI */}
+      {/* 🧩 SELETTORE RAPIDO 9 MOMENTI */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -237,7 +226,7 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      {/* 5. NOTE ALIMENTARI */}
+      {/* 📝 NOTE ALIMENTARI */}
       <View style={[styles.cardInput, { padding: 12, marginBottom: 16 }]}>
         <Text style={styles.labelLeft}>Note Alimentari / Sintomi</Text>
         <TextInput
@@ -267,17 +256,22 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
-  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', width: '100%' },
+  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
   
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
   containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
   dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
   
+  /* Stili per la nuova riga affiancata Glicemia + Insulina */
+  rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
+  metaLarghezza: { flex: 1 }, // Divide lo spazio perfettamente a metà (50% ciascuno)
+
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
   
-  glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 44, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
-  insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
+  /* Input allineati a sinistra all'interno del proprio box */
+  glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
+  insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
   
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
