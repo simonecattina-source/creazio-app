@@ -14,16 +14,24 @@ const COLORS = {
   error: "#FF3B30",
 };
 
+// Dati finti strutturati per testare l'allineamento perfetto delle colonne
 const DATI_LOG_MOCK = [
   {
     title: "Oggi",
-    data: [{ id: "1", glicemia: 145, insulina: "4 UI", tipo: "Post-Pranzo", note: "Pasta integrale", stato: "success", ora: "14:15", dataDoc: new Date() }]
+    data: [
+      { id: "1", glicemia: 110, insulina: "4 UI", tipo: "Prima Colazione", note: "Digiuno", dataDoc: new Date() },
+      { id: "2", glicemia: 145, insulina: "2 UI", tipo: "Dopo Colazione", note: "Fetta biscottata", dataDoc: new Date() },
+      { id: "3", glicemia: 95,  insulina: "6 UI", tipo: "Prima Pranzo", note: "", dataDoc: new Date() },
+      { id: "4", glicemia: 130, insulina: "3 UI", tipo: "Dopo Pranzo", note: "Riso", dataDoc: new Date() },
+      { id: "5", glicemia: 115, insulina: "5 UI", tipo: "Prima Cena", note: "", dataDoc: new Date() },
+      { id: "6", glicemia: 155, insulina: "2 UI", tipo: "Dopo Cena", note: "Pollo", dataDoc: new Date() }
+    ]
   },
   {
     title: "Ieri",
     data: [
-      { id: "2", glicemia: 65, insulina: "0 UI", tipo: "Pre-Pranzo", note: "Sintomi di ipo", stato: "warning", ora: "12:30", dataDoc: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      { id: "3", glicemia: 210, insulina: "6 UI", tipo: "Colazione", note: "Correzione iper", stato: "error", ora: "08:15", dataDoc: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+      { id: "7", glicemia: 125, insulina: "4 UI", tipo: "Prima Colazione", note: "", dataDoc: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      { id: "8", glicemia: 210, insulina: "8 UI", tipo: "Dopo Pranzo", note: "Dolce", dataDoc: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     ]
   }
 ];
@@ -42,26 +50,65 @@ export default function StoricoScreen() {
     return { ...sezione, data: elementiFiltrati };
   }).filter(sezione => sezione.data.length > 0);
 
-  // 🖨️ STAMPA ISOLATA WEB — Evita la cattura dello schermo dell'applicazione
   const generaEDesportaPDF = () => {
-    let righeTabellaHtml = "";
-    datiFiltrati.forEach(sezione => {
-      sezione.data.forEach(item => {
-        let coloreGlicemia = '#34C759';
-        if (item.glicemia > 180) coloreGlicemia = '#FF3B30';
-        if (item.glicemia < 70) coloreGlicemia = '#FF9F0A';
+    // Definizione esatta delle colonne richieste
+    const momentiColonne = [
+      "Prima Colazione", "Dopo Colazione", "Spuntino", 
+      "Prima Pranzo", "Dopo Pranzo", "Merenda", 
+      "Prima Cena", "Dopo Cena", "Notte"
+    ];
 
-        righeTabellaHtml += `
-          <tr>
-            <td>${sezione.title}</td>
-            <td>${item.ora}</td>
-            <td style="font-weight: bold; color: ${coloreGlicemia};">${item.glicemia} mg/dL</td>
-            <td style="font-weight: 600;">${item.insulina || '-'}</td>
-            <td>${item.tipo}</td>
-            <td style="font-style: italic;">${item.note || '-'}</td>
-            <td>-</td><td>-</td><td>-</td><td>-</td>
-          </tr>`;
+    let corpoTabellaHtml = "";
+
+    datiFiltrati.forEach(sezione => {
+      // Inizializziamo i contenitori vuoti per i 9 momenti di questo giorno
+      const rigaGlicemie: Record<string, string> = {};
+      const rigaInsuline: Record<string, string> = {};
+      const rigaNote: Record<string, string> = {};
+
+      momentiColonne.forEach(m => {
+        rigaGlicemie[m] = "-";
+        rigaInsuline[m] = "-";
+        rigaNote[m] = "-";
       });
+
+      // Mappiamo i dati reali nei rispettivi momenti della giornata
+      sezione.data.forEach(item => {
+        if (momentiColonne.includes(item.tipo)) {
+          let colore = '#34C759';
+          if (item.glicemia > 180) colore = '#FF3B30';
+          if (item.glicemia < 70) colore = '#FF9F0A';
+
+          rigaGlicemie[item.tipo] = `<span style="color: ${colore}; font-weight: bold;">${item.glicemia} mg/dL</span>`;
+          rigaInsuline[item.tipo] = item.insulina ? `<span style="font-weight: 600;">${item.insulina}</span>` : "-";
+          rigaNote[item.tipo] = item.note ? `<span style="font-style: italic; color: #555;">${item.note}</span>` : "-";
+        }
+      });
+
+      // Costruzione del blocco esatto di 4 righe per questo giorno
+      corpoTabellaHtml += `
+        <!-- RIGA 1: GLICEMIE -->
+        <tr>
+          <td class="cell-data" rowspan="4">${sezione.title}</td>
+          <td class="cell-label">Glicemia</td>
+          ${momentiColonne.map(m => `<td>\${rigaGlicemie[m]}</td>`).join('')}
+        </tr>
+        <!-- RIGA 2: INSULINE -->
+        <tr>
+          <td class="cell-label">Insulina</td>
+          ${momentiColonne.map(m => `<td>\${rigaInsuline[m]}</td>`).join('')}
+        </tr>
+        <!-- RIGA 3: NOTE -->
+        <tr>
+          <td class="cell-label">Note</td>
+          ${momentiColonne.map(m => `<td>\${rigaNote[m]}</td>`).join('')}
+        </tr>
+        <!-- RIGA 4: SEPARATORE / FIRMA -->
+        <tr class="row-separator">
+          <td class="cell-label">Firma / Note Mediche</td>
+          ${momentiColonne.map(() => `<td></td>`).join('')}
+        </tr>
+      `;
     });
 
     const htmlTemplate = `
@@ -69,61 +116,54 @@ export default function StoricoScreen() {
       <html>
         <head>
           <meta charset="utf-8">
-          <title>GlicoTrack — Report Medico</title>
           <style>
-            @page { size: landscape; margin: 15mm; }
-            @media print {
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #ffffff; }
-              .nested-header { background-color: #0A66C2 !important; color: #ffffff !important; }
-              th { background-color: #f2f2f7 !important; }
-            }
-            body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
-            .header-box { border-bottom: 3px solid #0A66C2; padding-bottom: 8px; margin-bottom: 20px; }
-            h1 { font-size: 24px; margin: 0; color: #0A66C2; font-weight: bold; }
-            p { font-size: 12px; margin: 5px 0 0 0; color: #8e8e93; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            th, td { border: 1px solid #e5e5ea; padding: 10px; text-align: left; font-size: 11px; }
-            th { background-color: #f2f2f7; font-weight: bold; color: #1c1c1e; }
-            .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 12px; font-weight: bold; padding: 8px; }
-            tr:nth-child(even) { background-color: #f9f9f9; }
+            @page { size: landscape; margin: 12mm; }
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; margin: 0; padding: 10px; background: #ffffff; }
+            h1 { font-size: 22px; color: #0A66C2; margin: 0 0 15px 0; font-weight: bold; border-bottom: 2px solid #0A66C2; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+            th, td { border: 1px solid #c7c7cc; padding: 8px 6px; font-size: 11px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+            th { background-color: #f2f2f7; font-weight: bold; font-size: 10px; text-transform: uppercase; }
+            .cell-data { font-weight: bold; background-color: #f0f5fa; color: #0A66C2; font-size: 12px; width: 80px; }
+            .cell-label { font-weight: 600; background-color: #f2f2f7; text-align: left; padding-left: 8px; width: 90px; }
+            .row-separator td { height: 20px; background-color: #fafafa; }
           </style>
         </head>
         <body>
-          <div class="header-box">
-            <h1>GlicoTrack — Registro Clinico Diabete</h1>
-            <p>Esportazione del Registro Glicemico | Data: ${new Date().toLocaleDateString('it-IT')}</p>
-          </div>
+          <h1>GlicoTrack — Registro Orizzontale Giornaliero</h1>
           <table>
             <thead>
               <tr>
-                <th colspan="4" class="nested-header">PARAMETRI METABOLICI PRINCIPALI</th>
-                <th colspan="2" class="nested-header">CONTESTO DIARIO</th>
-                <th colspan="4" class="nested-header">INDICATORI CLINICI AGGIUNTIVI (MEDICO)</th>
-              </tr>
-              <tr>
-                <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
-                <th>Momento Pasto</th><th>Note Alimentari</th>
-                <th>Carboidrati (g)</th><th>Attività (min)</th><th>Note Mediche</th><th>Firma Dottore</th>
+                <th>Data</th>
+                <th>Parametro</th>
+                <th>Prima Colazione</th>
+                <th>Dopo Colazione</th>
+                <th>Spuntino</th>
+                <th>Prima Pranzo</th>
+                <th>Dopo Pranzo</th>
+                <th>Merenda</th>
+                <th>Prima Cena</th>
+                <th>Dopo Cena</th>
+                <th>Notte</th>
               </tr>
             </thead>
-            <tbody>${righeTabellaHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato registrato.</td></tr>'}</tbody>
+            <tbody>
+              ${corpoTabellaHtml || '<tr><td colspan="11">Nessun dato registrato nel periodo selezionato.</td></tr>'}
+            </tbody>
           </table>
         </body>
-      </html>`;
+      </html>
+    `;
 
-    // Metodo puro per il web: apre una finestra separata contenente SOLO il codice dell'estratto tabellare
     const finestraStampa = window.open('', '_blank');
     if (finestraStampa) {
       finestraStampa.document.write(htmlTemplate);
       finestraStampa.document.close();
-      
-      // Attende il caricamento dei fogli di stile e lancia il gestore di sistema
       finestraStampa.onload = () => {
         finestraStampa.focus();
         finestraStampa.print();
       };
     } else {
-      alert("Disattiva il blocco pop-up del browser per visualizzare la griglia del PDF.");
+      alert("Disattiva il blocco pop-up del browser per visualizzare il registro.");
     }
   };
 
