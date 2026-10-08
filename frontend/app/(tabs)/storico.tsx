@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
-// 🎨 Palette colori coordinata in Dark Mode
 const COLORS = {
   background: "#121212",        
   surfaceSecondary: "#1C1C1E",  
@@ -77,7 +76,7 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
-  // Funzione avanzata che calcola un timestamp millisecondi preciso al minuto combinando data e ora
+  // Funzione avanzata che calcola un timestamp preciso al minuto unendo data e ora
   const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
     let giorno = 0, mese = 0, annoCompleto = 0;
     
@@ -110,17 +109,8 @@ export default function StoricoScreen() {
     const oggi = new Date();
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
     const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
-  };
-
-  const BlackdifferenzaGiorni = (stringaData: string) => {
-    if (filtroAttivo === 'all') return true;
-    const oggi = new Date();
-    const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
-    const timestampMisurazione = ottieniTimestampCompleto(stringaData, "00:00");
-    const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
+    const BlackdifferenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    return BlackdifferenzaGiorni <= parseInt(filtroAttivo) && BlackdifferenzaGiorni >= -1;
   };
 
   const eliminaSingoloItem = async () => {
@@ -148,7 +138,6 @@ export default function StoricoScreen() {
     setModMomento(item.tipo || 'Prima Colazione');
     setModOraText(item.ora || '12:00');
     
-    // Pulisce le note rimuovendo la traccia dell'orario fuso per non duplicarla nel box
     const testoNotePulito = item.note ? item.note.replace(/^\[\d{2}:\d{2}\]\s*/, '') : '';
     setModNote(testoNotePulito);
     
@@ -206,7 +195,7 @@ export default function StoricoScreen() {
     }
   };
 
-  // Raggruppa e applica il doppio ordinamento cronologico temporale (Data + Ora)
+  // 🪄 Raggruppa e applica il doppio ordinamento cronologico temporale (Data + Ora)
   const ottieniDatiSezionati = () => {
     const sezioni: Record<string, any[]> = {};
     const datiFiltratiTemporali = datiReali.filter(item => rientraNelFiltro(item.dataTesto || "Oggi"));
@@ -220,10 +209,11 @@ export default function StoricoScreen() {
     return Object.keys(sezioni)
       .sort((a, b) => ottieniTimestampCompleto(b, "00:00") - ottieniTimestampCompleto(a, "00:00")) 
       .map(chiave => {
+        // 🪄 CORRETTO: Variabile allineata ed esatta per l'ordinamento intraday delle ore
         const elementiGiornoOrdinati = sezioni[chiave].sort((itemA, itemB) => {
           return ottieniTimestampCompleto(chiave, itemB.ora || "00:00") - ottieniTimestampCompleto(chiave, itemA.ora || "00:00");
         });
-        return { title: chiave, data: elementosGiornoOrdinati };
+        return { title: chiave, data: elementiGiornoOrdinati };
       })
       .filter(s => s.data.length > 0);
   };
@@ -296,7 +286,7 @@ export default function StoricoScreen() {
           </style>
         </head>
         <body>
-          <h1>Diabety - Registro Storico Giornaliero</h1>
+          <h1>Diabety - Registro Storile Giornaliero</h1>
           <table>
             <thead>
               <tr>
@@ -330,7 +320,7 @@ export default function StoricoScreen() {
               <Text style={[styles.exportText, {color: COLORS.error}]}>Svuota</Text>
             </TouchableOpacity>
           )}
-          {/* Pulsante PDF in Rosso e Bianco con i bordi originali mantenuti */}
+          {/* Pulsante PDF Rosso e Bianco con i bordi originali */}
           <TouchableOpacity style={[styles.exportButton, styles.exportButtonPDFRed]} onPress={generaEDesportaPDF}>
             <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
             <Text style={styles.exportTextPDFWhite}>Esporta PDF</Text>
@@ -409,9 +399,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2', // Testo blu
-                    backgroundColor: '#FFFFFF', // Sfondo bianco ripristinato
-                    border: '1px solid #E5E5EA', // Bordo grigio originale
+                    color: '#0A66C2', 
+                    backgroundColor: '#FFFFFF', 
+                    border: '1px solid #E5E5EA', 
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -435,9 +425,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2', // Testo blu
-                    backgroundColor: '#FFFFFF', // Sfondo bianco ripristinato
-                    border: '1px solid #E5E5EA', // Bordo grigio originale
+                    color: '#0A66C2', 
+                    backgroundColor: '#FFFFFF', 
+                    border: '1px solid #E5E5EA', 
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -491,7 +481,6 @@ export default function StoricoScreen() {
           </View>
         </View>
       </Modal>
-
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
@@ -523,7 +512,6 @@ const styles = StyleSheet.create({
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: '#2C2C2E' },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontWeight: '600', fontSize: 14 },
   
-  /* Nuove proprietà visive per il tasto esporta rosso e bianco */
   exportButtonPDFRed: { backgroundColor: '#FF3B30', borderColor: '#FF3B30' },
   exportTextPDFWhite: { fontFamily: 'Plus Jakarta Sans', color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 
