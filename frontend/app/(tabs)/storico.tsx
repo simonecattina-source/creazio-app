@@ -90,23 +90,36 @@ export default function StoricoScreen() {
         }
       });
 
+      // Generazione rigida ed esplicita delle colonne per evitare bug di interpretazione
+      let trGlicemieHtml = "";
+      let trInsulineHtml = "";
+      let trNoteHtml = "";
+      let trFirmeHtml = "";
+
+      momentiColonne.forEach(m => {
+        trGlicemieHtml += `<td>${rigaGlicemie[m]}</td>`;
+        trInsulineHtml += `<td>${rigaInsuline[m]}</td>`;
+        trNoteHtml += `<td>${rigaNote[m]}</td>`;
+        trFirmeHtml += `<td></td>`;
+      });
+
       corpoTabellaHtml += `
         <tr>
           <td class="cell-data" rowspan="4">${sezione.title}</td>
           <td class="cell-label">Glicemia</td>
-          ${momentiColonne.map(m => `<td>\${rigaGlicemie[m]}</td>`).join('')}
+          ${trGlicemieHtml}
         </tr>
         <tr>
           <td class="cell-label">Insulina</td>
-          ${momentiColonne.map(m => `<td>\${rigaInsuline[m]}</td>`).join('')}
+          ${trInsulineHtml}
         </tr>
         <tr>
           <td class="cell-label">Note</td>
-          ${momentiColonne.map(m => `<td>\${rigaNote[m]}</td>`).join('')}
+          ${trNoteHtml}
         </tr>
         <tr class="row-separator">
           <td class="cell-label">Firma / Note Mediche</td>
-          ${momentiColonne.map(() => `<td></td>`).join('')}
+          ${trFirmeHtml}
         </tr>`;
     });
     const htmlTemplate = `
