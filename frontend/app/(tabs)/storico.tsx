@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SectionList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Print from 'expo-print';
 
 const COLORS = {
   surface: "#FFFFFF",
@@ -27,7 +28,6 @@ const DATI_LOG_MOCK = [
     ]
   }
 ];
-
 export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
 
@@ -43,76 +43,74 @@ export default function StoricoScreen() {
     return { ...sezione, data: elementiFiltrati };
   }).filter(sezione => sezione.data.length > 0);
 
-  // 📥 FUNZIONE DI DOWNLOAD DIRETTO DEL REPORT CLINICO
-  const scaricaReportPDF = () => {
-    let righeHtml = "";
-    datiFiltrati.forEach(sezione => {
-      sezione.data.forEach(item => {
-        righeHtml += `
-          <tr>
-            <td>${sezione.title}</td>
-            <td>${item.ora}</td>
-            <td style="font-weight: bold; color: ${item.glicemia > 180 ? '#FF3B30' : item.glicemia < 70 ? '#FF9F0A' : '#34C759'}">${item.glicemia} mg/dL</td>
-            <td>${item.insulina || '-'}</td>
-            <td>${item.tipo}</td>
-            <td>${item.note || '-'}</td>
-            <td>-</td><td>-</td><td>-</td><td>-</td>
-          </tr>`;
+  const generaEDesportaPDF = async () => {
+    try {
+      let righeTabellaHtml = "";
+      datiFiltrati.forEach(sezione => {
+        sezione.data.forEach(item => {
+          righeTabellaHtml += `
+            <tr>
+              <td>${sezione.title}</td>
+              <td>${item.ora}</td>
+              <td style="font-weight: bold; color: ${item.glicemia > 180 ? '#FF3B30' : item.glicemia < 70 ? '#FF9F0A' : '#34C759'}">${item.glicemia} mg/dL</td>
+              <td style="font-weight: 600;">${item.insulina || '-'}</td>
+              <td>${item.tipo}</td>
+              <td style="font-style: italic;">${item.note || '-'}</td>
+              <td>-</td><td>-</td><td>-</td><td>-</td>
+            </tr>
+          `;
+        });
       });
-    });
 
-    const htmlTemplate = `
-      <html>
-        <head>
-          <title>GlicoTrack - Registro Medico</title>
-          <style>
-            @page { size: landscape; margin: 12mm; }
-            body { font-family: sans-serif; color: #1c1c1e; margin: 0; padding: 20px; }
-            h1 { color: #0A66C2; font-size: 22px; margin-bottom: 4px; }
-            p { font-size: 12px; color: #8e8e93; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #e5e5ea; padding: 10px; font-size: 11px; text-align: left; }
-            th { background-color: #f2f2f7; font-weight: bold; color: #1c1c1e; }
-            .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 11px; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>GlicoTrack - Registro Medico Orizzontale</h1>
-          <p>Generato il: ${new Date().toLocaleDateString('it-IT')} | Filtro Temporale: ${filtroAttivo === 'all' ? 'Tutto lo storico' : `Ultimi \${filtroAttivo} giorni`}</p>
-          <table>
-            <thead>
-              <tr>
-                <th colspan="4" class="nested-header">PARAMETRI CLINICI</th>
-                <th colspan="2" class="nested-header">DIARIO DI BORDO</th>
-                <th colspan="4" class="nested-header">VALUTAZIONE SPECIALISTICA (MEDICO)</th>
-              </tr>
-              <tr>
-                <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
-                <th>Momento Pasto</th><th>Note Alimentari</th>
-                <th>Carboidrati (g)</th><th>Sport (min)</th><th>Note Medico</th><th>Firma Clinica</th>
-              </tr>
-            </thead>
-            <tbody>${righeHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato registrato.</td></tr>'}</tbody>
-          </table>
-        </body>
-      </html>`;
+      const htmlTemplate = `
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <style>
+              @page { size: landscape; margin: 20mm; }
+              body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1c1c1e; padding: 10px; background: #ffffff; }
+              h1 { font-size: 24px; margin-bottom: 5px; color: #0A66C2; font-weight: bold; }
+              p { font-size: 12px; margin-bottom: 20px; color: #8e8e93; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th, td { border: 1px solid #e5e5ea; padding: 10px; text-align: left; font-size: 11px; }
+              th { background-color: #f2f2f7; font-weight: bold; }
+              .nested-header { text-align: center; background-color: #0A66C2; color: white; font-size: 12px; font-weight: bold; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+            </style>
+          </head>
+          <body>
+            <h1>GlicoTrack — Report Clinico Glicemie</h1>
+            <p>Generato il: ${new Date().toLocaleDateString('it-IT')} | Filtro applicato: ${filtroAttivo === 'all' ? 'Tutto lo storico' : `Ultimi \${filtroAttivo} giorni`}</p>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th colspan="4" class="nested-header">PARAMETRI METABOLICI PRINCIPALI</th>
+                  <th colspan="2" class="nested-header">CONTESTO DIARIO</th>
+                  <th colspan="4" class="nested-header">INDICATORI CLINICI AGGIUNTIVI (MEDICO)</th>
+                </tr>
+                <tr>
+                  <th>Data</th><th>Ora</th><th>Glicemia</th><th>Insulina</th>
+                  <th>Momento Pasto</th><th>Note Alimentari</th>
+                  <th>Carboidrati (g)</th><th>Attività (min)</th><th>Note Mediche</th><th>Firma Dottore</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${righeTabellaHtml || '<tr><td colspan="10" style="text-align:center;">Nessun dato registrato.</td></tr>'}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
 
-    if (Platform.OS === 'web') {
-      // Trasforma l'HTML in un oggetto scaricabile (Blob) dal browser
-      const blob = new Blob([htmlTemplate], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      
-      // Crea un collegamento invisibile per forzare il download del file
-      const linkDiScaricamento = document.createElement('a');
-      linkDiScaricamento.href = url;
-      linkDiScaricamento.download = `report-glicemia-${filtroAttivo}.html`; // Nota: Viene scaricato come documento pronto per la stampa orizzontale pulita
-      
-      document.body.appendChild(linkDiScaricamento);
-      linkDiScaricamento.click();
-      
-      // Pulisce la memoria del browser
-      document.body.removeChild(linkDiScaricamento);
-      window.URL.revokeObjectURL(url);
+      const { uri } = await Print.printToFileAsync({ html: htmlTemplate });
+      if (Platform.OS === 'web') {
+        const nuovaFinestra = window.open(uri, '_blank');
+        if (!nuovaFinestra) alert("Se il PDF non si apre, disattiva il blocco pop-up del browser.");
+      }
+    } catch (errore) {
+      console.error(errore);
+      alert("Errore durante la generazione del file PDF.");
     }
   };
 
@@ -120,9 +118,9 @@ export default function StoricoScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Storico</Text>
-        <TouchableOpacity style={styles.exportButton} onPress={scaricaReportPDF}>
-          <Ionicons name="download-outline" size={16} color={COLORS.brandPrimary} />
-          <Text style={styles.exportText}>Scarica PDF</Text>
+        <TouchableOpacity style={styles.exportButton} onPress={generaEDesportaPDF}>
+          <Ionicons name="document-text-outline" size={16} color={COLORS.brandPrimary} />
+          <Text style={styles.exportText}>Esporta in PDF</Text>
         </TouchableOpacity>
       </View>
 
@@ -168,7 +166,7 @@ export default function StoricoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.surface, paddingTop: 50 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
+  header: { flexDirection: 'row', justifyBetween: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F0FA', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6 },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontWeight: '600', fontSize: 14 },
@@ -184,7 +182,7 @@ const styles = StyleSheet.create({
   timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 18, zIndex: 2 },
   timelineLine: { position: 'absolute', top: 30, bottom: 0, width: 2, backgroundColor: COLORS.surfaceSecondary, zIndex: 1 },
   card: { flex: 1, backgroundColor: COLORS.surfaceSecondary, borderRadius: 12, padding: 12, marginBottom: 12, marginLeft: 8 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  cardHeader: { flexDirection: 'row', justifyBetween: 'space-between', alignItems: 'baseline' },
   valoreGlicemia: { fontFamily: 'Space Grotesk', fontSize: 22, fontWeight: '700', color: COLORS.onSurface },
   unitaMisura: { fontSize: 12, color: COLORS.muted, fontWeight: '400' },
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
