@@ -21,7 +21,6 @@ const MOMENTI = [
 ];
 
 export default function InserimentoScreen() {
-  // Genera la data odierna nel formato ISO richiesto dal calendario web (AAAA-MM-GG)
   const ottieniDataOdiernaISO = () => {
     const oggi = new Date();
     const g = String(oggi.getDate()).padStart(2, '0');
@@ -30,16 +29,13 @@ export default function InserimentoScreen() {
     return `${a}-${m}-${g}`;
   };
 
-  // Stato per la data in formato ISO (es: "2026-10-08")
   const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
-
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
 
-  // Trasforma la data da AAAA-MM-GG al formato GG/MM/AA per lo storico e il PDF
   const ottieniDataFormattataStorico = (stringaISO: string) => {
     if (!stringaISO) return "";
     const [anno, mese, giorno] = stringaISO.split('-');
@@ -71,7 +67,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: ottieniDataFormattataStorico(dataISO) // Invia la data corretta nel formato GG/MM/AA
+        dataTesto: ottieniDataFormattataStorico(dataISO)
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -97,39 +93,38 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      {/* 1. 📅 SELETTORE CALENDARIO WEB NATIVO: Allineato a sinistra e privo di crash */}
-      <View style={[styles.cardInput, styles.dataCardSinistra]}>
+      {/* 1. 📅 DATA: Riquadro rimpicciolito, vicino e auto-adattivo sul lato sinistro */}
+      <View style={styles.dataCardSinistra}>
         <Text style={styles.labelLeft}>Data Controllo</Text>
         
         {Platform.OS === 'web' ? (
-          // Inietta il tag input del browser per mostrare il calendario visivo standard
           <input
             type="date"
             value={dataISO}
-            max={ottieniDataOdiernaISO()} // 🔒 Impedisce la selezione di date future
+            max={ottieniDataOdiernaISO()} 
             onChange={(e) => setDataISO(e.target.value)}
             style={{
               fontFamily: 'sans-serif',
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: '600',
               color: COLORS.brandPrimary,
               backgroundColor: '#FFFFFF',
               border: '1px solid #E5E5EA',
               borderRadius: '10px',
-              padding: '8px 12px',
+              padding: '6px 10px',
               marginTop: '4px',
-              width: '100%',
-              boxSizing: 'border-box',
-              outline: 'none'
+              width: 'auto', // Rende la linea vicina al testo e non troppo lunga
+              display: 'inline-block',
+              outline: 'none',
+              cursor: 'pointer'
             }}
           />
         ) : (
-          // Testo di backup se visualizzato fuori dal browser
           <Text style={styles.dataInput}>{ottieniDataFormattataStorico(dataISO)}</Text>
         )}
       </View>
 
-      {/* 2. GLICEMIA (Titolo e valore a sinistra) */}
+      {/* 2. GLICEMIA */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
         <TextInput
@@ -143,7 +138,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* 3. INSULINA (Titolo e valore a sinistra) */}
+      {/* 3. INSULINA */}
       <View style={[styles.cardInput, { marginBottom: 12 }]}>
         <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
         <TextInput
@@ -207,7 +202,9 @@ const styles = StyleSheet.create({
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', width: '100%' },
   
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
-  dataCardSinistra: { width: '55%', marginBottom: 16, alignSelf: 'flex-start', backgroundColor: 'transparent', padding: 0 },
+  
+  /* Blocco data ristretto vicino al testo e non a tutta larghezza */
+  dataCardSinistra: { width: 'auto', marginBottom: 16, alignSelf: 'flex-start', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
   
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 44, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
