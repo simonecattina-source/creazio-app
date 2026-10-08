@@ -4,16 +4,16 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
+// 🎨 Palette colori coordinata in Dark Mode
 const COLORS = {
-  surface: "#FFFFFF",
-  surfaceSecondary: "#F2F2F7",
-  brandPrimary: "#0A66C2",
-  onBrandPrimary: "#FFFFFF",
-  onSurface: "#1C1C1E",
-  muted: "#8E8E93",
-  success: "#34C759",
-  warning: "#FF9F0A",
-  error: "#FF3B30",
+  background: "#121212",        // Sfondo principale nero
+  surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite
+  brandPrimary: "#0A66C2",      // Blu per azioni principali
+  onSurface: "#FFFFFF",         // Testo principale bianco puro
+  muted: "#8E8E93",             // Testo secondario grigio
+  success: "#34C759",           // Verde soglia normale
+  warning: "#FF9F0A",           // Arancione soglia bassa
+  error: "#FF3B30",             // Rosso soglia alta
 };
 
 const MOMENTI_COLONNE = [
@@ -23,15 +23,20 @@ const MOMENTI_COLONNE = [
 ];
 
 export default function StoricoScreen() {
-  // 🔘 Stato aggiornato per includere anche il valore '14' nei filtri accettati
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
+  // Stati per la gestione della modifica ed eliminazione singola
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
   const [modGlicemia, setModGlicemia] = useState('');
   const [modInsulina, setModInsulina] = useState('');
   const [modNote, setModNote] = useState('');
   const [modMomento, setModMomento] = useState('');
+  
+  // 📅⏰ Nuovi stati per la modifica di Data e Ora dentro il popup
+  const [modDataISO, setModDataISO] = useState('');
+  const [modOraText, setModOraText] = useState('');
+
   const [mostraModalModifica, setMostraModalModifica] = useState(false);
   const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
   const [testoNotifica, setTestoNotifica] = useState('✓ Modifica salvata nel registro');
@@ -87,8 +92,6 @@ export default function StoricoScreen() {
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
     const timestampMisurazione = ottieniTimestamp(stringaData);
     const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
-    
-    // Accetta dinamicamente anche il range dei 14 giorni inserito nel ciclo
     return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
@@ -110,12 +113,25 @@ export default function StoricoScreen() {
     }
   };
 
+  // Carica i dati attuali inclusa la conversione della data in ISO per il calendario
   const apriModificaItem = (item: any) => {
     setItemSelezionato(item);
     setModGlicemia(item.glicemia.toString());
     setModInsulina(item.insulina ? item.insulina.replace(' UI', '').replace('-', '') : '');
     setModNote(item.note || '');
     setModMomento(item.tipo || 'Prima Colazione');
+    setModOraText(item.ora || '12:00');
+    
+    // Converte GG/MM/AA in AAAA-MM-GG per caricarlo correttamente nell'input calendar
+    if (item.dataTesto && item.dataTesto.includes('/')) {
+      const [g, m, a] = item.dataTesto.split('/');
+      setModDataISO(`20${a}-${m}-${g}`);
+    } else {
+      // Fallback su data odierna se indicato come "Oggi"
+      const d = new Date();
+      setModDataISO(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+
     setTestoNotifica('✓ Modifica salvata nel registro');
     setMostraNotificaModifica(false); 
     setMostraModalModifica(true);
@@ -127,6 +143,11 @@ export default function StoricoScreen() {
       alert("Inserisci un valore di glicemia valido.");
       return;
     }
+
+    // Riconverte la data ISO modificata nel popup in formato GG/MM/AA per lo storico
+    const [aaaa, mm, gg] = modDataISO.split('-');
+    const dataRiconvertita = `${gg}/${mm}/${aaaa.slice(-2)}`;
+
     try {
       const datiAggiornati = datiReali.map(item => {
         if (item.id === itemSelezionato.id) {
@@ -135,11 +156,14 @@ export default function StoricoScreen() {
             glicemia: valoreGlicemia,
             insulina: modInsulina ? `${modInsulina} UI` : '-',
             tipo: modMomento,
-            note: modNote
+            note: modNote,
+            ora: modOraText,          // Salva l'orario modificato a scorrimento
+            dataTesto: dataRiconvertita // Salva la data modificata a calendario
           };
         }
         return item;
       });
+
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(datiAggiornati));
       setDatiReali(datiAggiornati);
       setTestoNotifica('✓ Modifica salvata nel registro');
@@ -280,12 +304,11 @@ export default function StoricoScreen() {
       </View>
 
       {mostraNotificaSvuotato && (
-        <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#FCE8E6', borderColor: COLORS.error }]}>
-          <Text style={[styles.notificaTesto, { color: '#A51D24' }]}>✕ Intero diario glicemico svuotato</Text>
+        <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#132D1B', borderColor: COLORS.success }]}>
+          <Text style={[styles.notificaTesto, { color: COLORS.success }]}>✓ Intero diario glicemico svuotato</Text>
         </View>
       )}
 
-      {/* 🔘 BARRA FILTRI AGGIORNATA A 4 PULSANTI (Inclusi i 14 Giorni) */}
       <View style={styles.filterBar}>
         {[
           { id: '7', etichetta: '7 GG' },
@@ -339,13 +362,73 @@ export default function StoricoScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Gestisci Misurazione</Text>
+            
             <ScrollView style={{maxHeight: 280}} showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>Data Misurazione</Text>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="date"
+                  value={modDataISO}
+                  onChange={(e) => setModDataISO(e.target.value)}
+                  style={{
+                    fontFamily: 'sans-serif',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#0A66C2',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E5E5EA',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    marginBottom: '8px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    filter: 'invert(1)',
+                    WebkitFilter: 'invert(1)'
+                  }}
+                />
+              ) : (
+                <TextInput style={styles.textInput} value={modDataISO} onChangeText={setModDataISO} />
+              )}
+
+              <Text style={styles.inputLabel}>Ora Misurazione</Text>
+              {Platform.OS === 'web' ? (
+                <input
+                  type="time"
+                  value={modOraText}
+                  onChange={(e) => setModOraText(e.target.value)}
+                  style={{
+                    fontFamily: 'sans-serif',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#0A66C2',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E5E5EA',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    marginBottom: '8px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    filter: 'invert(1)',
+                    WebkitFilter: 'invert(1)'
+                  }}
+                />
+              ) : (
+                <TextInput style={styles.textInput} value={modOraText} onChangeText={setModOraText} />
+              )}
+
               <Text style={styles.inputLabel}>Glicemia (mg/dL)</Text>
-              <TextInput style={styles.textInput} keyboardType="numeric" value={modGlicemia} onChangeText={setModGlicemia} />
+              <TextInput style={styles.textInput} keyboardType="numeric" value={modGlicemia} onChangeText={setModGlicemia} maxLength={3} />
+
               <Text style={styles.inputLabel}>Insulina (Unità UI)</Text>
-              <TextInput style={styles.textInput} keyboardType="numeric" value={modInsulina} onChangeText={setModInsulina} placeholder="Nessuna" />
+              <TextInput style={styles.textInput} keyboardType="numeric" value={modInsulina} onChangeText={setModInsulina} placeholder="Nessuna" maxLength={2} />
+
               <Text style={styles.inputLabel}>Note / Pasti</Text>
               <TextInput style={styles.textInput} value={modNote} onChangeText={setModNote} />
+
               <Text style={styles.inputLabel}>Momento della Giornata</Text>
               <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4}}>
                 {MOMENTI_COLONNE.map(m => (
@@ -355,11 +438,13 @@ export default function StoricoScreen() {
                 ))}
               </View>
             </ScrollView>
+
             {mostraNotificaModifica && (
-              <View style={[styles.notificaTendina, testoNotifica.includes('eliminata') && {backgroundColor: '#FCE8E6', borderColor: COLORS.error}]}>
-                <Text style={[styles.notificaTesto, testoNotifica.includes('eliminata') && {color: '#A51D24'}]}>{testoNotifica}</Text>
+              <View style={[styles.notificaTendina, testoNotifica.includes('eliminata') && {backgroundColor: '#1C1314', borderColor: COLORS.error}]}>
+                <Text style={[styles.notificaTesto, testoNotifica.includes('eliminata') && {color: COLORS.error}]}>{testoNotifica}</Text>
               </View>
             )}
+
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnAnnulla} onPress={() => setMostraModalModifica(false)}>
                 <Text style={styles.btnAnnullaText}>Chiudi</Text>
@@ -401,18 +486,18 @@ export default function StoricoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.surface, paddingTop: 50 },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 50 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
-  exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F0FA', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6 },
-  exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontWeight: '600', fontSize: 14 },
+  exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: '#2C2C2E' },
+  exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontWeight: '600', fontSize: 14 },
   filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 16 },
   filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.brandPrimary },
   filterButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted },
-  filterButtonTextActive: { color: COLORS.onBrandPrimary },
+  filterButtonTextActive: { color: COLORS.onSurface, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
-  sectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: COLORS.onSurface, backgroundColor: COLORS.surface, paddingVertical: 8 },
+  sectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: COLORS.onSurface, backgroundColor: COLORS.background, paddingVertical: 8 },
   row: { flexDirection: 'row', minHeight: 90 },
   timelineContainer: { width: 24, alignItems: 'center' },
   timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 18, zIndex: 2 },
@@ -424,31 +509,33 @@ const styles = StyleSheet.create({
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
   tipoPasto: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, marginTop: 4, fontWeight: '500' },
   noteTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, fontStyle: 'italic' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12 },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
+  modalContent: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2C2C2E' },
   modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
-  inputLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginTop: 12, marginBottom: 4 },
-  textInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 10, fontSize: 14, color: COLORS.onSurface, marginBottom: 4 },
-  chipMomento: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 14 },
-  chipMomentoAttiva: { backgroundColor: '#E6F0FA', borderWidth: 1, borderColor: COLORS.brandPrimary },
-  chipMomentoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.onSurface },
-  chipMomentoTextAttiva: { color: COLORS.brandPrimary, fontWeight: '600' },
+  inputLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginTop: 10, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start' },
+  textInput: { backgroundColor: '#2C2C2E', borderRadius: 10, padding: 10, fontSize: 14, color: COLORS.onSurface, marginBottom: 4, textAlign: 'left', width: '100%' },
+  chipMomento: { backgroundColor: '#2C2C2E', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 14 },
+  chipMomentoAttiva: { backgroundColor: '#17314A', borderWidth: 1, borderColor: COLORS.brandPrimary },
+  chipMomentoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
+  chipMomentoTextAttiva: { color: COLORS.onSurface, fontWeight: '600' },
   modalActions: { flexDirection: 'row', gap: 8, marginTop: 24 },
-  btnAnnulla: { flex: 1, backgroundColor: COLORS.surfaceSecondary, padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  btnAnnulla: { flex: 1, backgroundColor: '#2C2C2E', padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnAnnullaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
   btnElimina: { flex: 1.2, backgroundColor: COLORS.error, padding: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
   btnEliminaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   btnSalva: { flex: 1.2, backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
-  notificaTendina: { backgroundColor: '#E6F4EA', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
-  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: '#137333', fontWeight: '600', fontSize: 14 },
-  modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContentSvuota: { backgroundColor: '#FFF', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16 },
-  iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#FCE8E6', padding: 10, borderRadius: 999 },
+  notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
+  notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
+  
+  modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContentSvuota: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', borderWidth: 1, borderColor: '#2C2C2E' },
+  iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#311718', padding: 10, borderRadius: 999 },
   modalTitleSvuota: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
   modalSubtitleSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.muted, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   modalActionsSvuota: { flexDirection: 'row', gap: 12, width: '100%' },
-  btnAnnullaSvuota: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  btnAnnullaSvuota: { flex: 1, backgroundColor: '#2C2C2E', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   btnAnnullaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
   btnConfermaSvuota: { flex: 1, backgroundColor: COLORS.error, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   btnConfermaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
