@@ -61,7 +61,8 @@ export default function GraficiScreen() {
             })
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
 
-          setPuntiGrafico(andamentoCronologico.slice(-15));
+          // Estrae gli ultimi 10 giorni con test per mantenere il grafico pulito su mobile
+          setPuntiGrafico(andamentoCronologico.slice(-10));
         } else {
           setMediaGlicemia(0);
           setPuntiGrafico([]);
@@ -71,109 +72,181 @@ export default function GraficiScreen() {
       console.log("Errore nel caricamento dei dati medici.");
     }
   };
+  // 🪄 MOTORE GEOMETRICO: Genera i tracciati SVG matematici per la scala 10-500 e l'asse X
   const renderizzaGraficoLineaNativa = () => {
     if (puntiGrafico.length === 0) return null;
 
-    const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
-    const altezzaGrafico = 200;
-    const margineLaterale = 20;
-    const spazioUtileX = larghezzaGrafico - (margineLaterale * 2);
+    // Dimensioni responsive adatte allo schermo dell'iPhone
+    const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 32;
+    const altezzaGrafico = 250;
+    
+    // Margini interni per fare spazio alla tabella numerica di sinistra (45px) e alle date in basso
+    const margineSinistro = 45;
+    const margineDestro = 15;
+    const margineSuperiore = 20;
+    const margineInferiore = 25;
 
-    const GLICEMIA_MIN = 40;
-    const GLICEMIA_MAX = 240;
+    const spazioUtileX = larghezzaGrafico - margineSinistro - margineDestro;
+    const spazioUtileY = altezzaGrafico - margineSuperiore - margineInferiore;
+
+    // 📈 SOGLIE RICHIESTE: Il grafico scala rigorosamente da un minimo di 10 a un massimo di 500 mg/dL
+    const GLICEMIA_MIN = 10;
+    const GLICEMIA_MAX = 500;
     
     const calcolaY = (valore: number) => {
       const valoreProtetto = Math.max(GLICEMIA_MIN, Math.min(GLICEMIA_MAX, valore));
+      // Calcola la percentuale invertita perché l'asse Y di SVG parte dall'alto verso il basso
       const percentuale = (valoreProtetto - GLICEMIA_MIN) / (GLICEMIA_MAX - GLICEMIA_MIN);
-      return altezzaGrafico - (percentuale * altezzaGrafico);
+      return margineSuperiore + spazioUtileY - (percentuale * spazioUtileY);
     };
 
+    // Calcola i punti Y esatti per le righe fisse del range ideale (70 e 180)
     const rigaSoglia180Y = calcolaY(180);
     const rigaSoglia70Y = calcolaY(70);
 
+    // Genera i punti della scala a sinistra (10, 100, 200, 300, 400, 500)
+    const valoriAsseY =;
+
+    // Mappa le coordinate X,Y di tutte le medie giornaliere inserite
     const coordinataPunti = puntiGrafico.map((punto, i) => {
-      const x = margineLaterale + (i * (spazioUtileX / (puntiGrafico.length - 1 || 1)));
+      const x = margineSinistro + (i * (spazioUtileX / (puntiGrafico.length - 1 || 1)));
       const y = calcolaY(punto.media);
       return { x, y, ...punto };
     });
 
+    // Costruisce la stringa del tracciato d="M..." per la linea continua dell'andamento quotidiano
     let percorsoLineaD = "";
     coordinataPunti.forEach((p, i) => {
-      // 🪄 CORRETTO: Adesso usa la variabile "i" allineata senza mandare in crash l'app
       if (i === 0) {
         percorsoLineaD += `M ${p.x} ${p.y}`;
       } else {
         percorsoLineaD += ` L ${p.x} ${p.y}`;
       }
     });
+    // Array fisso di valori per generare i numeri e le linee guida dell'asse verticale
+    const taccheAsseY =;
+
     return (
       <View style={styles.containerGraficoSvg}>
-        <svg width="100%" height="230" style={{ display: 'block', overflow: 'visible' }}>
+        <svg width="100%" height={altezzaGrafico} style={{ display: 'block', overflow: 'visible' }}>
           
-          {/* Fascia protetta ideale tra 70 e 180 */}
+          {/* ⚪ SFONDO GENERALE DEL GRAFICO CORRETTO IN GRIGIO CHIARO */}
           <rect
-            x={margineLaterale}
+            x={margineSinistro}
+            y={margineSuperiore}
+            width={spazioUtileX}
+            height={spazioUtileY}
+            fill="#F4F4F6"
+            rx="4"
+          />
+
+          {/* 🟢 AREA DI RANGE IDEALE (Evidenziata in verde tenue tra 70 e 180 mg/dL) */}
+          <rect
+            x={margineSinistro}
             y={rigaSoglia180Y}
             width={spazioUtileX}
             height={rigaSoglia70Y - rigaSoglia180Y}
-            fill="rgba(52, 199, 89, 0.06)"
+            fill="rgba(52, 199, 89, 0.12)"
           />
 
-          {/* Linea fissa 180 mg/dL */}
+          {/* 📊 RIGHE ORIZZONTALI DELLA TABELLA (Da 10 a 500 mg/dL) */}
+          {taccheAsseY.map((valore) => {
+            const yPos = calcolaY(valore);
+            return (
+              <g key={valore}>
+                {/* Linea sottile di griglia */}
+                <line
+                  x1={margineSinistro}
+                  y1={yPos}
+                  x2={larghezzaGrafico - margineDestro}
+                  y2={yPos}
+                  stroke="#E5E5EA"
+                  strokeWidth="1"
+                />
+                {/* 🔢 NUMERI ASSE VERTICALE A SINISTRA (Allineati a destra del margine) */}
+                <text
+                  x={margineSinistro - 8}
+                  y={yPos + 4}
+                  fill="#1C1C1E"
+                  fontSize="10"
+                  fontWeight="700"
+                  fontFamily="sans-serif"
+                  textAnchor="end"
+                >
+                  {valore}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* 🛡️ LINEA DI CONTROLLO FISSA ORIZZONTALE SOGLIA ALTA (180 mg/dL) */}
           <line
-            x1={margineLaterale}
+            x1={margineSinistro}
             y1={rigaSoglia180Y}
-            x2={larghezzaGrafico - margineLaterale}
+            x2={larghezzaGrafico - margineDestro}
             y2={rigaSoglia180Y}
             stroke={COLORS.error}
             strokeWidth="1.5"
-            strokeDasharray="4 4"
+            strokeDasharray="3 3"
           />
-          <text x={larghezzaGrafico - 15} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">
-            180
-          </text>
 
-          {/* Linea fissa 70 mg/dL */}
+          {/* 🛡️ LINEA DI CONTROLLO FISSA ORIZZONTALE SOGLIA BASSA (70 mg/dL) */}
           <line
-            x1={margineLaterale}
+            x1={margineSinistro}
             y1={rigaSoglia70Y}
-            x2={larghezzaGrafico - margineLaterale}
+            x2={larghezzaGrafico - margineDestro}
             y2={rigaSoglia70Y}
             stroke={COLORS.warning}
             strokeWidth="1.5"
-            strokeDasharray="4 4"
+            strokeDasharray="3 3"
           />
-          <text x={larghezzaGrafico - 15} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">
-            70
-          </text>
 
-          {/* Linea continua dell'andamento */}
+          {/* 📈 TRACCIATO DELLA LINEA CONTINUA DELL'ANDAMENTO GIORNALIERO */}
           {percorsoLineaD !== "" && (
-            <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d={percorsoLineaD}
+              fill="none"
+              stroke={COLORS.brandPrimary}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           )}
 
-          {/* Puntini sui nodi delle misurazioni */}
+          {/* 🔵 PUNTINI SUI NODI DELLE MISURAZIONI QUOTIDIANE */}
           {coordinataPunti.map((p, i) => (
             <g key={i}>
-              <circle cx={p.x} cy={p.y} r="4.5" fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1.5" />
-              {(coordinataPunti.length < 8 || i % 2 === 0) && (
-                <text x={p.x} y={p.y - 10} fill={COLORS.onSurface} fontSize="10" fontWeight="700" fontFamily="sans-serif" textAnchor="middle">
-                  {p.media}
-                </text>
-              )}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="4.5"
+                fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success}
+                stroke="#FFFFFF"
+                strokeWidth="1.5"
+              />
+              {/* Valore numerico stampato sopra il nodino per massima leggibilità */}
+              <text
+                x={p.x}
+                y={p.y - 10}
+                fill="#1C1C1E"
+                fontSize="10"
+                fontWeight="700"
+                fontFamily="sans-serif"
+                textAnchor="middle"
+              >
+                {p.media}
+              </text>
             </g>
           ))}
         </svg>
 
-        <View style={styles.rigaEtichetteDate}>
-          {puntiGrafico.map((p, i) => {
-            const mostraData = i === 0 || i === Math.floor(puntiGrafico.length / 2) || i === puntiGrafico.length - 1;
-            return (
-              <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>
-                {p.dataLabel.slice(0, 5)}
-              </Text>
-            );
-          })}
+        {/* ⏰ ASSE ORIZZONTALE IN BASSO: Elenco proporzionale dei giorni calcolati */}
+        <View style={[styles.rigaEtichetteDate, { paddingLeft: margineSinistro, paddingRight: margineDestro }]}>
+          {puntiGrafico.map((p, i) => (
+            <Text key={i} style={styles.dataTestoLabel}>
+              {p.dataLabel.slice(0, 5)}
+            </Text>
+          ))}
         </View>
       </View>
     );
@@ -182,6 +255,7 @@ export default function GraficiScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Analisi e Grafici</Text>
       
+      {/* Riquadro di riepilogo rapido del trimestre dei 91 giorni */}
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (91 GG)</Text>
         
@@ -200,6 +274,7 @@ export default function GraficiScreen() {
         </View>
       </View>
 
+      {/* Sezione del grafico interattivo con le due soglie fisse */}
       <View style={styles.cardGraficoContenitore}>
         <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
         <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
@@ -207,7 +282,7 @@ export default function GraficiScreen() {
         {puntiGrafico.length > 0 ? (
           renderizzaGraficoLineaNativa()
         ) : (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+          <View style={{ paddingVertical: 40, alignItems: 'center', width: '100%' }}>
             <Ionicons name="analytics-outline" size={32} color={COLORS.muted} style={{ marginBottom: 8 }} />
             <Text style={{ color: COLORS.muted, fontFamily: 'Plus Jakarta Sans', fontSize: 13 }}>Nessun dato disponibile per generare il grafico.</Text>
           </View>
@@ -230,7 +305,7 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
   
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
-  containerGraficoSvg: { width: '100%', alignItems: 'center', marginTop: 10, position: 'relative' },
-  rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16, marginTop: 10 },
+  containerGraficoSvg: { width: '100%', marginTop: 10, position: 'relative' },
+  rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10, paddingHorizontal: 2 },
   dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted }
 });
