@@ -135,7 +135,7 @@ export default function StoricoScreen() {
           </style>
         </head>
         <body>
-          <h1>GlicoTrack — Registro Orizzontale Giornaliero</h1>
+          <h1>Diabety - Registro Storico Giornaliero</h1>
           <table>
             <thead>
               <tr>
