@@ -114,7 +114,7 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 📅⏰ RIGHE TEMPORALI CON CORREZIONE CROMATICA BLU */}
+      {/* 📅⏰ RIGHE TEMPORALI RIPRISTINATE: Sfondo Bianco + Scritta Blu */}
       <View style={styles.containerRigaTemporale}>
         {/* Casella Data */}
         <View style={styles.dataCardSinistra}>
@@ -129,19 +129,16 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', // Forza la scritta in blu
-                backgroundColor: '#FFFFFF', 
-                border: '1px solid #E5E5EA', 
+                color: '#0A66C2', // 🔵 Testo interno rigorosamente BLU
+                backgroundColor: '#FFFFFF', // ⚪ Sfondo e cerchio ripristinati BIANCHI
+                border: '1px solid #E5E5EA', // 🔲 Bordo grigio chiaro originale
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
                 width: 'auto', 
                 display: 'inline-block',
                 outline: 'none',
-                cursor: 'pointer',
-                // 🪄 Matrice di filtri CSS tarata per convertire l'icona interna in BLU nativo anziché arancione
-                filter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)',
-                WebkitFilter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)'
+                cursor: 'pointer'
               }}
             />
           ) : (
@@ -161,19 +158,16 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', // Forza la scritta in blu
-                backgroundColor: '#FFFFFF', 
-                border: '1px solid #E5E5EA', 
+                color: '#0A66C2', // 🔵 Testo interno rigorosamente BLU
+                backgroundColor: '#FFFFFF', // ⚪ Sfondo e cerchio ripristinati BIANCHI
+                border: '1px solid #E5E5EA', // 🔲 Bordo grigio chiaro originale
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
                 width: 'auto', 
                 display: 'inline-block',
                 outline: 'none',
-                cursor: 'pointer',
-                // 🪄 Stesso filtro per rendere anche l'icona dell'orologio BLU
-                filter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)',
-                WebkitFilter: 'invert(31%) sepia(85%) saturate(1512%) hue-rotate(193deg) brightness(92%) contrast(96%)'
+                cursor: 'pointer'
               }}
             />
           ) : (
