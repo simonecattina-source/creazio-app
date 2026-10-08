@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 🎨 Palette colori con sfondo Data ripristinato
 const COLORS = {
-  background: "#121212",        // Sfondo principale nero
-  surfaceSecondary: "#1C1C1E",  // Sfondo dei riquadri antracite
-  brandPrimary: "#0A66C2",      // Blu per data e azioni principali
-  onSurface: "#FFFFFF",         // Testo principale bianco puro
-  muted: "#8E8E93",             // Testo secondario grigio
-  success: "#34C759",           // Verde soglia normale
-  warning: "#FF9F0A",           // Arancione soglia bassa
-  error: "#FF3B30",             // Rosso soglia alta
+  background: "#121212",        
+  surfaceSecondary: "#1C1C1E",  
+  brandPrimary: "#0A66C2",      
+  onSurface: "#FFFFFF",         
+  muted: "#8E8E93",             
+  success: "#34C759",           
+  warning: "#FF9F0A",           
+  error: "#FF3B30",             
 };
 
 const MOMENTI = [
@@ -29,12 +28,30 @@ export default function InserimentoScreen() {
     return `${a}-${m}-${g}`;
   };
 
+  // ⏰ Calcola l'ora corrente del sistema (formato HH:MM)
+  const ottieniOraCorrente = () => {
+    const oggi = new Date();
+    const ore = String(oggi.getHours()).padStart(2, '0');
+    const minuti = String(oggi.getMinutes()).padStart(2, '0');
+    return `${ore}:${minuti}`;
+  };
+
   const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
+  const [oraInserita, setOraInserita] = useState(ottieniOraCorrente());
+
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
+
+  // 🔄 Effetto che tiene l'ora aggiornata al secondo attuale finché l'utente non la modifica manualmente
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOraInserita(ottieniOraCorrente());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const ottieniDataFormattataStorico = (stringaISO: string) => {
     if (!stringaISO) return "";
@@ -66,7 +83,7 @@ export default function InserimentoScreen() {
         insulina: insulina ? `${insulina} UI` : '-',
         tipo: momentoSelezionato,
         note: note || '',
-        ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+        ora: oraInserita, 
         dataTesto: ottieniDataFormattataStorico(dataISO)
       };
 
@@ -79,6 +96,7 @@ export default function InserimentoScreen() {
       setGlicemia('');
       setInsulina('');
       setNote('');
+      setOraInserita(ottieniOraCorrente());
       
       setMostraNotifica(true);
       setTimeout(() => {
@@ -93,36 +111,74 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Inserisci Nuovi Dati</Text>
       
-      {/* 1. DATA: Ripristinato lo sfondo BIANCO originale con icona del calendario BIANCA */}
-      <View style={styles.dataCardSinistra}>
-        <Text style={styles.labelLeft}>Data Controllo</Text>
-        {Platform.OS === 'web' ? (
-          <input
-            type="date"
-            value={dataISO}
-            max={ottieniDataOdiernaISO()} 
-            onChange={(e) => setDataISO(e.target.value)}
-            style={{
-              fontFamily: 'sans-serif',
-              fontSize: '15px',
-              fontWeight: '600',
-              color: '#0A66C2', // Mantiene il bellissimo blu primario per il testo della data
-              backgroundColor: '#FFFFFF', // 🌟 RIPRISTINATO BIANCO ORIGINALE
-              border: '1px solid #E5E5EA', // 🌟 RIPRISTINATO BORDO GRIGIO CHIARO
-              borderRadius: '10px',
-              padding: '6px 10px',
-              marginTop: '4px',
-              width: 'auto', 
-              display: 'inline-block',
-              outline: 'none',
-              cursor: 'pointer',
-              filter: 'invert(1)', // Mantiene l'icona bianca nativa
-              WebkitFilter: 'invert(1)'
-            }}
-          />
-        ) : (
-          <Text style={styles.dataInput}>{ottieniDataFormattataStorico(dataISO)}</Text>
-        )}
+      <View style={styles.containerRigaTemporale}>
+        {/* Blocco Data */}
+        <View style={styles.dataCardSinistra}>
+          <Text style={styles.labelLeft}>Data Controllo</Text>
+          {Platform.OS === 'web' ? (
+            <input
+              type="date"
+              value={dataISO}
+              max={ottieniDataOdiernaISO()} 
+              onChange={(e) => setDataISO(e.target.value)}
+              style={{
+                fontFamily: 'sans-serif',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#0A66C2', 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E5E5EA', 
+                borderRadius: '10px',
+                padding: '6px 10px',
+                marginTop: '4px',
+                width: 'auto', 
+                display: 'inline-block',
+                outline: 'none',
+                cursor: 'pointer',
+                filter: 'invert(1)', 
+                WebkitFilter: 'invert(1)'
+              }}
+            />
+          ) : (
+            <Text style={styles.dataInput}>{ottieniDataFormattataStorico(dataISO)}</Text>
+          )}
+        </View>
+
+        {/* 🎡 Blocco Ora: attiva la ruota/tabella a scorrimento nativa di iOS/Android */}
+        <View style={styles.dataCardSinistra}>
+          <Text style={styles.labelLeft}>Ora Controllo</Text>
+          {Platform.OS === 'web' ? (
+            <input
+              type="time"
+              value={oraInserita}
+              onChange={(e) => setOraInserita(e.target.value)}
+              style={{
+                fontFamily: 'sans-serif',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#0A66C2', 
+                backgroundColor: '#FFFFFF', 
+                border: '1px solid #E5E5EA', 
+                borderRadius: '10px',
+                padding: '6px 10px',
+                marginTop: '4px',
+                width: 'auto', 
+                display: 'inline-block',
+                outline: 'none',
+                cursor: 'pointer',
+                filter: 'invert(1)', 
+                WebkitFilter: 'invert(1)'
+              }}
+            />
+          ) : (
+            <TextInput
+              style={styles.timeInputBackup}
+              value={oraInserita}
+              onChangeText={setOraInserita}
+              maxLength={5}
+            />
+          )}
+        </View>
       </View>
 
       {/* 2. GLICEMIA */}
@@ -203,9 +259,12 @@ const styles = StyleSheet.create({
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', width: '100%' },
   
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
-  dataCardSinistra: { width: 'auto', marginBottom: 16, alignSelf: 'flex-start', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
+  containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
+  dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
   
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
+  timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
+  
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 44, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
