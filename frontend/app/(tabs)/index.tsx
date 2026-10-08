@@ -10,9 +10,9 @@ const COLORS = {
   onBrandPrimary: "#FFFFFF",
   onSurface: "#1C1C1E",
   muted: "#8E8E93",
-  success: "#34C759",
-  warning: "#FF9F0A",
-  error: "#FF3B30",
+  success: "#34C759", // Verde normale
+  warning: "#FF9F0A", // Arancione basso (<70)
+  error: "#FF3B30",   // Rosso alto (>180)
 };
 
 const MOMENTI = [
@@ -24,22 +24,36 @@ const MOMENTI = [
 export default function InserimentoScreen() {
   const router = useRouter();
   
-  // Funzione per generare la data attuale nel formato GG/MM/AA
+  // Genera automaticamente la data di oggi nel formato GG/MM/AA
   const ottieniDataOdiernaFormattata = () => {
     const oggi = new Date();
     const giorno = String(oggi.getDate()).padStart(2, '0');
     const mese = String(oggi.getMonth() + 1).padStart(2, '0');
-    const anno = String(oggi.getFullYear()).slice(-2); // Estrae le ultime 2 cifre dell'anno (es: "26")
+    const anno = String(oggi.getFullYear()).slice(-2); 
     return `${giorno}/${mese}/${anno}`;
   };
 
-  // Stati del form (con la Data inserita come primo elemento predefinito)
+  // Stati del modulo di inserimento
   const [dataInserita, setDataInserita] = useState(ottieniDataOdiernaFormattata());
   const [glicemia, setGlicemia] = useState('');
   const [insulina, setInsulina] = useState('');
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
+
+  // 🪄 Inserisce automaticamente le barre divisorie / mentre l'utente digita i numeri
+  const gestisciScritturaData = (testo: string) => {
+    const numeriPuri = testo.replace(/\D/g, ""); // Cancella le lettere
+    let testoFormattato = numeriPuri;
+
+    if (numeriPuri.length > 2 && numeriPuri.length <= 4) {
+      testoFormattato = `${numeriPuri.slice(0, 2)}/${numeriPuri.slice(2)}`;
+    } else if (numeriPuri.length > 4) {
+      testoFormattato = `${numeriPuri.slice(0, 2)}/${numeriPuri.slice(2, 4)}/${numeriPuri.slice(4, 6)}`;
+    }
+    
+    setDataInserita(testoFormattato);
+  };
 
   const ottieniColoreGlicemia = () => {
     const valore = parseInt(glicemia);
@@ -52,9 +66,9 @@ export default function InserimentoScreen() {
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     
-    // Validazione della data inserita
-    const regexData = /^\d{2}\/\d{2}\/\d{2}\$/;
-    if (!regexData.test(dataInserita)) {
+    // 🛠️ Controllo della data corretto: accetta lettere, numeri e barre nel formato GG/MM/AA
+    const regexDataPulita = /^\d{2}\/\d{2}\/\d{2}\$/;
+    if (!regexDataPulita.test(dataInserita) || dataInserita.length !== 8) {
       alert("Inserisci la data nel formato corretto GG/MM/AA (es: 08/10/26).");
       return;
     }
@@ -72,7 +86,7 @@ export default function InserimentoScreen() {
         tipo: momentoSelezionato,
         note: note || '',
         ora: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-        dataTesto: dataInserita // Memorizza la vera data scelta dall'utente (GG/MM/AA)
+        dataTesto: dataInserita // Invia la data reale (anche passata) allo storico e al PDF
       };
 
       const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
@@ -81,11 +95,12 @@ export default function InserimentoScreen() {
       elencoDati.unshift(nuovaMisurazione);
       await AsyncStorage.setItem('glicotrack_data', JSON.stringify(elencoDati));
 
-      // Resetta i campi lasciando la data pronta per un eventuale altro inserimento nello stesso giorno
+      // Pulisce i campi pronti per un nuovo log lasciando impostata la data scelta
       setGlicemia('');
       setInsulina('');
       setNote('');
       
+      // Attiva il messaggio a tendina verde sopra il pulsante
       setMostraNotifica(true);
       setTimeout(() => {
         setMostraNotifica(false);
@@ -99,15 +114,16 @@ export default function InserimentoScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Nuovo Log Clinico</Text>
       
-      {/* 📅 CASELLA DELLA DATA INIZIALE RICHIESTA (GG/MM/AA) */}
+      {/* 📅 CASELLA DELLA DATA INIZIALE CON TASTIERA NUMERICA E MASCHERA AUTOMATICA */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Data del Controllo (GG/MM/AA)</Text>
         <TextInput
           style={styles.dataInput}
           placeholder="GG/MM/AA"
           placeholderTextColor="#C7C7CC"
+          keyboardType="numeric"
           value={dataInserita}
-          onChangeText={setDataInserita}
+          onChangeText={gestisciScritturaData}
           maxLength={8}
         />
       </View>
@@ -138,7 +154,7 @@ export default function InserimentoScreen() {
         />
       </View>
 
-      {/* SELETTORE DEI 9 MOMENTI */}
+      {/* SELETTORE DEI 9 MOMENTI (FLEX-ROW CHIPS) */}
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -155,18 +171,19 @@ export default function InserimentoScreen() {
         })}
       </View>
 
-      {/* NOTE */}
+      {/* NOTE ALIMENTARI */}
       <View style={styles.cardInput}>
         <Text style={styles.label}>Note Alimentari / Sintomi</Text>
         <TextInput
           style={styles.noteInput}
-          placeholder="Es: Riso e pollo, pre-allenamento..."
+          placeholder="Es: Riso integrale, stanchezza..."
           placeholderTextColor="#C7C7CC"
           value={note}
           onChangeText={setNote}
         />
       </View>
 
+      {/* NOTIFICA A TENDINA VERDE A SCOMPARSA AUTOMATICA */}
       {mostraNotifica && (
         <View style={styles.notificaTendina}>
           <Text style={styles.notificaTesto}>✓ Misurazione salvata nel registro</Text>
