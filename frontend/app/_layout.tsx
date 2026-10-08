@@ -23,12 +23,12 @@ export default function RootLayout() {
     Ionicons: require("@react-native-vector-icons/ionicons/fonts/Ionicons.ttf"),
   });
 
-  // 🔒 Blocco dello zoom su browser mobili (Safari/Chrome per iPhone)
+  // 🔒 BLOCCO ZOOM DEFINITIVO PER IPHONE (Meta + Eventi JavaScript iOS)
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      // 1. Forza il tag viewport standard
       let metaViewport = document.querySelector('meta[name="viewport"]');
-      const regoleBloccoZoom = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
-
+      const regoleBloccoZoom = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover";
       if (metaViewport) {
         metaViewport.setAttribute('content', regoleBloccoZoom);
       } else {
@@ -37,6 +37,32 @@ export default function RootLayout() {
         nuovoMeta.content = regoleBloccoZoom;
         document.head.appendChild(nuovoMeta);
       }
+
+      // 2. 🚫 Blocca il Pinch-to-Zoom (allargamento con due dita) su iOS
+      const bloccaPinchZoom = (evento: TouchEvent) => {
+        if (evento.touches.length > 1) {
+          evento.preventDefault();
+        }
+      };
+      document.addEventListener('touchstart', bloccaPinchZoom, { passive: false });
+
+      // 3. 🚫 Blocca il Doppio Tocco (Double-Tap Zoom) su iOS
+      let ultimoTocco = 0;
+      const bloccaDoppioTocco = (evento: TouchEvent) => {
+        const tempoAttuale = new Date().getTime();
+        const differenzaTempo = tempoAttuale - ultimoTocco;
+        if (differenzaTempo <= 300 && differenzaTempo > 0) {
+          evento.preventDefault();
+        }
+        ultimoTocco = tempoAttuale;
+      };
+      document.addEventListener('touchend', bloccaDoppioTocco, { passive: false });
+
+      // Pulizia dei listener se il componente si smonta
+      return () => {
+        document.removeEventListener('touchstart', bloccaPinchZoom);
+        document.removeEventListener('touchend', bloccaDoppioTocco);
+      };
     }
   }, []);
 
