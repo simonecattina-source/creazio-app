@@ -23,7 +23,8 @@ const MOMENTI_COLONNE = [
 ];
 
 export default function StoricoScreen() {
-  const [filtroAttivo, setFiltroAttivo] = useState<'7' | '30' | 'all'>('all');
+  // 🔘 Stato aggiornato per includere anche il valore '14' nei filtri accettati
+  const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
 
   const [itemSelezionato, setItemSelezionato] = useState<any | null>(null);
@@ -86,6 +87,8 @@ export default function StoricoScreen() {
     const dataInizioOggi = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate()).getTime();
     const timestampMisurazione = ottieniTimestamp(stringaData);
     const differenzaGiorni = (dataInizioOggi - timestampMisurazione) / (1000 * 60 * 60 * 24);
+    
+    // Accetta dinamicamente anche il range dei 14 giorni inserito nel ciclo
     return differenzaGiorni <= parseInt(filtroAttivo) && differenzaGiorni >= -1;
   };
 
@@ -282,15 +285,21 @@ export default function StoricoScreen() {
         </View>
       )}
 
+      {/* 🔘 BARRA FILTRI AGGIORNATA A 4 PULSANTI (Inclusi i 14 Giorni) */}
       <View style={styles.filterBar}>
-        {['7', '30', 'all'].map((f) => (
+        {[
+          { id: '7', etichetta: '7 GG' },
+          { id: '14', etichetta: '14 GG' },
+          { id: '30', etichetta: '30 GG' },
+          { id: 'all', etichetta: 'Tutti' }
+        ].map((f) => (
           <TouchableOpacity 
-            key={f} 
-            style={[styles.filterButton, filtroAttivo === f && styles.filterButtonActive]}
-            onPress={() => setFiltroAttivo(f as any)}
+            key={f.id} 
+            style={[styles.filterButton, filtroAttivo === f.id && styles.filterButtonActive]}
+            onPress={() => setFiltroAttivo(f.id as any)}
           >
-            <Text style={[styles.filterButtonText, filtroAttivo === f && styles.filterButtonTextActive]}>
-              {f === 'all' ? 'Tutti' : `${f} GG`}
+            <Text style={[styles.filterButtonText, filtroAttivo === f.id && styles.filterButtonTextActive]}>
+              {f.etichetta}
             </Text>
           </TouchableOpacity>
         ))}
@@ -397,10 +406,10 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F0FA', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6 },
   exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontWeight: '600', fontSize: 14 },
-  filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
+  filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 16 },
   filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.brandPrimary },
-  filterButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.muted },
+  filterButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted },
   filterButtonTextActive: { color: COLORS.onBrandPrimary },
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
   sectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: COLORS.onSurface, backgroundColor: COLORS.surface, paddingVertical: 8 },
