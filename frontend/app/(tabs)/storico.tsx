@@ -90,22 +90,20 @@ export default function StoricoScreen() {
         }
       });
 
-      // Generazione rigida ed esplicita delle colonne per evitare bug di interpretazione
       let trGlicemieHtml = "";
       let trInsulineHtml = "";
       let trNoteHtml = "";
-      let trFirmeHtml = "";
 
       momentiColonne.forEach(m => {
         trGlicemieHtml += `<td>${rigaGlicemie[m]}</td>`;
         trInsulineHtml += `<td>${rigaInsuline[m]}</td>`;
         trNoteHtml += `<td>${rigaNote[m]}</td>`;
-        trFirmeHtml += `<td></td>`;
       });
 
+      // Costruzione compatta a 3 righe (rowspan="3") senza la riga della firma
       corpoTabellaHtml += `
         <tr>
-          <td class="cell-data" rowspan="4">${sezione.title}</td>
+          <td class="cell-data" rowspan="3">${sezione.title}</td>
           <td class="cell-label">Glicemia</td>
           ${trGlicemieHtml}
         </tr>
@@ -113,15 +111,12 @@ export default function StoricoScreen() {
           <td class="cell-label">Insulina</td>
           ${trInsulineHtml}
         </tr>
-        <tr>
+        <tr class="row-separator">
           <td class="cell-label">Note</td>
           ${trNoteHtml}
-        </tr>
-        <tr class="row-separator">
-          <td class="cell-label">Firma / Note Mediche</td>
-          ${trFirmeHtml}
         </tr>`;
     });
+
     const htmlTemplate = `
       <!DOCTYPE html>
       <html>
@@ -136,7 +131,7 @@ export default function StoricoScreen() {
             th { background-color: #f2f2f7; font-weight: bold; font-size: 10px; text-transform: uppercase; }
             .cell-data { font-weight: bold; background-color: #f0f5fa; color: #0A66C2; font-size: 12px; width: 80px; }
             .cell-label { font-weight: 600; background-color: #f2f2f7; text-align: left; padding-left: 8px; width: 90px; }
-            .row-separator td { height: 20px; background-color: #fafafa; }
+            .row-separator td { background-color: #ffffff; }
           </style>
         </head>
         <body>
