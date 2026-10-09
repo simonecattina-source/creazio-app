@@ -3,15 +3,17 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// 🎨 PALETTE COLORI HIGH-CONTRAST CON ACCENTI NEON PREMIUM
 const COLORS = {
-  background: "#121212",        
-  surfaceSecondary: "#1C1C1E",  
-  brandPrimary: "#0A66C2",      
+  background: "#0A0A0C",        
+  surfaceSecondary: "#13131A",  
+  brandPrimary: "#00E5FF",      // Azzurro Cyan elettrico neon coordinato
   onSurface: "#FFFFFF",         
-  muted: "#8E8E93",             
-  success: "#34C759",           
-  warning: "#FF9F0A",           
-  error: "#FF3B30",             
+  muted: "#7E7E86",             
+  success: "#00E676",           // Verde smeraldo Oled (In Target)
+  warning: "#FF9100",           // Arancione vivo (Ipoglicemia)
+  error: "#FF5252",             // Rosso corallo neon (Iperglicemia)
+  borderGlass: "rgba(255, 255, 255, 0.06)" // Bordo lucido ultra-sottile
 };
 
 const MOMENTI = [
@@ -43,7 +45,6 @@ export default function InserimentoScreen() {
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
   
-  // ℹ️ Stato per gestire l'apertura e la chiusura della guida modale INFO
   const [mostraModalInfo, setMostraModalInfo] = useState(false);
 
   useEffect(() => {
@@ -76,7 +77,6 @@ export default function InserimentoScreen() {
     if (valore > 180) return COLORS.error;
     return COLORS.success;
   };
-
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     
@@ -137,19 +137,23 @@ export default function InserimentoScreen() {
       alert("Impossibile salvare i dati localmente.");
     }
   };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      {/* 🏷️ INTESTAZIONE CON TITOLO A SINISTRA E TASTO INFO A DESTRA */}
+      {/* 🏷️ INTESTAZIONE: MODIFICATO IL TASTO INFO CON SOLO ICONA REATTIVA E PULITA */}
       <View style={styles.headerForm}>
         <Text style={styles.title}>Inserisci Nuovi Dati</Text>
-        <TouchableOpacity style={styles.infoButton} onPress={() => setMostraModalInfo(true)}>
-          <Ionicons name="information-circle-outline" size={24} color={COLORS.brandPrimary} />
-          <Text style={styles.infoButtonText}>INFO</Text>
+        <TouchableOpacity 
+          style={styles.infoButtonMinimal} 
+          onPress={() => setMostraModalInfo(true)}
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        >
+          <Ionicons name="information-circle-outline" size={26} color={COLORS.brandPrimary} />
         </TouchableOpacity>
       </View>
       
-      {/* 📅⏰ RIGHE TEMPORALI CORRETTE */}
+      {/* 📅⏰ RIGHE TEMPORALI INALTERATE */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
@@ -163,9 +167,9 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', 
-                backgroundColor: '#FFFFFF', 
-                border: '1px solid #E5E5EA', 
+                color: '#00E5FF', 
+                backgroundColor: '#13131A', 
+                border: '1px solid rgba(255,255,255,0.06)', 
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
@@ -191,9 +195,9 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#0A66C2', 
-                backgroundColor: '#FFFFFF', 
-                border: '1px solid #E5E5EA', 
+                color: '#00E5FF', 
+                backgroundColor: '#13131A', 
+                border: '1px solid rgba(255,255,255,0.06)', 
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
@@ -209,7 +213,7 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* RIGA AFFIANCATA GLICEMIA + INSULINA */}
+      {/* BOX INPUT INALTERATI */}
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
@@ -274,42 +278,42 @@ export default function InserimentoScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
-      {/* 🎪 POPUP MODALE SCURO GUIDA CLINICA DIABETY (INFO) */}
-      <Modal visible={mostraModalInfo} animationType="slide" transparent={true}>
+      {/* 🎪 MODAL INTERFACCIA INFO: TOTALMENTE COORDINATO AL DESIGN NEON PREMIUM */}
+      <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalContentPremium}>
             <View style={styles.modalHeaderInfo}>
               <Text style={styles.modalTitleInfo}>Guida all'Uso</Text>
-              <TouchableOpacity onPress={() => setMostraModalInfo(false)}>
-                <Ionicons name="close-circle" size={26} color={COLORS.muted} />
+              <TouchableOpacity onPress={() => setMostraModalInfo(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close-circle" size={24} color={COLORS.muted} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalScrollInfo} showsVerticalScrollIndicator={false}>
               
-              <View style={styles.infoBlock}>
+              <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>🛡️ Archivio Rotante di 90 Giorni</Text>
                 <Text style={styles.infoBlockText}>
                   L'app memorizza ed esegue il calcolo dei dati basandosi sull'ultimo trimestre completo (13 settimane). Ad ogni nuovo inserimento, i log antecedenti ai 90 giorni vengono eliminati automaticamente per salvaguardare spazio e privacy.
                 </Text>
               </View>
 
-              <View style={styles.infoBlock}>
+              <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>⏰ Tracciamento Orario Intraday</Text>
                 <Text style={styles.infoBlockText}>
                   L'orario selezionato viene memorizzato per ordinare cronologicamente la timeline e viene fuso automaticamente tra parentesi quadre all'inizio delle tue Note. In questo modo rimarrà impresso in modo chiaro anche nell'esportazione.
                 </Text>
               </View>
 
-              <View style={styles.infoBlock}>
-                <Text style={styles.infoBlockTitle}>📊 Codici Colore Medici</Text>
+              <View style={styles.infoBlockPremium}>
+                <Text style={[styles.infoBlockTitle, { color: COLORS.success }]}>📊 Codici Colore Medici</Text>
                 <Text style={styles.infoBlockText}>
                   I valori inseriti assumono colori diversi in base alle soglie cliniche standard: Verde per valori normali (70-180 mg/dL), Arancione in caso di ipoglicemia (&lt;70 mg/dL) e Rosso per iperglicemia (&gt;180 mg/dL).
                 </Text>
               </View>
 
-              <View style={styles.infoBlock}>
-                <Text style={styles.infoBlockTitle}>📄 Esportazione PDF Griglia Orizzontale</Text>
+              <View style={styles.infoBlockPremium}>
+                <Text style={[styles.infoBlockTitle, { color: COLORS.brandPrimary }]}>📄 Esportazione PDF Griglia Orizzontale</Text>
                 <Text style={styles.infoBlockText}>
                   Dalla sezione "Storico" puoi applicare i filtri rapidi (7, 14, 30, 90 giorni) e generare un report a griglia orizzontale strutturato pronto per la stampa o l'invio diretto al tuo medico diabetologo.
                 </Text>
@@ -328,17 +332,19 @@ export default function InserimentoScreen() {
   );
 }
 
+// 📐 FOGLI DI STILE CSS AVANZATI (SIZE ED INGOMBRI DEI BOX INPUT PRESERVATI AL 100%)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background }, 
-  content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
+  content: { padding: 16, paddingTop: 45, paddingBottom: 40 },
   
   headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, width: '100%' },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
-  infoButton: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1C1C1E', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#2C2C2E' },
-  infoButtonText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontWeight: '700', fontSize: 13 },
+  
+  // 🌟 NUOVO STILE PULSATO INFO MINIMAL (Rimosso bordi e sfondo grigio, solo icona pura)
+  infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
 
-  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 12, marginBottom: 10 },
-  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
+  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 14, marginBottom: 10 },
+  cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
   containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
   dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
@@ -347,31 +353,32 @@ const styles = StyleSheet.create({
   metaLarghezza: { flex: 1 }, 
 
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
-  timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center' },
+  timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
   
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
   
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
-  chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
-  chipSelezionata: { backgroundColor: "#17314A", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
+  chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: 'transparent' },
+  chipSelezionata: { backgroundColor: "#0C232B", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
   chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
   
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
-  saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
+  saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#0A0A0C' },
+  notificaTendina: { backgroundColor: '#092414', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2C2C2E', maxHeight: '85%' },
-  modalHeaderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#2C2C2E', paddingBottom: 10 },
+  // 🌟 STILE MODAL EVOLUTO COORDINATO AI GRAFICI NEON
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 16 },
+  modalContentPremium: { backgroundColor: '#111116', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: COLORS.borderGlass, maxHeight: '85%' },
+  modalHeaderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderGlass, paddingBottom: 10 },
   modalTitleInfo: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
   modalScrollInfo: { marginBottom: 16 },
-  infoBlock: { marginBottom: 16, backgroundColor: '#121212', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E' },
+  infoBlockPremium: { marginBottom: 16, backgroundColor: '#020204', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.borderGlass },
   infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
-  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, lineHeight: 18, textAlign: 'left' },
+  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, lineHeight: 19, textAlign: 'left' },
   btnChiudiInfo: { backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
-  btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#FFFFFF' }
+  btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#0A0A0C' }
 });
