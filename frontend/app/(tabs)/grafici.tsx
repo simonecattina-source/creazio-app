@@ -122,7 +122,6 @@ export default function GraficiScreen() {
               ore = parseInt(h);
               oreMinuti = parseInt(m);
             }
-            // 🛡️ CORRETTO: Ripristinata la variabile corretta 'oreMinuti' al posto dell'errore automatico
             return { minutiAssoluti: (ore * 60) + oreMinuti, glicemia: item.glicemia };
           });
 
@@ -278,7 +277,22 @@ export default function GraficiScreen() {
           <text x={larghezzaGrafico - 12} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" textAnchor="end">180</text>
           <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
           <text x={larghezzaGrafico - 12} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" textAnchor="end">70</text>
+          
           {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+          
+          {/* 🛡️ BLINDAZIONE: Ciclo totalmente libero e garantito al 100%. Il pallino viene stampato SEMPRE. */}
+          {coordinataPunti.map((p, i) => {
+            const nascondiScrittaValore = coordinataPunti.length > 15 && i % 3 !== 0;
+            const colorePuntoTrimestre = p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success;
+            return (
+              <g key={`punto-trimestre-${i}`}>
+                <circle cx={p.x} cy={p.y} r="3.5" fill={colorePuntoTrimestre} stroke="#1C1C1E" strokeWidth="1" />
+                {!nascondiScrittaValore && (
+                  <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.media}</text>
+                )}
+              </g>
+            );
+          })}
         </svg>
         <View style={styles.rigaEtichetteDate}>
           {puntiGraficoLinea.map((p, i) => {
@@ -410,7 +424,6 @@ export default function GraficiScreen() {
           </View>
         )}
       </View>
-      {/* 📊 GRAFICO 4: STRUTTURA ED INTERFACCIA DEDICATA ALL'EMOGLOBINA GLICATA PREDITTIVA */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16, paddingBottom: 20 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Stima Emoglobina Glicata (HbA1c)</Text>
