@@ -41,7 +41,6 @@ export default function GraficiScreen() {
   const [medieMomenti, setMedieMomenti] = useState<any[]>([]);
   const [puntiGrafico24Ore, setPuntiGrafico24Ore] = useState<any[]>([]);
 
-  // 🧪 STATI AGGIUNTIVI PER IL CALCOLO DELL'EMOGLOBINA GLICATA ESTIMATA (HbA1c)
   const [glicataStimata, setGlicataStimata] = useState<number>(0);
   const [glicataMmol, setGlicataMmol] = useState<number>(0);
 
@@ -66,7 +65,6 @@ export default function GraficiScreen() {
       setModalTitolo("Medie per Momento");
       setModalTesto("Questo istogramma analizza lo storico trimestrale (90 giorni) diviso per i 7 controlli del diario clinico.\n\nOgni colonna mostra la media calcolata in quello specifico orario. Lo stato cromatico indica: Verde (a target), Arancione (basso/ipo) o Rosso (alto/iper). Il trattino (-) indica assenza di dati.");
     } else if (tipo === 'glicata') {
-      // 📝 NOTA MEDICA: NUOVO POPUP INFORMATIVO PER L'EMOGLOBINA GLICATA PREVERSION
       setModalTitolo("Stima Emoglobina Glicata (HbA1c)");
       setModalTesto("Questo modulo esegue una stima matematica predittiva della tua Emoglobina Glicata (HbA1c) basandosi sulla formula internazionale ADA (eAG) applicata a tutti i test degli ultimi 90 giorni.\n\nI binari cromatici dinamici indicano il livello di controllo metabolico:\n• Verde (< 7.0%): Ottimo controllo\n• Arancione (7.0% - 8.0%): Controllo moderato\n• Rosso (> 8.0%): Controllo insufficiente\n\nAttenzione: questo valore è puramente indicativo e matematico. Non sostituisce in alcun modo l'esame del sangue effettuato in laboratorio medico.");
     }
@@ -92,7 +90,6 @@ export default function GraficiScreen() {
           const mediaCalcolata = Math.round(somma / elenco.length);
           setMediaGlicemia(mediaCalcolata);
 
-          // 🧮 ALGORITMO MEDICO: Calcolo predittivo dell'HbA1c (%) ed HbA1c (mmol/mol)
           const stimaPercentuale = (mediaCalcolata + 46.7) / 28.7;
           setGlicataStimata(Math.round(stimaPercentuale * 10) / 10);
           const stimaMmol = (stimaPercentuale - 2.15) * 10.978;
@@ -119,24 +116,25 @@ export default function GraficiScreen() {
           const logDiIeri = elenco.filter((item: any) => item.dataTesto === dataIeriTesto);
 
           let puntiOggi = logDiOggi.map((item: any) => {
-            let ore = 12, minuti = 0;
+            let ore = 12, oreMinuti = 0;
             if (item.ora && item.ora.includes(':')) {
               const [h, m] = item.ora.split(':');
               ore = parseInt(h);
-              minuti = parseInt(m);
+              oreMinuti = parseInt(m);
             }
-            return { minutiAssoluti: (ore * 60) + minutes, glicemia: item.glicemia };
+            // 🛡️ CORRETTO: Ripristinata la variabile corretta 'oreMinuti' al posto dell'errore automatico
+            return { minutiAssoluti: (ore * 60) + oreMinuti, glicemia: item.glicemia };
           });
 
           if (logDiIeri.length > 0) {
             const logDiIeriOrdinati = logDiIeri.map((item: any) => {
-              let ore = 0, minuti = 0;
+              let ore = 0, oreMinuti = 0;
               if (item.ora && item.ora.includes(':')) {
                 const [h, m] = item.ora.split(':');
                 ore = parseInt(h);
-                minuti = parseInt(m);
+                oreMinuti = parseInt(m);
               }
-              return { minutiAssoluti: (ore * 60) + minuti, glicemia: item.glicemia };
+              return { minutiAssoluti: (ore * 60) + oreMinuti, glicemia: item.glicemia };
             }).sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
 
             const ultimoControlloIeriSera = logDiIeriOrdinati[logDiIeriOrdinati.length - 1];
@@ -250,6 +248,48 @@ export default function GraficiScreen() {
       </View>
     );
   };
+  const renderizzaGraficoLineaGiorni = () => {
+    if (puntiGraficoLinea.length === 0) return null;
+    const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
+    const altezzaGrafico = 150;
+    const margineLaterale = 20;
+    const spazioUtileX = larghezzaGrafico - (margineLaterale * 2);
+
+    const rigaSoglia180Y = calcolaCoordinateLineaX(180, altezzaGrafico);
+    const rigaSoglia70Y = calcolaCoordinateLineaX(70, altezzaGrafico);
+
+    const coordinataPunti = puntiGraficoLinea.map((punto, indice) => {
+      const x = margineLaterale + (indice * (spazioUtileX / (puntiGraficoLinea.length - 1 || 1)));
+      const y = calcolaCoordinateLineaX(punto.media, altezzaGrafico);
+      return { x, y, ...punto };
+    });
+
+    let percorsoLineaD = "";
+    coordinataPunti.forEach((p, i) => {
+      if (i === 0) percorsoLineaD += `M ${p.x} ${p.y}`;
+      else percorsoLineaD += ` L ${p.x} ${p.y}`;
+    });
+
+    return (
+      <View style={styles.containerGraficoSvg}>
+        <svg width="100%" height="175" style={{ display: 'block', overflow: 'visible' }}>
+          <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.06)" />
+          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1.5" strokeDasharray="4 4" />
+          <text x={larghezzaGrafico - 12} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" textAnchor="end">180</text>
+          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
+          <text x={larghezzaGrafico - 12} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" textAnchor="end">70</text>
+          {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+        </svg>
+        <View style={styles.rigaEtichetteDate}>
+          {puntiGraficoLinea.map((p, i) => {
+            const mostraData = i === 0 || i === Math.floor(puntiGraficoLinea.length / 2) || i === puntiGraficoLinea.length - 1;
+            return <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>{p.dataLabel.slice(0, 5)}</Text>;
+          })}
+        </View>
+      </View>
+    );
+  };
+
   const renderizzaGraficoColonneMomenti = () => {
     if (medieMomenti.length === 0) return null;
     const altezzaMassimaColonna = 110;
@@ -275,15 +315,13 @@ export default function GraficiScreen() {
     );
   };
 
-  // 📈 DETERMINAZIONE DINAMICA DEL COLORE PER I BINARI CROMATICI DELLA GLICATA
   const ottieniColoreGlicata = (val: number) => {
     if (val === 0) return "#2C2C2E";
-    if (val < 7.0) return COLORS.success;   // Verde: Ottimo controllo
-    if (val <= 8.0) return COLORS.warning;  // Arancione: Moderato
-    return COLORS.error;                    // Rosso: Insufficiente
+    if (val < 7.0) return COLORS.success;   
+    if (val <= 8.0) return COLORS.warning;  
+    return COLORS.error;                    
   };
 
-  // CALCOLO PERCENTUALE SPAZIALE PER IL RIEMPIMENTO DELLA BARRA LINEARE (Scala tra 4.0% e 12.0%)
   const calcolaPercentualeBarraGlicata = (val: number) => {
     if (val === 0) return 0;
     const MIN_GLIC = 4.0;
@@ -393,20 +431,10 @@ export default function GraficiScreen() {
               </Text>
             </View>
             
-            {/* BARRA DI PROGRESSO LINEARE DINAMICA CON SFONDO SCURO */}
             <View style={styles.binarioGrigioBarraSfondo}>
-              <View 
-                style={[
-                  styles.riempimentoAttivoBarra, 
-                  { 
-                    width: `${calcolaPercentualeBarraGlicata(glicataStimata)}%`, 
-                    backgroundColor: ottieniColoreGlicata(glicataStimata) 
-                  }
-                ]} 
-              />
+              <View style={[styles.riempimentoAttivoBarra, { width: `${calcolaPercentualeBarraGlicata(glicataStimata)}%`, backgroundColor: ottieniColoreGlicata(glicataStimata) }]} />
             </View>
 
-            {/* SEGNALATORI DEI BINARI CROMATICI DI RIFERIMENTO */}
             <View style={styles.rigaLegendaGlicataLimiti}>
               <Text style={styles.testoLegendaMarcatore}>4.0%</Text>
               <Text style={[styles.testoLegendaMarcatore, { color: COLORS.success }]}>Target (&lt;7%)</Text>
