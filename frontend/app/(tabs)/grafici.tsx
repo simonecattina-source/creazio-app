@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, Platform, Dimensions, TouchableOpac
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
-// 🌟 IMPORTE FONDAMENTALE: Componenti SVG nativi per prevenire il crash su iPhone
+// 🌟 LIBRERIA COMPATIBILE IPHONE ED EXPO SENZA RISK CRASH
 import Svg, { Path, Circle, Text as SvgText, Line, Rect, Defs, LinearGradient, Stop, G } from 'react-native-svg';
 
 const COLORS = {
@@ -206,15 +206,15 @@ export default function GraficiScreen() {
   const calcolaCoordinateLineaX = (valoreGlicemia: number, altezzaGrafico: number) => {
     const GLICEMIA_MIN = 40;
     const GLICEMIA_MAX = 240;
-    const valoreProtetto = Math.max(GLICEMIA_MIN, Math.min(GLICEMIA_MAX, valeurGlicemia));
+    const valoreProtetto = Math.max(GLICEMIA_MIN, Math.min(GLICEMIA_MAX, valoreGlicemia));
     const percentuale = (valoreProtetto - GLICEMIA_MIN) / (GLICEMIA_MAX - GLICEMIA_MIN);
     return altezzaGrafico - (percentuale * altezzaGrafico);
   };
 
   const generaPercorsoCurvoBezier = (punti: any[]) => {
     if (!punti || punti.length === 0) return "";
-    if (punti.length === 1) return `M ${punti[0].x} ${punti[0].y}`;
-    let d = `M ${punti[0].x} ${punti[0].y}`;
+    if (punti.length === 1) return `M ${punti.x} ${punti.y}`;
+    let d = `M ${punti.x} ${punti.y}`;
     for (let i = 0; i < punti.length - 1; i++) {
       const cpX1 = punti[i].x + (punti[i + 1].x - punti[i].x) / 3;
       const cpY1 = punti[i].y;
@@ -244,17 +244,18 @@ export default function GraficiScreen() {
     const percorsoCurvaStr = generaPercorsoCurvoBezier(coordinataPunti);
     let percorsoGradienteStr = "";
     if (coordinataPunti.length > 0) {
-      percorsoGradienteStr = percorsoCurvaStr + ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico} L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
+      percorsoGradienteStr = percorsoCurvaStr + ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico} L ${coordinataPunti.x} ${altezzaGrafico} Z`;
     }
 
     return (
       <View style={styles.containerGraficoSvg}>
         <Svg width={larghezzaGrafico} height="175">
           <Defs>
+            {/* 🌟 RISOLTO: Tag a chiusura maiuscola coerente per superare il Bundler di Metro */}
             <LinearGradient id="neonCyanGrad" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0%" stopColor={COLORS.brandPrimary} stopOpacity="0.25" />
               <Stop offset="100%" stopColor={COLORS.brandPrimary} stopOpacity="0.00" />
-            </linearGradient>
+            </LinearGradient>
           </Defs>
           <Rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(0, 230, 118, 0.04)" />
           <Line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1" strokeDasharray="3 3" opacity={0.6} />
@@ -293,17 +294,18 @@ export default function GraficiScreen() {
     const percorsoCurvaStr = generaPercorsoCurvoBezier(coordinataPunti);
     let percorsoGradienteStr = "";
     if (coordinataPunti.length > 0) {
-      percorsoGradienteStr = percorsoCurvaStr + ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico} L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
+      percorsoGradienteStr = percorsoCurvaStr + ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico} L ${coordinataPunti.x} ${altezzaGrafico} Z`;
     }
 
     return (
       <View style={styles.containerGraficoSvg}>
         <Svg width={larghezzaGrafico} height="175">
           <Defs>
+            {/* 🌟 RISOLTO: Tag a chiusura maiuscola coerente anche nel secondo grafico macro trend */}
             <LinearGradient id="neonPurpleGrad" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0%" stopColor={COLORS.brandSecondary} stopOpacity="0.25" />
               <Stop offset="100%" stopColor={COLORS.brandSecondary} stopOpacity="0.00" />
-            </linearGradient>
+            </LinearGradient>
           </Defs>
           <Rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(0, 230, 118, 0.03)" />
           <Line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1" strokeDasharray="3 3" opacity={0.5} />
@@ -362,7 +364,7 @@ export default function GraficiScreen() {
         </View>
       </Modal>
       
-      {/* 🌟 LAYOUT DELLE CARD ORIZZONTALI: 2/3 E 1/3 PERFETTAMENTE INTEGRATI */}
+      {/* 🌟 LAYOUT DELLE CARD SUPERIORI ORIZZONTALI AFFIANCATE: 2/3 E 1/3 RIGIDO COMPATIBILE */}
       <View style={styles.rigaCardSuperioriContainer}>
         <View style={styles.cardSuperioreDueTerzi}>
           <View style={styles.rigaTitoloGrafico}>
@@ -432,7 +434,7 @@ export default function GraficiScreen() {
         )}
       </View>
 
-      {/* CARD 5: ISTOGRAMMI ORARI */}
+      {/* CARD 5: ISTOGRAMMI PER MOMENTO DELLA GIORNATA */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
@@ -445,7 +447,7 @@ export default function GraficiScreen() {
         )}
       </View>
 
-      {/* CARD 6: EMOGLOBINA GLICATA */}
+      {/* CARD 6: STIMA EMOGLOBINA GLICATA */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16, paddingBottom: 20 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Stima Emoglobina Glicata (HbA1c)</Text>
