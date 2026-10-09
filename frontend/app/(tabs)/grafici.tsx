@@ -8,7 +8,7 @@ import { useFocusEffect } from 'expo-router';
 const COLORS = {
   background: "#0A0A0C",        
   surfaceSecondary: "#13131A",  
-  brandPrimary: "#00E5FF",      // Cyan elettrico neon (Grafico 24h e Test Totali)
+  brandPrimary: "#00E5FF",      // Cyan elettrico neon (Grafico 24h)
   brandSecondary: "#7D52FF",    // Viola tech (Trend macro)
   onSurface: "#FFFFFF",         
   muted: "#7E7E86",             
@@ -60,13 +60,13 @@ export default function GraficiScreen() {
   const apriSpiegazione = (tipo: string) => {
     if (tipo === '24h') {
       setModalTitolo("Andamento sulle 24 Ore");
-      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa curva continua azzurra unisce cronologicamente i tuoi test. Il grafico recupera automaticamente l'ultima misurazione di ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.");
+      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa curva continua azzurra unisce cronologicamente i tuoi test. Il grafico recupera automaticamente l'ultima misurazione di ieri sera prima di mezzanotte e la usa como punto di partenza a inizio giornata.");
     } else if (tipo === 'giornaliere') {
       setModalTitolo("Andamento Medie Giornaliere");
       setModalTesto("Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia tra le due linee tratteggiate evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza.");
     } else if (tipo === 'momenti') {
       setModalTitolo("Medie per Momento");
-      setModalTesto("Questo grafico analizza lo storico trimestrale (90 giorni) diviso per  7 momenti della giornata.\n\nOgni colonna mostra la media calcolata in quello specifico orario. Lo stato indica: Verde (a target), Arancione (basso/ipo) o Rosso (alto/iper). Il trattino (-) indica assenza di dati.");
+      setModalTesto("Questo grafico analizza lo storico trimestrale (90 giorni) diviso per 7 moments della giornata.\n\nOgni colonna mostra la media calcolata in quello specifico orario. Lo stato indica: Verde (a target), Arancione (basso/ipo) o Rosso (alto/iper). Il trattino (-) indica assenza di dati.");
     } else if (tipo === 'glicata') {
       setModalTitolo("Stima Emoglobina Glicata (HbA1c)");
       setModalTesto("Questo modulo esegue una stima matematica predittiva della tua Emoglobina Glicata (HbA1c) basandosi sulla formula internazionale ADA (eAG) applicata a tutti i test degli ultimi 90 giorni.\n\nI binari indicano il livello di controllo metabolico:\n• Verde (< 7.0%): Ottimo controllo\n• Arancione (7.0% - 8.0%): Controllo moderato\n• Rosso (> 8.0%): Controllo insufficiente\n\nAttenzione: questo valore è puramente indicativo e matematico. Non sostituisce in alcun modo l'esame del sangue effettuato in laboratorio medico.");
@@ -201,7 +201,6 @@ export default function GraficiScreen() {
     return altezzaGrafico - (percentuale * altezzaGrafico);
   };
 
-  // 🛠️ FIX ALGORITMO DI TRACCIAMENTO BEZIER CORRETTO ED OTTIMIZZATO
   const generaPercorsoCurvoBezier = (punti: any[]) => {
     if (!punti || punti.length === 0) return "";
     if (punti.length === 1) return `M ${punti[0].x} ${punti[0].y}`;
@@ -215,7 +214,6 @@ export default function GraficiScreen() {
     }
     return d;
   };
-
   const renderizzaGraficoLinea24Ore = () => {
     if (puntiGrafico24Ore.length === 0) return null;
     const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
@@ -279,6 +277,7 @@ export default function GraficiScreen() {
       </View>
     );
   };
+
   const renderizzaGraficoLineaGiorni = () => {
     if (puntiGraficoLinea.length === 0) return null;
     const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
@@ -402,12 +401,12 @@ export default function GraficiScreen() {
         </View>
       </Modal>
       
-      {/* CARD 1: PANORAMICA STATISTICHE CON 3 BOX NEON COMPATTI */}
+      {/* 🌟 CARD 1 MODIFICATA: ELIMINATO IL BOX 3 DEI TEST TOTALI */}
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
         <View style={styles.containerRigaRiepilogo}>
           
-          {/* BOX 1: MEDIA CON BORDO INDICATORE SINISTRO NEON */}
+          {/* BOX 1: MEDIA (PRENDE IL 50% DELLO SPAZIO ORIZZONTALE) */}
           <View style={[styles.infoBoxStat, { borderLeftColor: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.borderGlass : COLORS.success }]}>
             <Text style={styles.statLabel}>Media</Text>
             <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.muted : COLORS.success }]}>
@@ -415,19 +414,11 @@ export default function GraficiScreen() {
             </Text>
           </View>
           
-          {/* BOX 2: IN RANGE (TIR) CON BORDO INDICATORE SINISTRO NEON */}
+          {/* BOX 2: IN RANGE (PRENDE IL 50% DELLO SPAZIO ORIZZONTALE) */}
           <View style={[styles.infoBoxStat, { borderLeftColor: totaleMisurazioni === 0 ? COLORS.borderGlass : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
             <Text style={styles.statLabel}>In Range (TIR)</Text>
             <Text style={[styles.statValue, { color: totaleMisurazioni === 0 ? COLORS.muted : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
               {totaleMisurazioni > 0 ? `${timeInRange}%` : '-'}
-            </Text>
-          </View>
-          
-          {/* BOX 3: TEST TOTALI COORDINATO CYAN ELETTRICO */}
-          <View style={[styles.infoBoxStat, { borderLeftColor: totaleMisurazioni > 0 ? COLORS.brandPrimary : COLORS.borderGlass }]}>
-            <Text style={styles.statLabel}>Test Totali</Text>
-            <Text style={[styles.statValue, { color: totaleMisurazioni > 0 ? COLORS.onSurface : COLORS.muted }]}>
-              {totaleMisurazioni}
             </Text>
           </View>
           
@@ -467,6 +458,7 @@ export default function GraficiScreen() {
           </View>
         )}
       </View>
+
       {/* CARD 4: ISTOGRAMMI PER MOMENTO DELLA GIORNATA */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
@@ -525,8 +517,6 @@ export default function GraficiScreen() {
     </ScrollView>
   );
 }
-
-// 📐 FOGLI DI STILE CSS AVANZATI (SIZE ED INGOMBRI ORIGINARI PRESERVATI AL 100%)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 16, paddingTop: 45, paddingBottom: 40 },
@@ -537,6 +527,7 @@ const styles = StyleSheet.create({
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16, borderWidth: 1, borderColor: COLORS.borderGlass },
   containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 10 },
   
+  // 📐 MODIFICATO: Grazie a flex: 1 su due elementi, occupano ciascuno esattamente il 50% dello spazio orizzontale della riga
   infoBoxStat: { flex: 1, backgroundColor: '#020204', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.borderGlass, borderLeftWidth: 3.5, alignItems: 'flex-start' },
   statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '700', color: COLORS.muted, marginBottom: 4 },
   statValue: { fontFamily: 'Space Grotesk', fontSize: 19, fontWeight: '900', color: COLORS.onSurface },
