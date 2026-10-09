@@ -450,19 +450,40 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-      {/* ℹ️ POPUP MODAL INFORMATIVO SULL'ESPORTAZIONE PDF */}
+      {/* ℹ️ POPUP MODAL INFORMATIVO AVANZATO CON INTESTAZIONI E ICONE */}
       <Modal visible={mostraHelpPDF} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentHelp}>
-            <View style={styles.iconaHelpContainer}>
-              <Ionicons name="document-text" size={32} color={COLORS.error} />
-            </View>
-            <Text style={styles.modalTitleHelp}>Esportazione PDF</Text>
-            <Text style={styles.modalSubtitleHelp}>
-              L'esportazione in PDF avverrà cliccando sul pulsante "Esporta PDF" permettendoti di scaricare il file.{"\n\n"}
-              Selezionando lo Storico (tra 7 GG, 14 GG, 30 GG, 90 GG, Tutti) il sistema ti esporterà in PDF direttamente il range dei giorni selezionati.
-            </Text>
+            <Text style={styles.modalTitleHelp}>Guida e Funzionalità</Text>
             
+            {/* SEZIONE 1: ESPORTAZIONE PDF */}
+            <View style={styles.helpSectionRow}>
+              <View style={[styles.helpIconBox, { backgroundColor: '#241011' }]}>
+                <Ionicons name="document-text" size={18} color={COLORS.error} />
+              </View>
+              <View style={styles.helpTextContainer}>
+                <Text style={styles.helpSectionHeader}>Esportazione Report PDF</Text>
+                <Text style={styles.helpSectionBody}>
+                  Cliccando sul pulsante <Text style={{fontWeight: '700', color: COLORS.error}}>"Esporta PDF"</Text> potrai scaricare il documento clinico temporale.{"\n"}
+                  Il sistema esporterà in modo intelligente solo l'intervallo di tempo che hai selezionato nella barra dei filtri (<Text style={{fontWeight: '600'}}>7, 14, 30, 90 giorni o Tutti</Text>).
+                </Text>
+              </View>
+            </View>
+
+            {/* SEZIONE 2: MODIFICA RECORD */}
+            <View style={styles.helpSectionRow}>
+              <View style={[styles.helpIconBox, { backgroundColor: '#0C232B' }]}>
+                <Ionicons name="pencil-sharp" size={18} color={COLORS.brandPrimary} />
+              </View>
+              <View style={styles.helpTextContainer}>
+                <Text style={styles.helpSectionHeader}>Modifica e Cancellazione</Text>
+                <Text style={styles.helpSectionBody}>
+                  Puoi correggere, variare o eliminare definitivamente qualsiasi misurazione salvata nel diario.{"\n"}
+                  Ti basta toccare l'icona della <Text style={{fontWeight: '700', color: COLORS.brandPrimary}}>matita</Text> posizionata a destra di ogni singolo record cronologico nella lista.
+                </Text>
+              </View>
+            </View>
+
             <TouchableOpacity style={styles.btnChiudiHelp} onPress={() => setMostraHelpPDF(false)}>
               <Text style={styles.btnChiudiHelpText}>Ho capito</Text>
             </TouchableOpacity>
@@ -658,11 +679,14 @@ const styles = StyleSheet.create({
   btnConfermaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   notificaTendinaGenerale: { padding: 12, borderRadius: 12, borderWidth: 1, marginHorizontal: 16, marginBottom: 12, alignItems: 'center' },
 
-  // 📐 STILI POPUP HELP PDF IN DARK MODE PREMIUM
-  modalContentHelp: { backgroundColor: '#111116', borderRadius: 24, padding: 24, width: '100%', maxWidth: 350, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
-  iconaHelpContainer: { marginBottom: 12, backgroundColor: '#241011', padding: 12, borderRadius: 999 },
-  modalTitleHelp: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 12 },
-  modalSubtitleHelp: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.muted, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  btnChiudiHelp: { backgroundColor: COLORS.brandPrimary, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, width: '100%', alignItems: 'center' },
+  // 📐 SCHEDA INFORMATIVA HELP AVANZATA
+  modalContentHelp: { backgroundColor: '#111116', borderRadius: 24, padding: 24, width: '100%', maxWidth: 360, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
+  modalTitleHelp: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '800', color: COLORS.onSurface, marginBottom: 24, alignSelf: 'flex-start', letterSpacing: -0.3 },
+  helpSectionRow: { flexDirection: 'row', width: '100%', gap: 14, marginBottom: 20, alignItems: 'flex-start' },
+  helpIconBox: { padding: 8, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 34, height: 34 },
+  helpTextContainer: { flex: 1, alignItems: 'flex-start' },
+  helpSectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
+  helpSectionBody: { fontFamily: 'Plus Jakarta Sans', fontSize: 12.5, color: COLORS.muted, lineHeight: 18, textAlign: 'left' },
+  btnChiudiHelp: { backgroundColor: COLORS.brandPrimary, paddingVertical: 12, borderRadius: 12, width: '100%', alignItems: 'center', marginTop: 10 },
   btnChiudiHelpText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#0A0A0C' }
 });
