@@ -61,7 +61,7 @@ export default function GraficiScreen() {
       setModalTesto("Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia verde sullo sfondo evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza: restare all'interno di questa fascia ti permette di mantenere un ottimo Time in Range (TIR).");
     } else if (tipo === 'momenti') {
       setModalTitolo("Medie per Momento");
-      setModalTesto("Questo istogramma analizza lo storico trimestrale (90 giorni) diviso per i 7 controlli del diario clinico.\n\nOgni colonna mostra la media glicemica calcolata in quello specifico orario. Il colore della barra ti indica visivamente lo stato: Verde (a target), Arancione (basso/iper) o Rosso (alto/ipo). Il trattino (-) indica che non ci sono ancora dati inseriti.");
+      setModalTesto("Questo istogramma analizza lo storico trimestrale (90 giorni) diviso per i 7 controlli del diario clinico.\n\nOgni colonna mostra la media glicemica calcolata in quello specifico orario. Il colore della barra ti indica visivamente lo stato: Verde (a target), Arancione (basso/ipo) o Rosso (alto/iper). Il trattino (-) indica che non ci sono ancora dati inseriti.");
     }
     setModalVisibile(true);
   };
