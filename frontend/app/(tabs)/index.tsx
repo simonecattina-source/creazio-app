@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 🎨 PALETTE COLORI HIGH-CONTRAST CON ACCENTI NEON PREMIUM CHIARI ED ELEGANTI
+// 🎨 PALETTE COLORI ELEVATA PER MASSIMO STACCO IN DARK MODE
 const COLORS = {
   background: "#0A0A0C",        
   surfaceSecondary: "#13131A",  // Nero profondo tech per i contenitori
@@ -13,7 +13,8 @@ const COLORS = {
   success: "#00E676",           // Verde smeraldo Oled
   warning: "#FF9100",           // Arancione vivo
   error: "#FF5252",             // Rosso corallo neon
-  borderGlass: "rgba(255, 255, 255, 0.08)" // Bordo lucido moderno e sottile
+  borderGlass: "rgba(255, 255, 255, 0.08)",
+  borderGlassBright: "rgba(255, 255, 255, 0.15)" // Bordo ad alto contrasto per i box principali
 };
 
 const MOMENTI = [
@@ -153,7 +154,7 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
       
-      {/* 📅⏰ RIGHE TEMPORALI AGGIORNATE IN STILE MODERNO E NITIDO */}
+      {/* 📅⏰ RIGHE TEMPORALI INALTERATE */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
@@ -213,14 +214,14 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* BOX INPUT AFFIANCATI INALTERATI NEGLI INGOMBRI E NEI MODULI */}
+      {/* 🌟 RIGHE APPORTATE CON I DUE BOX AD ALTO STACCO IN MARGINE ED EFFETTI PRESTIGIO */}
       <View style={styles.rigaDatiPrincipali}>
-        <View style={[styles.cardInput, styles.metaLarghezza]}>
-          <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
+        <View style={[styles.cardInputHighlight, styles.metaLarghezza]}>
+          <Text style={styles.labelLeftHighlight}>Glicemia (mg/dL)</Text>
           <TextInput
             style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
             placeholder="00"
-            placeholderTextColor="#48484A"
+            placeholderTextColor="#636366" // Placeholder hi-tech più visibile
             keyboardType="numeric"
             value={glicemia}
             onChangeText={setGlicemia}
@@ -228,12 +229,12 @@ export default function InserimentoScreen() {
           />
         </View>
 
-        <View style={[styles.cardInput, styles.metaLarghezza]}>
-          <Text style={styles.labelLeft}>Insulina (Unità UI)</Text>
+        <View style={[styles.cardInputHighlight, styles.metaLarghezza]}>
+          <Text style={styles.labelLeftHighlight}>Insulina (Unità UI)</Text>
           <TextInput
             style={styles.insulinaInput}
             placeholder="0"
-            placeholderTextColor="#48484A"
+            placeholderTextColor="#636366" // Placeholder hi-tech più visibile
             keyboardType="numeric"
             value={insulina}
             onChangeText={setInsulina}
@@ -350,12 +351,13 @@ const styles = StyleSheet.create({
   rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
   metaLarghezza: { flex: 1 }, 
 
-  // 🌟 TESTO DELLA DATA PIÙ CHIARO ED ULTRA-LEGGIBILE SU MOBILE (BIANCO SU FONDO SCURO)
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.onSurface, textAlign: 'left', paddingLeft: 2 },
-  
-  // 🌟 RIQUADRO ORARIO MOBILE ALLINEATO: Sfondo scuro premium nitido con finissimo bordo luminoso trasparente
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
   
+  // 🌟 NUOVO STILE AD ALTO STACCO PER I DUE CONTENITORI GLICEMIA E INSULINA (Bordo brillante + Leggera profondità)
+  cardInputHighlight: { backgroundColor: "#15151F", borderRadius: 16, padding: 16, alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlassBright, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 },
+  labelLeftHighlight: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '700', color: "#A4A4AA", marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
+
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
