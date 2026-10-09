@@ -4,15 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
+// 🎨 PALETTE AD ALTO CONTRASTO CON ROSSO CORALLO NEON PER IDENTITÀ PDF
 const COLORS = {
-  background: "#121212",        
-  surfaceSecondary: "#1C1C1E",  
-  brandPrimary: "#0A66C2",      
-  onSurface: "#FFFFFF",         
-  muted: "#8E8E93",             
-  success: "#34C759",           
-  warning: "#FF9F0A",           
-  error: "#FF3B30",             
+  background: "#0A0A0C",        
+  surfaceSecondary: "#13131A",  // Nero profondo tech per i contenitori
+  brandPrimary: "#00E5FF",      // Azzurro Cyan elettrico neon coordinato
+  onSurface: "#FFFFFF",         // Bianco purissimo ultra-nitido
+  muted: "#7E7E86",             
+  success: "#00E676",           // Verde smeraldo Oled
+  warning: "#FF9100",           // Arancione vivo
+  error: "#FF5252",             // Rosso corallo neon (Richiamo Icona PDF)
+  borderGlass: "rgba(255, 255, 255, 0.08)",
+  borderGlassBright: "rgba(255, 255, 255, 0.15)"
 };
 
 const MOMENTI_COLONNE = [
@@ -47,6 +50,7 @@ export default function StoricoScreen() {
     }, [])
   );
 
+  // 🔒 LOGICA MEMORIA NATIVA E CANCELLAZIONE PROTETTA
   const caricaDatiLocali = async () => {
     try {
       const datiSalvati = await AsyncStorage.getItem('glicotrack_data');
@@ -75,6 +79,7 @@ export default function StoricoScreen() {
     setMostraConfermaSvuota(false);
     await cancellaTuttoStorico();
   };
+  // 🔒 ALGORITMO FILTRI E TIMESTAMP INTEGRALMENTE PRESERVATO
   const ottieniTimestampCompleto = (stringaData: string, stringaOra: string) => {
     let giorno = 0, mese = 0, annoCompleto = 0;
     
@@ -229,11 +234,11 @@ export default function StoricoScreen() {
       })
       .filter(s => s.data.length > 0);
   };
+  // 🔒 ALGORITMO PDF INTEGRALMENTE PROTETTO NELLA SUA STRUTTURA A 4 GIORNI
   const generaEDesportaPDF = () => {
     let corpoHtmlCompleto = "";
     const sezioniDati = ottieniDatiSezionati();
 
-    // 🪄 ALGORITMO DI PAGINAZIONE: Cicla le giornate raggruppandole a blocchi di 4 per pagina
     for (let i = 0; i < sezioniDati.length; i += 4) {
       const bloccoQuattroGiorni = sezioniDati.slice(i, i + 4);
       let righeTabellaBlocco = "";
@@ -286,8 +291,6 @@ export default function StoricoScreen() {
       });
 
       const rigaInterruzionePagina = (i + 4 < sezioniDati.length) ? 'style="page-break-after: always;"' : '';
-
-      // 🪄 CONTROLLO DI COPERTINA RIGIDO: Se i === 0 inserisce il titolo blu, altrimenti lo omette sui fogli successivi
       const htmlTitoloIntestazione = (i === 0) 
         ? `<h1>Diabety - Registro Storico Giornaliero</h1>` 
         : `<div style="height: 10px;"></div>`;
@@ -335,19 +338,15 @@ export default function StoricoScreen() {
         </body>
       </html>`;
 
-    // 📱 SBLOCCO DOWNLOAD NATIVO IPHONE VIA BLOB OBJECT
     if (Platform.OS === 'web' && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       try {
         const blobFile = new Blob([htmlTemplate], { type: 'text/html;charset=utf-8;' });
         const urlBlob = URL.createObjectURL(blobFile);
-        
         const linkDownloadVirtuale = document.createElement('a');
         linkDownloadVirtuale.href = urlBlob;
         linkDownloadVirtuale.setAttribute('download', 'Registro_Glicemico_Diabety.html');
         document.body.appendChild(linkDownloadVirtuale);
-        
         linkDownloadVirtuale.click();
-        
         document.body.removeChild(linkDownloadVirtuale);
         URL.revokeObjectURL(urlBlob);
       } catch (errore) {
@@ -360,7 +359,7 @@ export default function StoricoScreen() {
     } else {
       const finestraStampa = window.open('', '_blank');
       if (finestraStampa) {
-        finestraStampa.document.write(htmlTemplate);
+        fnestraStampa.document.write(htmlTemplate);
         finestraStampa.document.close();
         finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
       }
@@ -368,23 +367,26 @@ export default function StoricoScreen() {
   };
   return (
     <View style={styles.container}>
+      
+      {/* 🏷️ HEADER OPERATIVO CON RIGIDO RICHIAMO COLORE DOCUMENTO */}
       <View style={styles.header}>
         <Text style={styles.title}>Storico</Text>
         <View style={{flexDirection:'row', gap: 8}}>
           {datiReali.length > 0 && (
-            <TouchableOpacity style={[styles.exportButton, {backgroundColor:'#FFEEF0'}]} onPress={() => setMostraConfermaSvuota(true)}>
-              <Text style={[styles.exportText, {color: COLORS.error}]}>Svuota</Text>
+            <TouchableOpacity style={styles.exportButtonSvuotaMinimal} onPress={() => setMostraConfermaSvuota(true)}>
+              <Text style={styles.exportTextSvuotaRed}>Svuota</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={[styles.exportButton, styles.exportButtonPDFRed]} onPress={generaEDesportaPDF}>
-            <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.exportTextPDFWhite}>Esporta PDF</Text>
+          {/* 🌟 PULSANTE PDF IN VERSIONE ROSSO ACROBAT NEON AD ALTO STACCO */}
+          <TouchableOpacity style={styles.exportButtonPDFAcrobatNeon} onPress={generaEDesportaPDF}>
+            <Ionicons name="document-text-outline" size={16} color={COLORS.error} />
+            <Text style={styles.exportTextPDFAcrobatNeon}>Esporta PDF</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {mostraNotificaSvuotato && (
-        <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#132D1B', borderColor: COLORS.success }]}>
+        <View style={[styles.notificaTendinaGenerale, { backgroundColor: '#092414', borderColor: COLORS.success }]}>
           <Text style={[styles.notificaTesto, { color: COLORS.success }]}>✓ Intero diario glicemico svuotato</Text>
         </View>
       )}
@@ -399,10 +401,10 @@ export default function StoricoScreen() {
         ].map((f) => (
           <TouchableOpacity 
             key={f.id} 
-            style={[styles.filterButton, filtroAttivo === f.id && styles.filterButtonActive]}
+            style={[styles.filterButton, filtroAttivo === f.id && styles.filterButtonActiveNeon]}
             onPress={() => setFiltroAttivo(f.id as any)}
           >
-            <Text style={[styles.filterButtonText, filtroAttivo === f.id && styles.filterButtonTextActive]}>
+            <Text style={[styles.filterButtonText, filtroAttivo === f.id && styles.filterButtonTextActiveNeon]}>
               {f.etichetta}
             </Text>
           </TouchableOpacity>
@@ -439,6 +441,7 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+      {/* POPUP MODAL DI MODIFICA INALTERATO */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -455,9 +458,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E5EA',
+                    color: '#00E5FF',
+                    backgroundColor: '#13131A',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -481,9 +484,9 @@ export default function StoricoScreen() {
                     fontFamily: 'sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#0A66C2',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E5EA',
+                    color: '#00E5FF',
+                    backgroundColor: '#13131A',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     marginBottom: '8px',
@@ -537,6 +540,8 @@ export default function StoricoScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* CONFIRMA CANCELLAZIONE */}
       <Modal visible={mostraConfermaSvuota} animationType="fade" transparent={true}>
         <View style={styles.modalOverlayCentrato}>
           <View style={styles.modalContentSvuota}>
@@ -560,57 +565,63 @@ export default function StoricoScreen() {
     </View>
   );
 }
+// 📐 CONFIGURAZIONI CSS CON RICHIAMO RIGIDO NATURALE ICONA PDF ROSSA
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 50 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
-  exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: '#2C2C2E' },
-  exportText: { fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontWeight: '600', fontSize: 14 },
-  exportButtonPDFRed: { backgroundColor: '#FF3B30', borderColor: '#FF3B30' },
-  exportTextPDFWhite: { fontFamily: 'Plus Jakarta Sans', color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-  filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 4, marginBottom: 16 },
-  filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
-  filterButtonActive: { backgroundColor: COLORS.brandPrimary },
+  
+  exportButtonSvuotaMinimal: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#13131A', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 82, 82, 0.15)' },
+  exportTextSvuotaRed: { fontFamily: 'Plus Jakarta Sans', color: COLORS.error, fontWeight: '600', fontSize: 14 },
+
+  exportButtonPDFAcrobatNeon: { flexDirection: 'row', alignItems: 'center', backgroundColor: "#241011", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: COLORS.error },
+  exportTextPDFAcrobatNeon: { fontFamily: 'Plus Jakarta Sans', color: COLORS.error, fontWeight: '700', fontSize: 14 },
+
+  filterBar: { flexDirection: 'row', paddingHorizontal: 16, gap: 5, marginBottom: 16 },
+  filterButton: { flex: 1, backgroundColor: COLORS.surfaceSecondary, paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
+  filterButtonActiveNeon: { backgroundColor: "#0C232B", borderColor: COLORS.brandPrimary, borderWidth: 1 },
   filterButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '600', color: COLORS.muted },
-  filterButtonTextActive: { color: COLORS.onSurface, fontWeight: '700' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 32 },
+  filterButtonTextActiveNeon: { color: COLORS.brandPrimary, fontWeight: '700' },
+
+  listContent: { paddingHorizontal: 16, paddingBottom: 110 }, 
   sectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 16, fontWeight: '700', color: COLORS.onSurface, backgroundColor: COLORS.background, paddingVertical: 8 },
   row: { flexDirection: 'row', minHeight: 90 },
   timelineContainer: { width: 24, alignItems: 'center' },
   timelineDot: { width: 12, height: 12, borderRadius: 6, marginTop: 18, zIndex: 2 },
   timelineLine: { position: 'absolute', top: 30, bottom: 0, width: 2, backgroundColor: COLORS.surfaceSecondary, zIndex: 1 },
-  card: { flex: 1, backgroundColor: COLORS.surfaceSecondary, borderRadius: 12, padding: 12, marginBottom: 12, marginLeft: 8 },
+  card: { flex: 1, backgroundColor: COLORS.surfaceSecondary, borderRadius: 12, padding: 12, marginBottom: 12, marginLeft: 8, borderWidth: 1, borderColor: COLORS.borderGlass },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   valoreGlicemia: { fontFamily: 'Space Grotesk', fontSize: 22, fontWeight: '700', color: COLORS.onSurface },
   unitaMisura: { fontSize: 12, color: COLORS.muted, fontWeight: '400' },
   oraTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
   tipoPasto: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, marginTop: 4, fontWeight: '500' },
   noteTest: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, fontStyle: 'italic' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#2C2C2E' },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 16 },
+  modalContent: { backgroundColor: '#111116', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: COLORS.borderGlass },
   modalTitle: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
   inputLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, fontWeight: '600', color: COLORS.muted, marginTop: 10, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start' },
-  textInput: { backgroundColor: '#2C2C2E', borderRadius: 10, padding: 10, fontSize: 14, color: COLORS.onSurface, marginBottom: 4, textAlign: 'left', width: '100%' },
-  chipMomento: { backgroundColor: '#2C2C2E', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 14 },
-  chipMomentoAttiva: { backgroundColor: '#17314A', borderWidth: 1, borderColor: COLORS.brandPrimary },
+  textInput: { backgroundColor: '#1C1C24', borderRadius: 10, padding: 10, fontSize: 14, color: COLORS.onSurface, marginBottom: 4, textAlign: 'left', width: '100%', borderWidth: 1, borderColor: COLORS.borderGlass },
+  chipMomento: { backgroundColor: '#1C1C24', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 14, borderWidth: 1, borderColor: 'transparent' },
+  chipMomentoAttiva: { backgroundColor: '#0C232B', borderWidth: 1, borderColor: COLORS.brandPrimary },
   chipMomentoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted },
-  chipMomentoTextAttiva: { color: COLORS.onSurface, fontWeight: '600' },
+  chipMomentoTextAttiva: { color: COLORS.brandPrimary, fontWeight: '700' },
   modalActions: { flexDirection: 'row', gap: 8, marginTop: 24 },
-  btnAnnulla: { flex: 1, backgroundColor: '#2C2C2E', padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  btnAnnulla: { flex: 1, backgroundColor: '#1C1C24', padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
   btnAnnullaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
   btnElimina: { flex: 1.2, backgroundColor: COLORS.error, padding: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
   btnEliminaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
   btnSalva: { flex: 1.2, backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
-  notificaTendina: { backgroundColor: '#132D1B', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
+  btnSalvaText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#0A0A0C' },
+  notificaTendina: { backgroundColor: '#092414', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 15, alignItems: 'center' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
-  modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContentSvuota: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', borderWidth: 1, borderColor: '#2C2C2E' },
-  iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#311718', padding: 10, borderRadius: 999 },
+  modalOverlayCentrato: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContentSvuota: { backgroundColor: '#111116', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
+  iconaAvvisoContainer: { marginBottom: 12, backgroundColor: '#240F10', padding: 10, borderRadius: 999 },
   modalTitleSvuota: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 8 },
   modalSubtitleSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.muted, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   modalActionsSvuota: { flexDirection: 'row', gap: 12, width: '100%' },
-  btnAnnullaSvuota: { flex: 1, backgroundColor: '#2C2C2E', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  btnAnnullaSvuota: { flex: 1, backgroundColor: '#1C1C24', paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
   btnAnnullaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
   btnConfermaSvuota: { flex: 1, backgroundColor: COLORS.error, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   btnConfermaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
