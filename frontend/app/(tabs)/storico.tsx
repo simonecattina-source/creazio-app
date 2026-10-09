@@ -687,6 +687,8 @@ const styles = StyleSheet.create({
   helpTextContainer: { flex: 1, alignItems: 'flex-start' },
   helpSectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
   helpSectionBody: { fontFamily: 'Plus Jakarta Sans', fontSize: 12.5, color: COLORS.muted, lineHeight: 18, textAlign: 'left' },
-  btnChiudiHelp: { backgroundColor: COLORS.brandPrimary, paddingVertical: 12, borderRadius: 12, width: '100%', alignItems: 'center', marginTop: 10 },
-  btnChiudiHelpText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#0A0A0C' }
+  
+  // 🛠️ PULSANTE UNIFORMATO AL 100% CON LO STILE DEI GRAFICI
+  btnChiudiHelp: { marginTop: 10, backgroundColor: '#1A1A24', borderWidth: 1, borderColor: COLORS.borderGlass, paddingVertical: 12, borderRadius: 12, width: '100%', alignItems: 'center' },
+  btnChiudiHelpText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface }
 });
