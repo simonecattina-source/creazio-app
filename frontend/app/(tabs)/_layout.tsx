@@ -22,18 +22,26 @@ export default function TabLayout() {
           backgroundColor: COLORS.backgroundBar,
           borderTopWidth: 1,
           borderTopColor: COLORS.borderGlass,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          // 🍏 CORREZIONE ALTEZZA AUTO ED ELASTICA PER IPHONE SENZA SQUASH VISIVO
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
           paddingTop: 8,
-          elevation: 0, // Rimuove ombre brutte su Android
-          shadowOpacity: 0, // Rimuove ombre vecchie su iOS
+          elevation: 0, // Rimuove ombre su Android
+          shadowOpacity: 0, // Rimuove ombre su iOS
+          position: 'absolute', // Permette la corretta Safe Area nativa inferiore
+          bottom: 0,
+          left: 0,
+          right: 0
         },
         tabBarLabelStyle: {
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 2,
+          marginTop: Platform.OS === 'ios' ? 4 : 2, // Centratura verticale su iOS
         },
+        tabBarIconStyle: {
+          marginBottom: 0, // Evita che l'icona spinga in basso il testo
+        }
       }}
     >
       {/* PULSANTE 1: INSERISCI / HOME */}
