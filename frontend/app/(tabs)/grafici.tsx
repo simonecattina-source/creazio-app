@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Platform, Dimensions, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Platform, Dimensions, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
@@ -41,34 +41,29 @@ export default function GraficiScreen() {
   const [medieMomenti, setMedieMomenti] = useState<any[]>([]);
   const [puntiGrafico24Ore, setPuntiGrafico24Ore] = useState<any[]>([]);
 
+  // 💡 STATI E PARAMETRI PER IL MODAL INTERNO DELLE SPIEGAZIONI
+  const [modalVisibile, setModalVisibile] = useState<boolean>(false);
+  const [modalTitolo, setModalTitolo] = useState<string>("");
+  const [modalTesto, setModalTesto] = useState<string>("");
+
   useFocusEffect(
     React.useCallback(() => {
       caricaDatiECalcola();
     }, [])
   );
 
-  const mostraInfoGrafico24h = () => {
-    Alert.alert(
-      "Andamento sulle 24 Ore",
-      "Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa linea continua azzurra unisce cronologicamente i tuoi test. Per evitare interruzioni al mattino, il grafico recupera automaticamente l'ultima misurazione che hai effettuato ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.",
-      [{ text: "Ho capito", style: "default" }]
-    );
-  };
-
-  const mostraInfoMedieGiornaliere = () => {
-    Alert.alert(
-      "Andamento Medie Giornaliere",
-      "Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia verde sullo sfondo evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza: restare all'interno di questa fascia ti permette di mantenere un ottimo Time in Range (TIR).",
-      [{ text: "Ho capito", style: "default" }]
-    );
-  };
-
-  const mostraInfoMedieMomenti = () => {
-    Alert.alert(
-      "Medie per Momento della Giornata",
-      "Questo istogramma analizza lo storico trimestrale (90 giorni) diviso per i 7 controlli del diario clinico.\n\nOgni colonna mostra la media glicemica calcolata in quello specifico orario. Il colore della barra ti indica visivamente lo stato: Verde (a target), Arancione (basso/iper) o Rosso (alto/ipo). Il trattino (-) indica che non ci sono ancora dati inseriti per quel momento.",
-      [{ text: "Ho capito", style: "default" }]
-    );
+  const apriSpiegazione = (tipo: string) => {
+    if (tipo === '24h') {
+      setModalTitolo("Andamento sulle 24 Ore");
+      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa linea continua azzurra unisce cronologicamente i tuoi test. Per evitare interruzioni al mattino, il grafico recupera automaticamente l'ultima misurazione che hai effettuato ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.");
+    } else if (tipo === 'giornaliere') {
+      setModalTitolo("Andamento Medie Giornaliere");
+      setModalTesto("Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia verde sullo sfondo evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza: restare all'interno di questa fascia ti permette di mantenere un ottimo Time in Range (TIR).");
+    } else if (tipo === 'momenti') {
+      setModalTitolo("Medie per Momento");
+      setModalTesto("Questo istogramma analizza lo storico trimestrale (90 giorni) diviso per i 7 controlli del diario clinico.\n\nOgni colonna mostra la media glicemica calcolata in quello specifico orario. Il colore della barra ti indica visivamente lo stato: Verde (a target), Arancione (basso/iper) o Rosso (alto/ipo). Il trattino (-) indica che non ci sono ancora dati inseriti.");
+    }
+    setModalVisibile(true);
   };
 
   const parsingData = (stringaData: string) => {
@@ -323,6 +318,27 @@ export default function GraficiScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Analisi e Grafici</Text>
+
+      {/* 🔮 MODAL PERSONALIZZATO AD ALTA REATTIVITÀ PER L'INTERFACCIA GRAFICA */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisibile}
+        onRequestClose={() => setModalVisibile(false)}
+      >
+        <View style={styles.sfondoModalCentrato}>
+          <View style={styles.corpoSchedaModal}>
+            <Text style={styles.titoloModal}>{modalTitolo}</Text>
+            <Text style={styles.testoDescrizioneModal}>{modalTesto}</Text>
+            <TouchableOpacity 
+              style={styles.bottoneChiudiModal} 
+              onPress={() => setModalVisibile(false)}
+            >
+              <Text style={styles.testoBottoneChiudi}>Ho capito</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
@@ -342,16 +358,15 @@ export default function GraficiScreen() {
         </View>
       </View>
 
-      {/* 🔘 CONFIGURAZIONE INTEGRALE ONPRESS + HITSLOP SENSIBILE PER LE FINESTRE POPUP */}
       <View style={styles.cardGraficoContenitore}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
           <TouchableOpacity 
-            onPress={mostraInfoGrafico24h} 
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            onPress={() => apriSpiegazione('24h')} 
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
             style={styles.pulsanteInfoTocco}
           >
-            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>Linea continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
@@ -367,11 +382,11 @@ export default function GraficiScreen() {
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
           <TouchableOpacity 
-            onPress={mostraInfoMedieGiornaliere} 
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            onPress={() => apriSpiegazione('giornaliere')} 
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
             style={styles.pulsanteInfoTocco}
           >
-            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
@@ -387,11 +402,11 @@ export default function GraficiScreen() {
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
           <TouchableOpacity 
-            onPress={mostraInfoMedieMomenti} 
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            onPress={() => apriSpiegazione('momenti')} 
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
             style={styles.pulsanteInfoTocco}
           >
-            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
@@ -420,7 +435,7 @@ const styles = StyleSheet.create({
   unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
   rigaTitoloGrafico: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' },
-  pulsanteInfoTocco: { padding: 6, justifyContent: 'center', alignItems: 'center' },
+  pulsanteInfoTocco: { padding: 4, justifyContent: 'center', alignItems: 'center' },
   containerGraficoSvg: { width: '100%', marginTop: 6, position: 'relative' },
   rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, paddingHorizontal: 2 },
   dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted },
@@ -428,5 +443,13 @@ const styles = StyleSheet.create({
   singolaColonnaWrapper: { flex: 1, alignItems: 'center', gap: 6 },
   valoreColonnaTesto: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '700' },
   colonnaRettangolo: { width: 18, borderRadius: 5, minHeight: 4 },
-  etichettaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '600', color: COLORS.muted, marginTop: 2 }
+  etichettaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '600', color: COLORS.muted, marginTop: 2 },
+  
+  // 🎨 STILI CSS PER LA SCHEDA DEL NUOVO MODAL
+  sfondoModalCentrato: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.75)', padding: 20 },
+  corpoSchedaModal: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 22, width: '100%', maxWidth: 340, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
+  titoloModal: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '700', color: COLORS.onSurface, marginBottom: 12 },
+  testoDescrizioneModal: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, lineHeight: 20, textAlign: 'left' },
+  bottoneChiudiModal: { marginTop: 22, backgroundColor: COLORS.brandPrimary, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10, alignSelf: 'stretch', alignItems: 'center' },
+  testoBottoneChiudi: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface }
 });
