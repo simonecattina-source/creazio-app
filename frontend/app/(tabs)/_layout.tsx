@@ -22,25 +22,21 @@ export default function TabLayout() {
           backgroundColor: COLORS.backgroundBar,
           borderTopWidth: 1,
           borderTopColor: COLORS.borderGlass,
-          // 🍏 CORREZIONE ALTEZZA AUTO ED ELASTICA PER IPHONE SENZA SQUASH VISIVO
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          // 🍏 ALTEZZA STANDARDIZZATA PER IPHONE CON TACCA INFERIORE NATIVA
+          height: Platform.OS === 'ios' ? 92 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 32 : 10,
           paddingTop: 8,
-          elevation: 0, // Rimuove ombre su Android
-          shadowOpacity: 0, // Rimuove ombre su iOS
-          position: 'absolute', // Permette la corretta Safe Area nativa inferiore
-          bottom: 0,
-          left: 0,
-          right: 0
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarLabelStyle: {
           fontFamily: 'Plus Jakarta Sans',
           fontSize: 11,
           fontWeight: '600',
-          marginTop: Platform.OS === 'ios' ? 4 : 2, // Centratura verticale su iOS
+          marginTop: 2,
         },
         tabBarIconStyle: {
-          marginBottom: 0, // Evita che l'icona spinga in basso il testo
+          marginBottom: 0,
         }
       }}
     >
