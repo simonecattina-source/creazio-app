@@ -451,7 +451,7 @@ export default function GraficiScreen() {
         {/* 🌟 COLONNA DESTRA: NUOVA CARD MEDIA DI OGGI (PRENDE 1/3 DELLO SPAZIO) */}
         <View style={styles.cardSuperioreUnTerzo}>
           <View style={styles.rigaTitoloGrafico}>
-            <Text style={styles.sectionLabel} numberOfLines={1}>Oggi</Text>
+            <Text style={styles.sectionLabel} numberOfLines={1}>Media Oggi</Text>
             <TouchableOpacity onPress={() => apriSpiegazione('oggi')} style={styles.pulsanteInfoTocco}>
               <Ionicons name="information-circle-outline" size={16} color={COLORS.brandPrimary} />
             </TouchableOpacity>
