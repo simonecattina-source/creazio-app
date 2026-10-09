@@ -4,15 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
+// 🎨 NUOVA PALETTE NEON HIGH-CONTRAST PREMIUM
 const COLORS = {
-  background: "#121212",        
-  surfaceSecondary: "#1C1C1E",  
-  brandPrimary: "#0A66C2",      
+  background: "#0A0A0C",        
+  surfaceSecondary: "#13131A",  
+  brandPrimary: "#00E5FF",      // Cyan elettrico neon per la linea 24h
+  brandSecondary: "#7D52FF",    // Viola tech per il trend macro
   onSurface: "#FFFFFF",         
-  muted: "#8E8E93",             
-  success: "#34C759",           
-  warning: "#FF9F0A",           
-  error: "#FF3B30",             
+  muted: "#7E7E86",             
+  success: "#00E676",           // Verde smeraldo Oled
+  warning: "#FF9100",           // Arancione vivo
+  error: "#FF5252",             // Rosso corallo neon
+  borderGlass: "rgba(255, 255, 255, 0.06)" 
 };
 
 const MOMENTI_ELENCO = [
@@ -57,7 +60,7 @@ export default function GraficiScreen() {
   const apriSpiegazione = (tipo: string) => {
     if (tipo === '24h') {
       setModalTitolo("Andamento sulle 24 Ore");
-      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa linea continua azzurra unisce cronologicamente i tuoi test. Il grafico recupera automaticamente l'ultima misurazione di ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.");
+      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa curva continua azzurro neon unisce cronologicamente i tuoi test. Il grafico recupera automaticamente l'ultima misurazione di ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.");
     } else if (tipo === 'giornaliere') {
       setModalTitolo("Andamento Medie Giornaliere");
       setModalTesto("Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia verde sullo sfondo evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza.");
@@ -198,6 +201,21 @@ export default function GraficiScreen() {
     return altezzaGrafico - (percentuale * altezzaGrafico);
   };
 
+  // MOTORINO MATEMATICO DELLE SPLINE BEZIER (CREA LE CURVE PRECISE)
+  const generaPercorsoCurvoBezier = (punti: any[]) => {
+    if (punti.length === 0) return "";
+    if (punti.length === 1) return `M ${punti[0].x} ${punti[0].y}`;
+    let d = `M ${punti[0].x} ${punti[0].y}`;
+    for (let i = 0; i < punti.length - 1; i++) {
+      const cpX1 = punti[i].x + (punti[i + 1].x - punti[i].x) / 3;
+      const cpY1 = punti[i].y;
+      const cpX2 = punti[i].x + 2 * (punti[i + 1].x - punti[i].x) / 3;
+      const cpY2 = punti[i + 1].y;
+      d += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${punti[i + 1].x} ${punti[i + 1].y}`;
+    }
+    return d;
+  };
+
   const renderizzaGraficoLinea24Ore = () => {
     if (puntiGrafico24Ore.length === 0) return null;
     const larghezzaGrafico = Platform.OS === 'web' ? 340 : Dimensions.get('window').width - 64;
@@ -215,25 +233,40 @@ export default function GraficiScreen() {
       return { x, y, ...punto };
     });
 
-    let percorsoLineaD = "";
-    coordinataPunti.forEach((p, i) => {
-      if (i === 0) percorsoLineaD += `M ${p.x} ${p.y}`;
-      else percorsoLineaD += ` L ${p.x} ${p.y}`;
-    });
+    const percorsoCurvaStr = generaPercorsoCurvoBezier(coordinataPunti);
+    
+    // Genera l'area chiusa per il gradiente sfumato sottostante
+    let percorsoGradienteStr = "";
+    if (coordinataPunti.length > 0) {
+      percorsoGradienteStr = percorsoCurvaStr + 
+        ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico}` + 
+        ` L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
+    }
 
     return (
       <View style={styles.containerGraficoSvg}>
         <svg width="100%" height="175" style={{ display: 'block', overflow: 'visible' }}>
-          <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.06)" />
-          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1.5" strokeDasharray="4 4" />
-          <text x={larghezzaGrafico - 12} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" textAnchor="end">180</text>
-          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
-          <text x={larghezzaGrafico - 12} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" textAnchor="end">70</text>
-          {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke="#5AC8FA" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+          <defs>
+            <linearGradient id="neonCyanGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.brandPrimary} stopOpacity="0.28" />
+              <stop offset="100%" stopColor={COLORS.brandPrimary} stopOpacity="0.00" />
+            </linearGradient>
+          </defs>
+          
+          <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(0, 230, 118, 0.04)" />
+          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+          <text x={larghezzaGrafico - 5} y={rigaSoglia180Y + 3} fill={COLORS.error} fontSize="9" fontWeight="bold" textAnchor="end">180</text>
+          
+          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+          <text x={larghezzaGrafico - 5} y={rigaSoglia70Y + 3} fill={COLORS.warning} fontSize="9" fontWeight="bold" textAnchor="end">70</text>
+          
+          {percorsoGradienteStr !== "" && <path d={percorsoGradienteStr} fill="url(#neonCyanGrad)" />}
+          {percorsoCurvaStr !== "" && <path d={percorsoCurvaStr} fill="none" stroke={COLORS.brandPrimary} strokeWidth="3" strokeLinecap="round" />}
+          
           {coordinataPunti.map((p, i) => (
             <g key={i}>
-              <circle cx={p.x} cy={p.y} r="4" fill={p.glicemia > 180 ? COLORS.error : p.glicemia < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1" />
-              <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.glicemia}</text>
+              <circle cx={p.x} cy={p.y} r="4" fill={p.glicemia > 180 ? COLORS.error : p.glicemia < 70 ? COLORS.warning : COLORS.success} stroke="#0A0A0C" strokeWidth="1.5" />
+              <text x={p.x} y={p.y - 9} fill={COLORS.onSurface} fontSize="9" fontWeight="800" textAnchor="middle">{p.glicemia}</text>
             </g>
           ))}
         </svg>
@@ -263,32 +296,43 @@ export default function GraficiScreen() {
       return { x, y, ...punto };
     });
 
-    let percorsoLineaD = "";
-    coordinataPunti.forEach((p, i) => {
-      if (i === 0) percorsoLineaD += `M ${p.x} ${p.y}`;
-      else percorsoLineaD += ` L ${p.x} ${p.y}`;
-    });
+    const percorsoCurvaStr = generaPercorsoCurvoBezier(coordinataPunti);
+    
+    let percorsoGradienteStr = "";
+    if (coordinataPunti.length > 0) {
+      percorsoGradienteStr = percorsoCurvaStr + 
+        ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico}` + 
+        ` L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
+    }
 
     return (
       <View style={styles.containerGraficoSvg}>
         <svg width="100%" height="175" style={{ display: 'block', overflow: 'visible' }}>
-          <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(52, 199, 89, 0.06)" />
-          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1.5" strokeDasharray="4 4" />
-          <text x={larghezzaGrafico - 12} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" textAnchor="end">180</text>
-          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
-          <text x={larghezzaGrafico - 12} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" textAnchor="end">70</text>
+          <defs>
+            <linearGradient id="neonPurpleGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.brandSecondary} stopOpacity="0.25" />
+              <stop offset="100%" stopColor={COLORS.brandSecondary} stopOpacity="0.00" />
+            </linearGradient>
+          </defs>
           
-          {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+          <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(0, 230, 118, 0.03)" />
+          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+          <text x={larghezzaGrafico - 5} y={rigaSoglia180Y + 3} fill={COLORS.error} fontSize="9" fontWeight="bold" textAnchor="end">180</text>
           
-          {/* 🛡️ BLINDAZIONE: Ciclo totalmente libero e garantito al 100%. Il pallino viene stampato SEMPRE. */}
+          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+          <text x={larghezzaGrafico - 5} y={rigaSoglia70Y + 3} fill={COLORS.warning} fontSize="9" fontWeight="bold" textAnchor="end">70</text>
+          
+          {percorsoGradienteStr !== "" && <path d={percorsoGradienteStr} fill="url(#neonPurpleGrad)" />}
+          {percorsoCurvaStr !== "" && <path d={percorsoCurvaStr} fill="none" stroke={COLORS.brandSecondary} strokeWidth="3" strokeLinecap="round" />}
+          
           {coordinataPunti.map((p, i) => {
             const nascondiScrittaValore = coordinataPunti.length > 15 && i % 3 !== 0;
             const colorePuntoTrimestre = p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success;
             return (
-              <g key={`punto-trimestre-${i}`}>
-                <circle cx={p.x} cy={p.y} r="3.5" fill={colorePuntoTrimestre} stroke="#1C1C1E" strokeWidth="1" />
+              <g key={`macro-${i}`}>
+                <circle cx={p.x} cy={p.y} r="3.5" fill={colorePuntoTrimestre} stroke="#0A0A0C" strokeWidth="1.5" />
                 {!nascondiScrittaValore && (
-                  <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.media}</text>
+                  <text x={p.x} y={p.y - 9} fill={COLORS.onSurface} fontSize="9" fontWeight="800" textAnchor="middle">{p.media}</text>
                 )}
               </g>
             );
@@ -307,14 +351,14 @@ export default function GraficiScreen() {
   const renderizzaGraficoColonneMomenti = () => {
     if (medieMomenti.length === 0) return null;
     const altezzaMassimaColonna = 110;
-    const valoreMassimoScala = Array.from(new Set()).length + 300;
+    const valoreMassimoScala = 300;
 
     return (
       <View style={styles.containerGraficoSvg}>
         <View style={styles.rigaColonneContainer}>
           {medieMomenti.map((m, i) => {
             const altezzaCalcolata = m.media > 0 ? Math.min(altezzaMassimaColonna, (m.media / valoreMassimoScala) * altezzaMassimaColonna) : 4;
-            const coloreColonna = m.media === 0 ? "#2C2C2E" : m.media > 180 ? COLORS.error : m.media < 70 ? COLORS.warning : COLORS.success;
+            const coloreColonna = m.media === 0 ? "#1F1F29" : m.media > 180 ? COLORS.error : m.media < 70 ? COLORS.warning : COLORS.success;
 
             return (
               <View key={i} style={styles.singolaColonnaWrapper}>
@@ -330,7 +374,7 @@ export default function GraficiScreen() {
   };
 
   const ottieniColoreGlicata = (val: number) => {
-    if (val === 0) return "#2C2C2E";
+    if (val === 0) return "#1F1F29";
     if (val < 7.0) return COLORS.success;   
     if (val <= 8.0) return COLORS.warning;  
     return COLORS.error;                    
@@ -359,6 +403,7 @@ export default function GraficiScreen() {
         </View>
       </Modal>
       
+      {/* CARD 1: PANORAMICA STATISTICHE IN STILE VETRO SATINATO */}
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
         <View style={styles.containerRigaRiepilogo}>
@@ -377,58 +422,62 @@ export default function GraficiScreen() {
         </View>
       </View>
 
+      {/* CARD 2: GRAFICO CURVO ANDAMENTO 24 ORE */}
       <View style={styles.cardGraficoContenitore}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
           <TouchableOpacity onPress={() => apriSpiegazione('24h')} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} style={styles.pulsanteInfoTocco}>
-            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.subLabelSpiegazione}>Linea continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
+        <Text style={styles.subLabelSpiegazione}>Curva continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
         {puntiGrafico24Ore.length > 0 ? renderizzaGraficoLinea24Ore() : (
           <View style={{ paddingVertical: 45, alignItems: 'center', width: '100%' }}>
-            <Ionicons name="time-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
+            <Ionicons name="time-outline" size={26} color={COLORS.muted} style={{ marginBottom: 6 }} />
             <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessuna misurazione disponibile.</Text>
           </View>
         )}
       </View>
 
+      {/* CARD 3: GRAFICO CURVO TREND MACRO 90 GIORNI */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
           <TouchableOpacity onPress={() => apriSpiegazione('giornaliere')} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} style={styles.pulsanteInfoTocco}>
-            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandSecondary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
         {puntiGraficoLinea.length > 0 ? renderizzaGraficoLineaGiorni() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
-            <Ionicons name="analytics-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
+            <Ionicons name="analytics-outline" size={26} color={COLORS.muted} style={{ marginBottom: 6 }} />
             <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessun dato disponibile.</Text>
           </View>
         )}
       </View>
-
+      {/* CARD 4: ISTOGRAMMI PER MOMENTO DELLA GIORNATA */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
           <TouchableOpacity onPress={() => apriSpiegazione('momenti')} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} style={styles.pulsanteInfoTocco}>
-            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
         {totaleMisurazioni > 0 ? renderizzaGraficoColonneMomenti() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
-            <Ionicons name="bar-chart-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
+            <Ionicons name="bar-chart-outline" size={26} color={COLORS.muted} style={{ marginBottom: 6 }} />
             <Text style={{ color: COLORS.muted, fontSize: 13 }}>Nessun dato inserito.</Text>
           </View>
         )}
       </View>
+
+      {/* CARD 5: STIMA DEDICATA INTERFACCIA GLICATA (HbA1c) */}
       <View style={[styles.cardGraficoContenitore, { marginTop: 16, paddingBottom: 20 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Stima Emoglobina Glicata (HbA1c)</Text>
           <TouchableOpacity onPress={() => apriSpiegazione('glicata')} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} style={styles.pulsanteInfoTocco}>
-            <Ionicons name="information-circle-outline" size={21} color={COLORS.brandPrimary} />
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>Valore trimestrale predittivo calcolato su formula eAG (ADA).</Text>
@@ -456,7 +505,7 @@ export default function GraficiScreen() {
           </View>
         ) : (
           <View style={{ paddingVertical: 25, alignItems: 'center', width: '100%' }}>
-            <Ionicons name="flask-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
+            <Ionicons name="flask-outline" size={26} color={COLORS.muted} style={{ marginBottom: 6 }} />
             <Text style={{ color: COLORS.muted, fontSize: 13 }}>Dati insufficienti per stimare l'HbA1c.</Text>
           </View>
         )}
@@ -465,43 +514,47 @@ export default function GraficiScreen() {
   );
 }
 
+// 📐 FOGLI DI STILE CSS AVANZATI (SIZE ORIGINARIE PRESERVATE AL 100%)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 16, paddingTop: 45, paddingBottom: 40 },
-  title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
-  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface },
+  title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '800', color: COLORS.onSurface, marginBottom: 16, letterSpacing: -0.5 },
+  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, letterSpacing: -0.2 },
   subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, marginBottom: 16 },
-  riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16 },
+  
+  riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16, borderWidth: 1, borderColor: COLORS.borderGlass },
   containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 10 },
-  infoBoxStat: { flex: 1, backgroundColor: '#121212', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
+  infoBoxStat: { flex: 1, backgroundColor: '#020204', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.borderGlass, alignItems: 'flex-start' },
   statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
-  statValue: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
+  statValue: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '800', color: COLORS.onSurface },
   unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
-  cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
+  
+  cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
   rigaTitoloGrafico: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' },
-  pulsanteInfoTocco: { padding: 4, justifyContent: 'center', alignItems: 'center' },
+  pulsanteInfoTocco: { padding: 4, justifyContent: 'center', alignItems: 'center', opacity: 0.85 },
   containerGraficoSvg: { width: '100%', marginTop: 6, position: 'relative' },
   rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, paddingHorizontal: 2 },
-  dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted },
+  dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '700', color: COLORS.muted },
+  
   rigaColonneContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', minHeight: 140, paddingTop: 15, alignItems: 'flex-end' },
   singolaColonnaWrapper: { flex: 1, alignItems: 'center', gap: 6 },
-  valoreColonnaTesto: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '700' },
-  colonnaRettangolo: { width: 18, borderRadius: 5, minHeight: 4 },
-  etichettaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '600', color: COLORS.muted, marginTop: 2 },
+  valoreColonnaTesto: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '800' },
+  colonnaRettangolo: { width: 16, borderRadius: 4, minHeight: 4 },
+  etichettaColonnaMomento: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '700', color: COLORS.muted, marginTop: 2 },
   
-  sfondoModalCentrato: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.75)', padding: 20 },
-  corpoSchedaModal: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 22, width: '100%', maxWidth: 340, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
-  titoloModal: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '700', color: COLORS.onSurface, marginBottom: 12 },
+  sfondoModalCentrato: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.85)', padding: 20 },
+  corpoSchedaModal: { backgroundColor: '#111116', borderRadius: 16, padding: 22, width: '100%', maxWidth: 340, borderWidth: 1, borderColor: '#22222E', alignItems: 'flex-start' },
+  titoloModal: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '800', color: COLORS.onSurface, marginBottom: 12 },
   testoDescrizioneModal: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, lineHeight: 20, textAlign: 'left' },
-  bottoneChiudiModal: { marginTop: 22, backgroundColor: COLORS.brandPrimary, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10, alignSelf: 'stretch', alignItems: 'center' },
+  bottoneChiudiModal: { marginTop: 22, backgroundColor: '#1A1A24', borderWidth: 1, borderColor: COLORS.borderGlass, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10, alignSelf: 'stretch', alignItems: 'center' },
   testoBottoneChiudi: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface },
 
   containerInterfacciaGlicata: { width: '100%', marginTop: 5 },
   rigaDatiGlicataPrincipale: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginBottom: 14 },
-  valoreGlicataTestoCentrale: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '800' },
-  etichettaMmolSecondaria: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, fontWeight: '600' },
-  binarioGrigioBarraSfondo: { width: '100%', height: 10, backgroundColor: '#2C2C2E', borderRadius: 6, overflow: 'hidden' },
+  valoreGlicataTestoCentrale: { fontFamily: 'Space Grotesk', fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
+  etichettaMmolSecondaria: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, fontWeight: '700' },
+  binarioGrigioBarraSfondo: { width: '100%', height: 10, backgroundColor: '#171721', borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.borderGlass },
   riempimentoAttivoBarra: { height: '100%', borderRadius: 6 },
   rigaLegendaGlicataLimiti: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8 },
-  testoLegendaMarcatore: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted }
+  testoLegendaMarcatore: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '700', color: COLORS.muted }
 });
