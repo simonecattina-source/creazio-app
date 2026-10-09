@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Platform, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Platform, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
@@ -22,9 +22,13 @@ const MOMENTI_ELENCO = [
 ];
 
 const MOMENTI_SHORT = {
-  "Prima Colazione": "8:00", "Dopo Colazione": "11:00",
-  "Prima Pranzo": "12:00", "Dopo Pranzo": "15:00",
-  "Prima Cena": "20:00", "Dopo Cena": "22:00", "Notte": "24:00"
+  "Prima Colazione": "8:00",
+  "Dopo Colazione": "11:00",
+  "Prima Pranzo": "12:00",
+  "Dopo Pranzo": "15:00",
+  "Prima Cena": "20:00",
+  "Dopo Cena": "22:00",
+  "Notte": "24:00"
 };
 
 export default function GraficiScreen() {
@@ -42,6 +46,30 @@ export default function GraficiScreen() {
       caricaDatiECalcola();
     }, [])
   );
+
+  const mostraInfoGrafico24h = () => {
+    Alert.alert(
+      "Andamento sulle 24 Ore",
+      "Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa linea continua azzurra unisce cronologicamente i tuoi test. Per evitare interruzioni al mattino, il grafico recupera automaticamente l'ultima misurazione che hai effettuato ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.",
+      [{ text: "Ho capito", style: "default" }]
+    );
+  };
+
+  const mostraInfoMedieGiornaliere = () => {
+    Alert.alert(
+      "Andamento Medie Giornaliere",
+      "Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia verde sullo sfondo evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza: restare all'interno di questa fascia ti permette di mantenere un ottimo Time in Range (TIR).",
+      [{ text: "Ho capito", style: "default" }]
+    );
+  };
+
+  const mostraInfoMedieMomenti = () => {
+    Alert.alert(
+      "Medie per Momento della Giornata",
+      "Questo istogramma analizza lo storico trimestrale (90 giorni) diviso per i 7 controlli del diario clinico.\n\nOgni colonna mostra la media glicemica calcolata in quello specifico orario. Il colore della barra ti indica visivamente lo stato: Verde (a target), Arancione (basso/iper) o Rosso (alto/ipo). Il trattino (-) indica che non ci sono ancora dati inseriti per quel momento.",
+      [{ text: "Ho capito", style: "default" }]
+    );
+  };
 
   const parsingData = (stringaData: string) => {
     if (!stringaData || !stringaData.includes('/')) return new Date(0);
@@ -89,10 +117,7 @@ export default function GraficiScreen() {
               ore = parseInt(h);
               minuti = parseInt(m);
             }
-            return {
-              minutiAssoluti: (ore * 60) + minuti,
-              glicemia: item.glicemia
-            };
+            return { minutiAssoluti: (ore * 60) + minuti, glicemia: item.glicemia };
           });
 
           if (logDiIeri.length > 0) {
@@ -107,11 +132,7 @@ export default function GraficiScreen() {
             }).sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
 
             const ultimoControlloIeriSera = logDiIeriOrdinati[logDiIeriOrdinati.length - 1];
-
-            puntiOggi.unshift({
-              minutiAssoluti: 0, 
-              glicemia: ultimoControlloIeriSera.glicemia
-            });
+            puntiOggi.unshift({ minutiAssoluti: 0, glicemia: ultimoControlloIeriSera.glicemia });
           }
 
           const tracciato24hFlesibile = puntiOggi.sort((a: any, b: any) => a.minutiAssoluti - b.minutiAssoluti);
@@ -124,6 +145,7 @@ export default function GraficiScreen() {
             gruppiPerGiorno[dataChiave].push(item.glicemia);
           });
 
+          // 📈 MODIFICA FONDAMENTALE: Rimossa la limitazione .slice(-10), ora include tutti i 90 giorni
           const andamentoCronologico = Object.keys(gruppiPerGiorno)
             .map(dataChiave => {
               const valoriGiorno = gruppiPerGiorno[dataChiave];
@@ -131,7 +153,7 @@ export default function GraficiScreen() {
               return { dataLabel: dataChiave, media: Math.round(mediaGiorno) };
             })
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
-          setPuntiGraficoLinea(andamentoCronologico.slice(-10));
+          setPuntiGraficoLinea(andamentoCronologico);
 
           const gruppiPerMomento: Record<string, number[]> = {};
           MOMENTI_ELENCO.forEach(m => { gruppiPerMomento[m] = []; });
@@ -251,16 +273,24 @@ export default function GraficiScreen() {
           <text x={larghezzaGrafico - 12} y={rigaSoglia180Y + 4} fill={COLORS.error} fontSize="10" fontWeight="bold" textAnchor="end">180</text>
           <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1.5" strokeDasharray="4 4" />
           <text x={larghezzaGrafico - 12} y={rigaSoglia70Y + 4} fill={COLORS.warning} fontSize="10" fontWeight="bold" textAnchor="end">70</text>
-          {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
-          {coordinataPunti.map((p, i) => (
-            <g key={i}>
-              <circle cx={p.x} cy={p.y} r="4" fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1" />
-              {(coordinataPunti.length < 8 || i % 2 === 0) && <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.media}</text>}
-            </g>
-          ))}
+          
+          {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+          
+          {coordinataPunti.map((p, i) => {
+            // Se ci sono molti giorni (es. > 15), non disegniamo i pallini singoli e i micro-testi per non intasare la grafica
+            const mostraDettaglioPunto = coordinataPunti.length <= 15;
+            if (!mostraDettaglioPunto) return null;
+            return (
+              <g key={i}>
+                <circle cx={p.x} cy={p.y} r="3" fill={p.media > 180 ? COLORS.error : p.media < 70 ? COLORS.warning : COLORS.success} stroke="#1C1C1E" strokeWidth="1" />
+                <text x={p.x} y={p.y - 8} fill={COLORS.onSurface} fontSize="9" fontWeight="700" textAnchor="middle">{p.media}</text>
+              </g>
+            );
+          })}
         </svg>
         <View style={styles.rigaEtichetteDate}>
           {puntiGraficoLinea.map((p, i) => {
+            // 📅 LOGICA SPAZIALE: Mostra solo l'inizio del trimestre, il centro perfetto e la data odierna finale
             const mostraData = i === 0 || i === Math.floor(puntiGraficoLinea.length / 2) || i === puntiGraficoLinea.length - 1;
             return <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>{p.dataLabel.slice(0, 5)}</Text>;
           })}
@@ -271,8 +301,6 @@ export default function GraficiScreen() {
   const renderizzaGraficoColonneMomenti = () => {
     if (medieMomenti.length === 0) return null;
     const altezzaMassimaColonna = 110;
-    
-    // Generazione asincrona sicura per superare i filtri sulle stringhe vuote
     const valoreMassimoScala = Array.from(new Set()).length + 300;
 
     return (
@@ -318,8 +346,13 @@ export default function GraficiScreen() {
       </View>
 
       <View style={styles.cardGraficoContenitore}>
-        <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
-        <Text style={styles.subLabelSpiegazione}>Andamento Glicemia nell'arco delle 24h.</Text>
+        <View style={styles.rigaTitoloGrafico}>
+          <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
+          <TouchableOpacity onPress={mostraInfoGrafico24h} padding={4}>
+            <Ionicons name="information-circle-outline" size={19} color={COLORS.brandPrimary} />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.subLabelSpiegazione}>Linea continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
         {puntiGrafico24Ore.length > 0 ? renderizzaGraficoLinea24Ore() : (
           <View style={{ paddingVertical: 45, alignItems: 'center', width: '100%' }}>
             <Ionicons name="time-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
@@ -329,8 +362,13 @@ export default function GraficiScreen() {
       </View>
 
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
-        <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
-        <Text style={styles.subLabelSpiegazione}>Media Giornaliera dentro al range ideale (70-180 mg/dL).</Text>
+        <View style={styles.rigaTitoloGrafico}>
+          <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
+          <TouchableOpacity onPress={mostraInfoMedieGiornaliere} padding={4}>
+            <Ionicons name="information-circle-outline" size={19} color={COLORS.brandPrimary} />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
         {puntiGraficoLinea.length > 0 ? renderizzaGraficoLineaGiorni() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
             <Ionicons name="analytics-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
@@ -340,8 +378,13 @@ export default function GraficiScreen() {
       </View>
 
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
-        <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
-        <Text style={styles.subLabelSpiegazione}>Analisi divisa per Colazione, Pranzo, Cena, Notte. Valori Pre e Dopo il pasto.</Text>
+        <View style={styles.rigaTitoloGrafico}>
+          <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
+          <TouchableOpacity onPress={mostraInfoMedieMomenti} padding={4}>
+            <Ionicons name="information-circle-outline" size={19} color={COLORS.brandPrimary} />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
         {totaleMisurazioni > 0 ? renderizzaGraficoColonneMomenti() : (
           <View style={{ paddingVertical: 30, alignItems: 'center', width: '100%' }}>
             <Ionicons name="bar-chart-outline" size={28} color={COLORS.muted} style={{ marginBottom: 6 }} />
@@ -357,15 +400,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 16, paddingTop: 45, paddingBottom: 30 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
-  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
-  subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginBottom: 16 },
+  sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface },
+  subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, marginBottom: 16 },
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16 },
-  containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%' },
+  containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 10 },
   infoBoxStat: { flex: 1, backgroundColor: '#121212', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#2C2C2E', alignItems: 'flex-start' },
   statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
   statValue: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
   unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
+  rigaTitoloGrafico: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' },
   containerGraficoSvg: { width: '100%', marginTop: 6, position: 'relative' },
   rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, paddingHorizontal: 2 },
   dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted },
