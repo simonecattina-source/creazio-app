@@ -3,17 +3,17 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 🎨 PALETTE COLORI HIGH-CONTRAST CON ACCENTI NEON PREMIUM
+// 🎨 PALETTE COLORI HIGH-CONTRAST CON ACCENTI NEON PREMIUM CHIARI ED ELEGANTI
 const COLORS = {
   background: "#0A0A0C",        
-  surfaceSecondary: "#13131A",  
+  surfaceSecondary: "#13131A",  // Nero profondo tech per i contenitori
   brandPrimary: "#00E5FF",      // Azzurro Cyan elettrico neon coordinato
-  onSurface: "#FFFFFF",         
+  onSurface: "#FFFFFF",         // Bianco purissimo ultra-nitido
   muted: "#7E7E86",             
-  success: "#00E676",           // Verde smeraldo Oled (In Target)
-  warning: "#FF9100",           // Arancione vivo (Ipoglicemia)
-  error: "#FF5252",             // Rosso corallo neon (Iperglicemia)
-  borderGlass: "rgba(255, 255, 255, 0.06)" // Bordo lucido ultra-sottile
+  success: "#00E676",           // Verde smeraldo Oled
+  warning: "#FF9100",           // Arancione vivo
+  error: "#FF5252",             // Rosso corallo neon
+  borderGlass: "rgba(255, 255, 255, 0.08)" // Bordo lucido moderno e sottile
 };
 
 const MOMENTI = [
@@ -153,7 +153,7 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
       
-      {/* 📅⏰ SEZIONE DATE ED ORARI INALTERATI */}
+      {/* 📅⏰ RIGHE TEMPORALI AGGIORNATE IN STILE MODERNO E NITIDO */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
@@ -167,9 +167,9 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#00E5FF', 
+                color: '#FFFFFF', 
                 backgroundColor: '#13131A', 
-                border: '1px solid rgba(255,255,255,0.06)', 
+                border: '1px solid rgba(255,255,255,0.08)', 
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
@@ -195,9 +195,9 @@ export default function InserimentoScreen() {
                 fontFamily: 'sans-serif',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#00E5FF', 
+                color: '#FFFFFF', 
                 backgroundColor: '#13131A', 
-                border: '1px solid rgba(255,255,255,0.06)', 
+                border: '1px solid rgba(255,255,255,0.08)', 
                 borderRadius: '10px',
                 padding: '6px 10px',
                 marginTop: '4px',
@@ -213,7 +213,7 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* BOX INPUT AFFIANCATI INALTERATI */}
+      {/* BOX INPUT AFFIANCATI INALTERATI NEGLI INGOMBRI E NEI MODULI */}
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
@@ -278,7 +278,7 @@ export default function InserimentoScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
-      {/* 🎪 POP-UP GUIDA ALL'USO MODAL: TUTTI I TITOLI DEI QUADRI SCELTI IN UNIFORME BIANCO AD ALTO CONTRASTO */}
+      {/* 🎪 POP-UP GUIDA ALL'USO MODAL UNIFORME */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -305,7 +305,6 @@ export default function InserimentoScreen() {
                 </Text>
               </View>
 
-              {/* FIX CROMATICO: Sostituito il vecchio verde con l'uniforme COLORS.onSurface coerente al blocco 1 e 2 */}
               <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>📊 Codici Colore Medici</Text>
                 <Text style={styles.infoBlockText}>
@@ -313,7 +312,6 @@ export default function InserimentoScreen() {
                 </Text>
               </View>
 
-              {/* FIX CROMATICO: Sostituito il vecchio azzurro con l'uniforme COLORS.onSurface coerente al blocco 1 e 2 */}
               <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>📄 Esportazione PDF Griglia Orizzontale</Text>
                 <Text style={styles.infoBlockText}>
@@ -352,7 +350,10 @@ const styles = StyleSheet.create({
   rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
   metaLarghezza: { flex: 1 }, 
 
-  dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.brandPrimary, textAlign: 'left', paddingLeft: 2 },
+  // 🌟 TESTO DELLA DATA PIÙ CHIARO ED ULTRA-LEGGIBILE SU MOBILE (BIANCO SU FONDO SCURO)
+  dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.onSurface, textAlign: 'left', paddingLeft: 2 },
+  
+  // 🌟 RIQUADRO ORARIO MOBILE ALLINEATO: Sfondo scuro premium nitido con finissimo bordo luminoso trasparente
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
   
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
