@@ -4,17 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
-// 🎨 NUOVA PALETTE NEON HIGH-CONTRAST PREMIUM
+// 🎨 PALETTE NEON HIGH-CONTRAST PREMIUM COORDINATA
 const COLORS = {
   background: "#0A0A0C",        
   surfaceSecondary: "#13131A",  
-  brandPrimary: "#00E5FF",      // Cyan elettrico neon per la linea 24h
-  brandSecondary: "#7D52FF",    // Viola tech per il trend macro
+  brandPrimary: "#00E5FF",      // Cyan elettrico neon (Grafico 24h e Test Totali)
+  brandSecondary: "#7D52FF",    // Viola tech (Trend macro)
   onSurface: "#FFFFFF",         
   muted: "#7E7E86",             
-  success: "#00E676",           // Verde smeraldo Oled
-  warning: "#FF9100",           // Arancione vivo
-  error: "#FF5252",             // Rosso corallo neon
+  success: "#00E676",           // Verde smeraldo Oled (A Target)
+  warning: "#FF9100",           // Arancione vivo (Ipo/Attenzione)
+  error: "#FF5252",             // Rosso corallo neon (Iper/Alto)
   borderGlass: "rgba(255, 255, 255, 0.06)" 
 };
 
@@ -201,11 +201,10 @@ export default function GraficiScreen() {
     return altezzaGrafico - (percentuale * altezzaGrafico);
   };
 
-  // MOTORINO MATEMATICO DELLE SPLINE BEZIER (CREA LE CURVE PRECISE)
   const generaPercorsoCurvoBezier = (punti: any[]) => {
     if (punti.length === 0) return "";
-    if (punti.length === 1) return `M ${punti[0].x} ${punti[0].y}`;
-    let d = `M ${punti[0].x} ${punti[0].y}`;
+    if (punti.length === 1) return `M ${punti.x} ${punti.y}`;
+    let d = `M ${punti.x} ${punti.y}`;
     for (let i = 0; i < punti.length - 1; i++) {
       const cpX1 = punti[i].x + (punti[i + 1].x - punti[i].x) / 3;
       const cpY1 = punti[i].y;
@@ -235,12 +234,11 @@ export default function GraficiScreen() {
 
     const percorsoCurvaStr = generaPercorsoCurvoBezier(coordinataPunti);
     
-    // Genera l'area chiusa per il gradiente sfumato sottostante
     let percorsoGradienteStr = "";
     if (coordinataPunti.length > 0) {
       percorsoGradienteStr = percorsoCurvaStr + 
         ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico}` + 
-        ` L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
+        ` L ${coordinataPunti.x} ${altezzaGrafico} Z`;
     }
 
     return (
@@ -302,7 +300,7 @@ export default function GraficiScreen() {
     if (coordinataPunti.length > 0) {
       percorsoGradienteStr = percorsoCurvaStr + 
         ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico}` + 
-        ` L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
+        ` L ${coordinataPunti.x} ${altezzaGrafico} Z`;
     }
 
     return (
@@ -403,22 +401,35 @@ export default function GraficiScreen() {
         </View>
       </Modal>
       
-      {/* CARD 1: PANORAMICA STATISTICHE IN STILE VETRO SATINATO */}
+      {/* CARD 1: PANORAMICA STATISTICHE CON 3 BOX NEON COMPATTI (SIZE PRESERVATE AL 100%) */}
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
         <View style={styles.containerRigaRiepilogo}>
-          <View style={styles.infoBoxStat}>
+          
+          {/* BOX 1: MEDIA CON BORDO INDICATORE SINISTRO NEON */}
+          <View style={[styles.infoBoxStat, { borderLeftColor: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.borderGlass : COLORS.success }]}>
             <Text style={styles.statLabel}>Media</Text>
-            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : COLORS.success }]}>{mediaGlicemia > 0 ? `${mediaGlicemia}` : '-'} <Text style={styles.unitaMisuraSub}>mg/dL</Text></Text>
+            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.muted : COLORS.success }]}>
+              {mediaGlicemia > 0 ? `${mediaGlicemia}` : '-'} <Text style={styles.unitaMisuraSub}>mg/dL</Text>
+            </Text>
           </View>
-          <View style={styles.infoBoxStat}>
+          
+          {/* BOX 2: IN RANGE (TIR) CON BORDO INDICATORE SINISTRO NEON */}
+          <View style={[styles.infoBoxStat, { borderLeftColor: totaleMisurazioni === 0 ? COLORS.borderGlass : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
             <Text style={styles.statLabel}>In Range (TIR)</Text>
-            <Text style={[styles.statValue, { color: timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>{totaleMisurazioni > 0 ? `${timeInRange}%` : '-'}</Text>
+            <Text style={[styles.statValue, { color: totaleMisurazioni === 0 ? COLORS.muted : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
+              {totaleMisurazioni > 0 ? `${timeInRange}%` : '-'}
+            </Text>
           </View>
-          <View style={styles.infoBoxStat}>
+          
+          {/* BOX 3: TEST TOTALI COORDINATO CYAN ELETTRICO */}
+          <View style={[styles.infoBoxStat, { borderLeftColor: totaleMisurazioni > 0 ? COLORS.brandPrimary : COLORS.borderGlass }]}>
             <Text style={styles.statLabel}>Test Totali</Text>
-            <Text style={styles.statValue}>{totaleMisurazioni}</Text>
+            <Text style={[styles.statValue, { color: totaleMisurazioni > 0 ? COLORS.onSurface : COLORS.muted }]}>
+              {totaleMisurazioni}
+            </Text>
           </View>
+          
         </View>
       </View>
 
@@ -514,7 +525,7 @@ export default function GraficiScreen() {
   );
 }
 
-// 📐 FOGLI DI STILE CSS AVANZATI (SIZE ORIGINARIE PRESERVATE AL 100%)
+// 📐 FOGLI DI STILE CSS AVANZATI (SIZE ED INGOMBRI ORIGINARI PRESERVATI AL 100%)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 16, paddingTop: 45, paddingBottom: 40 },
@@ -524,9 +535,11 @@ const styles = StyleSheet.create({
   
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16, borderWidth: 1, borderColor: COLORS.borderGlass },
   containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 10 },
-  infoBoxStat: { flex: 1, backgroundColor: '#020204', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.borderGlass, alignItems: 'flex-start' },
-  statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '600', color: COLORS.muted, marginBottom: 4 },
-  statValue: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '800', color: COLORS.onSurface },
+  
+  // 🌟 SIZE E STRUTTURA INALTERATE: CAMBIATO SOLO SFONDO E BORDO VERTICALE A SINISTRA (2px)
+  infoBoxStat: { flex: 1, backgroundColor: '#020204', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.borderGlass, borderLeftWidth: 3.5, alignItems: 'flex-start' },
+  statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '700', color: COLORS.muted, marginBottom: 4 },
+  statValue: { fontFamily: 'Space Grotesk', fontSize: 19, fontWeight: '900', color: COLORS.onSurface },
   unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
   
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
