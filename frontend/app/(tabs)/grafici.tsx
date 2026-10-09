@@ -201,10 +201,11 @@ export default function GraficiScreen() {
     return altezzaGrafico - (percentuale * altezzaGrafico);
   };
 
+  // 🛠️ FIX ALGORITMO DI TRACCIAMENTO BEZIER CORRETTO ED OTTIMIZZATO
   const generaPercorsoCurvoBezier = (punti: any[]) => {
-    if (punti.length === 0) return "";
-    if (punti.length === 1) return `M ${punti.x} ${punti.y}`;
-    let d = `M ${punti.x} ${punti.y}`;
+    if (!punti || punti.length === 0) return "";
+    if (punti.length === 1) return `M ${punti[0].x} ${punti[0].y}`;
+    let d = `M ${punti[0].x} ${punti[0].y}`;
     for (let i = 0; i < punti.length - 1; i++) {
       const cpX1 = punti[i].x + (punti[i + 1].x - punti[i].x) / 3;
       const cpY1 = punti[i].y;
@@ -238,7 +239,7 @@ export default function GraficiScreen() {
     if (coordinataPunti.length > 0) {
       percorsoGradienteStr = percorsoCurvaStr + 
         ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico}` + 
-        ` L ${coordinataPunti.x} ${altezzaGrafico} Z`;
+        ` L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
     }
 
     return (
@@ -300,7 +301,7 @@ export default function GraficiScreen() {
     if (coordinataPunti.length > 0) {
       percorsoGradienteStr = percorsoCurvaStr + 
         ` L ${coordinataPunti[coordinataPunti.length - 1].x} ${altezzaGrafico}` + 
-        ` L ${coordinataPunti.x} ${altezzaGrafico} Z`;
+        ` L ${coordinataPunti[0].x} ${altezzaGrafico} Z`;
     }
 
     return (
@@ -401,7 +402,7 @@ export default function GraficiScreen() {
         </View>
       </Modal>
       
-      {/* CARD 1: PANORAMICA STATISTICHE CON 3 BOX NEON COMPATTI (SIZE PRESERVATE AL 100%) */}
+      {/* CARD 1: PANORAMICA STATISTICHE CON 3 BOX NEON COMPATTI */}
       <View style={styles.riepilogoCard}>
         <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
         <View style={styles.containerRigaRiepilogo}>
@@ -536,7 +537,6 @@ const styles = StyleSheet.create({
   riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16, borderWidth: 1, borderColor: COLORS.borderGlass },
   containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 10 },
   
-  // 🌟 SIZE E STRUTTURA INALTERATE: CAMBIATO SOLO SFONDO E BORDO VERTICALE A SINISTRA (2px)
   infoBoxStat: { flex: 1, backgroundColor: '#020204', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.borderGlass, borderLeftWidth: 3.5, alignItems: 'flex-start' },
   statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '700', color: COLORS.muted, marginBottom: 4 },
   statValue: { fontFamily: 'Space Grotesk', fontSize: 19, fontWeight: '900', color: COLORS.onSurface },
