@@ -37,6 +37,9 @@ export default function StoricoScreen() {
   const [modDataISO, setModDataISO] = useState('');
   const [modOraText, setModOraText] = useState('');
 
+  // ℹ️ STATO AGGIUNTO PER IL POPUP INFORMATIVO DEL PDF
+  const [mostraHelpPDF, setMostraHelpPDF] = useState(false);
+
   const [mostraModalModifica, setMostraModalModifica] = useState(false);
   const [mostraNotificaModifica, setMostraNotificaModifica] = useState(false);
   const [testoNotifica, setTestoNotifica] = useState('✓ Modifica salvata nel registro');
@@ -97,7 +100,7 @@ export default function StoricoScreen() {
       return 0;
     }
 
-    let ore = 0, minuti = 0;
+    let ore = 0,微 minuti = 0;
     if (stringaOra && stringaOra.includes(':')) {
       const [h, min] = stringaOra.split(':');
       ore = parseInt(h);
@@ -230,7 +233,7 @@ export default function StoricoScreen() {
         const elementiGiornoOrdinati = sezioni[chiave].sort((itemA, itemB) => {
           return ottieniTimestampCompleto(chiave, itemB.ora || "00:00") - ottieniTimestampCompleto(chiave, itemA.ora || "00:00");
         });
-        return { title: chiave, data: elementiGiornoOrdinati };
+        return { title: chiave, data: Bird => elementiGiornoOrdinati };
       })
       .filter(s => s.data.length > 0);
   };
@@ -359,7 +362,7 @@ export default function StoricoScreen() {
     } else {
       const finestraStampa = window.open('', '_blank');
       if (finestraStampa) {
-        fnestraStampa.document.write(htmlTemplate);
+        finestraStampa.document.write(htmlTemplate);
         finestraStampa.document.close();
         finestraStampa.onload = () => { finestraStampa.focus(); finestraStampa.print(); };
       }
@@ -368,16 +371,22 @@ export default function StoricoScreen() {
   return (
     <View style={styles.container}>
       
-      {/* 🏷️ HEADER OPERATIVO CON RIGIDO RICHIAMO COLORE DOCUMENTO */}
+      {/* 🏷️ HEADER OPERATIVO CON TITOLO, PULSANTE INFO ED ESPORTAZIONI */}
       <View style={styles.header}>
-        <Text style={styles.title}>Storico</Text>
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+          <Text style={styles.title}>Storico</Text>
+          {/* 🌟 PULSANTE "i" AGGIUNTO DI FIANCO A STORICO */}
+          <TouchableOpacity style={styles.infoHelpButton} onPress={() => setMostraHelpPDF(true)}>
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
+          </TouchableOpacity>
+        </View>
+
         <View style={{flexDirection:'row', gap: 8}}>
           {datiReali.length > 0 && (
             <TouchableOpacity style={styles.exportButtonSvuotaMinimal} onPress={() => setMostraConfermaSvuota(true)}>
               <Text style={styles.exportTextSvuotaRed}>Svuota</Text>
             </TouchableOpacity>
           )}
-          {/* 🌟 PULSANTE PDF IN VERSIONE ROSSO ACROBAT NEON AD ALTO STACCO */}
           <TouchableOpacity style={styles.exportButtonPDFAcrobatNeon} onPress={generaEDesportaPDF}>
             <Ionicons name="document-text-outline" size={16} color={COLORS.error} />
             <Text style={styles.exportTextPDFAcrobatNeon}>Esporta PDF</Text>
@@ -441,6 +450,26 @@ export default function StoricoScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
+      {/* ℹ️ POPUP MODAL INFORMATIVO SULL'ESPORTAZIONE PDF */}
+      <Modal visible={mostraHelpPDF} animationType="fade" transparent={true}>
+        <View style={styles.modalOverlayCentrato}>
+          <View style={styles.modalContentHelp}>
+            <View style={styles.iconaHelpContainer}>
+              <Ionicons name="document-text" size={32} color={COLORS.error} />
+            </View>
+            <Text style={styles.modalTitleHelp}>Esportazione PDF</Text>
+            <Text style={styles.modalSubtitleHelp}>
+              L'esportazione in PDF avverrà cliccando sul pulsante "Esporta PDF" permettendoti di scaricare il file.{"\n\n"}
+              Selezionando lo Storico (tra 7 GG, 14 GG, 30 GG, 90 GG, Tutti) il sistema ti esporterà in PDF direttamente il range dei giorni selezionati.
+            </Text>
+            
+            <TouchableOpacity style={styles.btnChiudiHelp} onPress={() => setMostraHelpPDF(false)}>
+              <Text style={styles.btnChiudiHelpText}>Ho capito</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* POPUP MODAL DI MODIFICA INALTERATO */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
@@ -565,11 +594,13 @@ export default function StoricoScreen() {
     </View>
   );
 }
-// 📐 CONFIGURAZIONI CSS CON RICHIAMO RIGIDO NATURALE ICONA PDF ROSSA
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 50 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
+  
+  // ℹ️ NUOVO PULSANTE INFO AFFIANCATO AL TITOLO
+  infoHelpButton: { padding: 4, justifyContent: 'center', alignItems: 'center' },
   
   exportButtonSvuotaMinimal: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#13131A', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 82, 82, 0.15)' },
   exportTextSvuotaRed: { fontFamily: 'Plus Jakarta Sans', color: COLORS.error, fontWeight: '600', fontSize: 14 },
@@ -625,5 +656,13 @@ const styles = StyleSheet.create({
   btnAnnullaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: COLORS.onSurface },
   btnConfermaSvuota: { flex: 1, backgroundColor: COLORS.error, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   btnConfermaTextSvuota: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '600', color: '#FFF' },
-  notificaTendinaGenerale: { padding: 12, borderRadius: 12, borderWidth: 1, marginHorizontal: 16, marginBottom: 12, alignItems: 'center' }
+  notificaTendinaGenerale: { padding: 12, borderRadius: 12, borderWidth: 1, marginHorizontal: 16, marginBottom: 12, alignItems: 'center' },
+
+  // 📐 NUOVI STILI PER IL POPUP HELP PDF IN DARK MODE PREMIUM
+  modalContentHelp: { backgroundColor: '#111116', borderRadius: 24, padding: 24, width: '100%', maxWidth: 350, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
+  iconaHelpContainer: { marginBottom: 12, backgroundColor: '#241011', padding: 12, borderRadius: 999 },
+  modalTitleHelp: { fontFamily: 'Space Grotesk', fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 12 },
+  modalSubtitleHelp: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.muted, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  btnChiudiHelp: { backgroundColor: COLORS.brandPrimary, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, width: '100%', alignItems: 'center' },
+  btnChiudiHelpText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#0A0A0C' }
 });
