@@ -37,7 +37,7 @@ export default function GraficiScreen() {
   const [totaleMisurazioni, setTotaleMisurazioni] = useState<number>(0);
   const [timeInRange, setTimeInRange] = useState<number>(0);
   
-  const [puntiGraficoLinea, setPuntiGraficoLinea] = useState<any[]>([]);
+  const [puntiGraficoLinea, setPJMutiGraficoLinea] = useState<any[]>([]);
   const [medieMomenti, setMedieMomenti] = useState<any[]>([]);
   const [puntiGrafico24Ore, setPuntiGrafico24Ore] = useState<any[]>([]);
 
@@ -145,7 +145,6 @@ export default function GraficiScreen() {
             gruppiPerGiorno[dataChiave].push(item.glicemia);
           });
 
-          // 📈 MODIFICA FONDAMENTALE: Rimossa la limitazione .slice(-10), ora include tutti i 90 giorni
           const andamentoCronologico = Object.keys(gruppiPerGiorno)
             .map(dataChiave => {
               const valoriGiorno = gruppiPerGiorno[dataChiave];
@@ -153,7 +152,7 @@ export default function GraficiScreen() {
               return { dataLabel: dataChiave, media: Math.round(mediaGiorno) };
             })
             .sort((a, b) => parsingData(a.dataLabel).getTime() - parsingData(b.dataLabel).getTime());
-          setPuntiGraficoLinea(andamentoCronologico);
+          setPJMutiGraficoLinea(andamentoCronologico);
 
           const gruppiPerMomento: Record<string, number[]> = {};
           MOMENTI_ELENCO.forEach(m => { gruppiPerMomento[m] = []; });
@@ -174,13 +173,13 @@ export default function GraficiScreen() {
         } else {
           setMediaGlicemia(0);
           setTimeInRange(0);
-          setPuntiGraficoLinea([]);
+          setPJMutiGraficoLinea([]);
           setMedieMomenti([]);
           setPuntiGrafico24Ore([]);
         }
       }
     } catch (e) {
-      console.log("Errore nel calcolo dei dati.");
+      console.log("Errore calcolo dati.");
     }
   };
 
@@ -277,7 +276,6 @@ export default function GraficiScreen() {
           {percorsoLineaD !== "" && <path d={percorsoLineaD} fill="none" stroke={COLORS.brandPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
           
           {coordinataPunti.map((p, i) => {
-            // Se ci sono molti giorni (es. > 15), non disegniamo i pallini singoli e i micro-testi per non intasare la grafica
             const mostraDettaglioPunto = coordinataPunti.length <= 15;
             if (!mostraDettaglioPunto) return null;
             return (
@@ -290,7 +288,6 @@ export default function GraficiScreen() {
         </svg>
         <View style={styles.rigaEtichetteDate}>
           {puntiGraficoLinea.map((p, i) => {
-            // 📅 LOGICA SPAZIALE: Mostra solo l'inizio del trimestre, il centro perfetto e la data odierna finale
             const mostraData = i === 0 || i === Math.floor(puntiGraficoLinea.length / 2) || i === puntiGraficoLinea.length - 1;
             return <Text key={i} style={[styles.dataTestoLabel, { opacity: mostraData ? 1 : 0 }]}>{p.dataLabel.slice(0, 5)}</Text>;
           })}
@@ -345,11 +342,16 @@ export default function GraficiScreen() {
         </View>
       </View>
 
+      {/* 🔘 CONFIGURAZIONE INTEGRALE ONPRESS + HITSLOP SENSIBILE PER LE FINESTRE POPUP */}
       <View style={styles.cardGraficoContenitore}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
-          <TouchableOpacity onPress={mostraInfoGrafico24h} padding={4}>
-            <Ionicons name="information-circle-outline" size={19} color={COLORS.brandPrimary} />
+          <TouchableOpacity 
+            onPress={mostraInfoGrafico24h} 
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            style={styles.pulsanteInfoTocco}
+          >
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>Linea continua collegata dall'ultima misurazione effettuata ieri sera.</Text>
@@ -364,8 +366,12 @@ export default function GraficiScreen() {
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento Medie Giornaliere</Text>
-          <TouchableOpacity onPress={mostraInfoMedieGiornaliere} padding={4}>
-            <Ionicons name="information-circle-outline" size={19} color={COLORS.brandPrimary} />
+          <TouchableOpacity 
+            onPress={mostraInfoMedieGiornaliere} 
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            style={styles.pulsanteInfoTocco}
+          >
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>La fascia evidenziata indica il range ideale (70-180 mg/dL).</Text>
@@ -380,8 +386,12 @@ export default function GraficiScreen() {
       <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Medie per Momento della Giornata</Text>
-          <TouchableOpacity onPress={mostraInfoMedieMomenti} padding={4}>
-            <Ionicons name="information-circle-outline" size={19} color={COLORS.brandPrimary} />
+          <TouchableOpacity 
+            onPress={mostraInfoMedieMomenti} 
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            style={styles.pulsanteInfoTocco}
+          >
+            <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subLabelSpiegazione}>Analisi divisa per i 7 controlli del diario clinico.</Text>
@@ -410,6 +420,7 @@ const styles = StyleSheet.create({
   unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start' },
   rigaTitoloGrafico: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' },
+  pulsanteInfoTocco: { padding: 6, justifyContent: 'center', alignItems: 'center' },
   containerGraficoSvg: { width: '100%', marginTop: 6, position: 'relative' },
   rigaEtichetteDate: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, paddingHorizontal: 2 },
   dataTestoLabel: { fontFamily: 'Space Grotesk', fontSize: 10, fontWeight: '600', color: COLORS.muted },
