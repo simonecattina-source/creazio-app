@@ -141,7 +141,7 @@ export default function InserimentoScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      {/* 🏷️ INTESTAZIONE: MODIFICATO IL TASTO INFO CON SOLO ICONA REATTIVA E PULITA */}
+      {/* 🏷️ INTESTAZIONE CON TITOLO E TASTO INFO REATTIVO AD ICONA PURA MINIMAL */}
       <View style={styles.headerForm}>
         <Text style={styles.title}>Inserisci Nuovi Dati</Text>
         <TouchableOpacity 
@@ -153,7 +153,7 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
       
-      {/* 📅⏰ RIGHE TEMPORALI INALTERATE */}
+      {/* 📅⏰ SEZIONE DATE ED ORARI INALTERATI */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
@@ -213,7 +213,7 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* BOX INPUT INALTERATI */}
+      {/* BOX INPUT AFFIANCATI INALTERATI */}
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInput, styles.metaLarghezza]}>
           <Text style={styles.labelLeft}>Glicemia (mg/dL)</Text>
@@ -278,7 +278,7 @@ export default function InserimentoScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
-      {/* 🎪 MODAL INTERFACCIA INFO: TOTALMENTE COORDINATO AL DESIGN NEON PREMIUM */}
+      {/* 🎪 POP-UP GUIDA ALL'USO MODAL: TUTTI I TITOLI DEI QUADRI SCELTI IN UNIFORME BIANCO AD ALTO CONTRASTO */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -305,15 +305,17 @@ export default function InserimentoScreen() {
                 </Text>
               </View>
 
+              {/* FIX CROMATICO: Sostituito il vecchio verde con l'uniforme COLORS.onSurface coerente al blocco 1 e 2 */}
               <View style={styles.infoBlockPremium}>
-                <Text style={[styles.infoBlockTitle, { color: COLORS.success }]}>📊 Codici Colore Medici</Text>
+                <Text style={styles.infoBlockTitle}>📊 Codici Colore Medici</Text>
                 <Text style={styles.infoBlockText}>
                   I valori inseriti assumono colori diversi in base alle soglie cliniche standard: Verde per valori normali (70-180 mg/dL), Arancione in caso di ipoglicemia (&lt;70 mg/dL) e Rosso per iperglicemia (&gt;180 mg/dL).
                 </Text>
               </View>
 
+              {/* FIX CROMATICO: Sostituito il vecchio azzurro con l'uniforme COLORS.onSurface coerente al blocco 1 e 2 */}
               <View style={styles.infoBlockPremium}>
-                <Text style={[styles.infoBlockTitle, { color: COLORS.brandPrimary }]}>📄 Esportazione PDF Griglia Orizzontale</Text>
+                <Text style={styles.infoBlockTitle}>📄 Esportazione PDF Griglia Orizzontale</Text>
                 <Text style={styles.infoBlockText}>
                   Dalla sezione "Storico" puoi applicare i filtri rapidi (7, 14, 30, 90 giorni) e generare un report a griglia orizzontale strutturato pronto per la stampa o l'invio diretto al tuo medico diabetologo.
                 </Text>
@@ -339,8 +341,6 @@ const styles = StyleSheet.create({
   
   headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, width: '100%' },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
-  
-  // 🌟 NUOVO STILE PULSATO INFO MINIMAL (Rimosso bordi e sfondo grigio, solo icona pura)
   infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
 
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 14, marginBottom: 10 },
@@ -370,7 +370,6 @@ const styles = StyleSheet.create({
   notificaTendina: { backgroundColor: '#092414', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
 
-  // 🌟 STILE MODAL EVOLUTO COORDINATO AI GRAFICI NEON
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 16 },
   modalContentPremium: { backgroundColor: '#111116', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: COLORS.borderGlass, maxHeight: '85%' },
   modalHeaderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderGlass, paddingBottom: 10 },
