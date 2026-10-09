@@ -22,9 +22,9 @@ const MOMENTI_ELENCO = [
 ];
 
 const MOMENTI_SHORT = {
-  "Prima Colazione": "Pr.Col", "Dopo Colazione": "Dp.Col",
-  "Prima Pranzo": "Pr.Prz", "Dopo Pranzo": "Dp.Prz",
-  "Prima Cena": "Pr.Cen", "Dopo Cena": "Dp.Cen", "Notte": "Notte"
+  "Prima Colazione": "8:00", "Dopo Colazione": "11:00",
+  "Prima Pranzo": "12:00", "Dopo Pranzo": "15:00",
+  "Prima Cena": "20:00", "Dopo Cena": "22:00", "Notte": "24:00"
 };
 
 export default function GraficiScreen() {
