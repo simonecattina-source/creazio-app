@@ -37,6 +37,7 @@ const MOMENTI_SHORT = {
 export default function GraficiScreen() {
   const [datiReali, setDatiReali] = useState<any[]>([]);
   const [mediaGlicemia, setMediaGlicemia] = useState<number>(0);
+  const [mediaOggi, setMediaOggi] = useState<number>(0); 
   const [totaleMisurazioni, setTotaleMisurazioni] = useState<number>(0);
   const [timeInRange, setTimeInRange] = useState<number>(0);
   
@@ -58,15 +59,21 @@ export default function GraficiScreen() {
   );
 
   const apriSpiegazione = (tipo: string) => {
-    if (tipo === '24h') {
+    if (tipo === 'trimestrale') {
+      setModalTitolo("Panoramica Trimestrale");
+      setModalTesto("Statistiche complessive degli ultimi 90 giorni.\n\n• Media: la media aritmetica totale di tutti i test.\n• In Range (TIR): la percentuale di test rimasti all'interno dell'intervallo ideale (70 - 180 mg/dL).");
+    } else if (tipo === 'oggi') {
+      setModalTitolo("Media di Oggi");
+      setModalTesto("Questo box calcola in tempo reale la media aritmetica di tutte le misurazioni effettuate esclusivamente nella data corrente (dalle 00:00 ad adesso).\n\nTi permette un controllo immediato per capire se l'andamento della giornata è a target.");
+    } else if (tipo === '24h') {
       setModalTitolo("Andamento sulle 24 Ore");
-      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa curva continua azzurra unisce cronologicamente i tuoi test. Il grafico recupera automaticamente l'ultima misurazione di ieri sera prima di mezzanotte e la usa como punto di partenza a inizio giornata.");
+      setModalTesto("Questo grafico mostra l'andamento della glicemia nella giornata di oggi.\n\nLa curva continua azzurra unisce cronologicamente i tuoi test. Il grafico recupera automaticamente l'ultima misurazione di ieri sera prima di mezzanotte e la usa come punto di partenza a inizio giornata.");
     } else if (tipo === 'giornaliere') {
       setModalTitolo("Andamento Medie Giornaliere");
       setModalTesto("Questo grafico mostra il trend macro della tua media glicemica includendo tutti i 90 giorni del trimestre.\n\nLa fascia tra le due linee tratteggiate evidenzia il range ideale (70 - 180 mg/dL). Le linee tratteggiate indicano i limiti di sicurezza.");
     } else if (tipo === 'momenti') {
       setModalTitolo("Medie per Momento");
-      setModalTesto("Questo grafico analizza lo storico trimestrale (90 giorni) diviso per 7 moments della giornata.\n\nOgni colonna mostra la media calcolata in quello specifico orario. Lo stato indica: Verde (a target), Arancione (basso/ipo) o Rosso (alto/iper). Il trattino (-) indica assenza di dati.");
+      setModalTesto("Questo grafico analizza lo storico trimestrale (90 giorni) diviso per i 7 momenti della giornata.\n\nOgni colonna mostra la media calcolata in quello specifico orario. Lo stato indica: Verde (a target), Arancione (basso/ipo) o Rosso (alto/iper). Il trattino (-) indica assenza di dati.");
     } else if (tipo === 'glicata') {
       setModalTitolo("Stima Emoglobina Glicata (HbA1c)");
       setModalTesto("Questo modulo esegue una stima matematica predittiva della tua Emoglobina Glicata (HbA1c) basandosi sulla formula internazionale ADA (eAG) applicata a tutti i test degli ultimi 90 giorni.\n\nI binari indicano il livello di controllo metabolico:\n• Verde (< 7.0%): Ottimo controllo\n• Arancione (7.0% - 8.0%): Controllo moderato\n• Rosso (> 8.0%): Controllo insufficiente\n\nAttenzione: questo valore è puramente indicativo e matematico. Non sostituisce in alcun modo l'esame del sangue effettuato in laboratorio medico.");
@@ -115,7 +122,15 @@ export default function GraficiScreen() {
           const dataOggiTesto = formattaDataTesto(oggiObj);
           const dataIeriTesto = formattaDataTesto(ieriObj);
 
+          // 🌟 ISOLAMENTO E CALCOLO DELLA MEDIA DI OGGI
           const logDiOggi = elenco.filter((item: any) => item.dataTesto === dataOggiTesto);
+          if (logDiOggi.length > 0) {
+            const sommaOggi = logDiOggi.reduce((acc: number, item: any) => acc + item.glicemia, 0);
+            setMediaOggi(Math.round(sommaOggi / logDiOggi.length));
+          } else {
+            setMediaOggi(0);
+          }
+
           const logDiIeri = elenco.filter((item: any) => item.dataTesto === dataIeriTesto);
 
           let puntiOggi = logDiOggi.map((item: any) => {
@@ -180,6 +195,7 @@ export default function GraficiScreen() {
 
         } else {
           setMediaGlicemia(0);
+          setMediaOggi(0);
           setTimeInRange(0);
           setGlicataStimata(0);
           setGlicataMmol(0);
@@ -251,10 +267,10 @@ export default function GraficiScreen() {
           </defs>
           
           <rect x={margineLaterale} y={rigaSoglia180Y} width={spazioUtileX} height={rigaSoglia70Y - rigaSoglia180Y} fill="rgba(0, 230, 118, 0.04)" />
-          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+          <line x1={margineLaterale} y1={rigaSoglia180Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia180Y} stroke={COLORS.error} strokeWidth="1" strokeDasharray="3 3" opacity={0.6} />
           <text x={larghezzaGrafico - 5} y={rigaSoglia180Y + 3} fill={COLORS.error} fontSize="9" fontWeight="bold" textAnchor="end">180</text>
           
-          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+          <line x1={margineLaterale} y1={rigaSoglia70Y} x2={larghezzaGrafico - margineLaterale} y2={rigaSoglia70Y} stroke={COLORS.warning} strokeWidth="1" strokeDasharray="3 3" opacity={0.6} />
           <text x={larghezzaGrafico - 5} y={rigaSoglia70Y + 3} fill={COLORS.warning} fontSize="9" fontWeight="bold" textAnchor="end">70</text>
           
           {percorsoGradienteStr !== "" && <path d={percorsoGradienteStr} fill="url(#neonCyanGrad)" />}
@@ -381,9 +397,9 @@ export default function GraficiScreen() {
   const calcolaPercentualeBarraGlicata = (val: number) => {
     if (val === 0) return 0;
     const MIN_GLIC = 4.0;
-    const MAX_GLIC = 12.0;
-    const protetto = Math.max(MIN_GLIC, Math.min(MAX_GLIC, val));
-    return ((protetto - MIN_GLIC) / (MAX_GLIC - MIN_GLIC)) * 100;
+    const MAX_GLICEMIA = 12.0;
+    const protetto = Math.max(MIN_GLIC, Math.min(MAX_GLICEMIA, val));
+    return ((protetto - MIN_GLIC) / (MAX_GLICEMIA - MIN_GLIC)) * 100;
   };
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -401,32 +417,61 @@ export default function GraficiScreen() {
         </View>
       </Modal>
       
-      {/* 🌟 CARD 1 MODIFICATA: ELIMINATO IL BOX 3 DEI TEST TOTALI */}
-      <View style={styles.riepilogoCard}>
-        <Text style={styles.sectionLabel}>Panoramica Trimestrale (90 GG)</Text>
-        <View style={styles.containerRigaRiepilogo}>
-          
-          {/* BOX 1: MEDIA (PRENDE IL 50% DELLO SPAZIO ORIZZONTALE) */}
-          <View style={[styles.infoBoxStat, { borderLeftColor: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.borderGlass : COLORS.success }]}>
-            <Text style={styles.statLabel}>Media</Text>
-            <Text style={[styles.statValue, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.muted : COLORS.success }]}>
-              {mediaGlicemia > 0 ? `${mediaGlicemia}` : '-'} <Text style={styles.unitaMisuraSub}>mg/dL</Text>
-            </Text>
+      {/* 🌟 STRUTTURA AD AFFIANCAMENTO: COLONNA TRIMESTRE (2/3) E COLONNA OGGI (1/3) */}
+      <View style={styles.rigaCardSuperioriContainer}>
+        
+        {/* COLONNA SINISTRA: TRIMESTRE (PRENDE 2/3 DELLO SPAZIO) */}
+        <View style={styles.cardSuperioreDueTerzi}>
+          <View style={styles.rigaTitoloGrafico}>
+            <Text style={styles.sectionLabel} numberOfLines={1}>Trimestre (90 GG)</Text>
+            <TouchableOpacity onPress={() => apriSpiegazione('trimestrale')} style={styles.pulsanteInfoTocco}>
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.brandSecondary} />
+            </TouchableOpacity>
           </View>
           
-          {/* BOX 2: IN RANGE (PRENDE IL 50% DELLO SPAZIO ORIZZONTALE) */}
-          <View style={[styles.infoBoxStat, { borderLeftColor: totaleMisurazioni === 0 ? COLORS.borderGlass : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
-            <Text style={styles.statLabel}>In Range (TIR)</Text>
-            <Text style={[styles.statValue, { color: totaleMisurazioni === 0 ? COLORS.muted : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
-              {totaleMisurazioni > 0 ? `${timeInRange}%` : '-'}
-            </Text>
+          <View style={styles.rigaBoxInterniTrimestre}>
+            {/* BOX MEDIA */}
+            <View style={[styles.infoBoxStatMini, { borderLeftColor: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.borderGlass : COLORS.success }]}>
+              <Text style={styles.statLabel} numberOfLines={1}>Media</Text>
+              <Text style={[styles.statValueMini, { color: mediaGlicemia > 180 ? COLORS.error : mediaGlicemia < 70 ? COLORS.warning : mediaGlicemia === 0 ? COLORS.muted : COLORS.success }]}>
+                {mediaGlicemia > 0 ? `${mediaGlicemia}` : '-'} <Text style={styles.unitaMisuraSub}>mg</Text>
+              </Text>
+            </View>
+            
+            {/* BOX IN RANGE */}
+            <View style={[styles.infoBoxStatMini, { borderLeftColor: totaleMisurazioni === 0 ? COLORS.borderGlass : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
+              <Text style={styles.statLabel} numberOfLines={1}>In Range</Text>
+              <Text style={[styles.statValueMini, { color: totaleMisurazioni === 0 ? COLORS.muted : timeInRange >= 70 ? COLORS.success : timeInRange >= 50 ? COLORS.warning : COLORS.error }]}>
+                {totaleMisurazioni > 0 ? `${timeInRange}%` : '-'}
+              </Text>
+            </View>
           </View>
-          
         </View>
+
+        {/* 🌟 COLONNA DESTRA: NUOVA CARD MEDIA DI OGGI (PRENDE 1/3 DELLO SPAZIO) */}
+        <View style={styles.cardSuperioreUnTerzo}>
+          <View style={styles.rigaTitoloGrafico}>
+            <Text style={styles.sectionLabel} numberOfLines={1}>Oggi</Text>
+            <TouchableOpacity onPress={() => apriSpiegazione('oggi')} style={styles.pulsanteInfoTocco}>
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.brandPrimary} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.containerBoxInternoOggi}>
+            <View style={[styles.infoBoxStatOggiCompatto, { borderLeftColor: mediaOggi > 180 ? COLORS.error : mediaOggi < 70 ? COLORS.warning : mediaOggi === 0 ? COLORS.borderGlass : COLORS.success }]}>
+              <Text style={styles.statLabel} numberOfLines={1}>Media</Text>
+              <Text style={[styles.statValueOggiCentrale, { color: mediaOggi > 180 ? COLORS.error : mediaOggi < 70 ? COLORS.warning : mediaOggi === 0 ? COLORS.muted : COLORS.success }]}>
+                {mediaOggi > 0 ? `${mediaOggi}` : '-'}
+              </Text>
+              <Text style={styles.unitaMisuraSub}>{mediaOggi > 0 ? 'mg/dL' : 'no test'}</Text>
+            </View>
+          </View>
+        </View>
+
       </View>
 
       {/* CARD 2: GRAFICO CURVO ANDAMENTO 24 ORE */}
-      <View style={styles.cardGraficoContenitore}>
+      <View style={[styles.cardGraficoContenitore, { marginTop: 16 }]}>
         <View style={styles.rigaTitoloGrafico}>
           <Text style={styles.sectionLabel}>Andamento sulle 24 Ore (Oggi)</Text>
           <TouchableOpacity onPress={() => apriSpiegazione('24h')} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} style={styles.pulsanteInfoTocco}>
@@ -524,14 +569,23 @@ const styles = StyleSheet.create({
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, letterSpacing: -0.2 },
   subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, marginBottom: 16 },
   
-  riepilogoCard: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', marginBottom: 16, borderWidth: 1, borderColor: COLORS.borderGlass },
-  containerRigaRiepilogo: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 10 },
+  // 📐 CONTENITORE ORIZZONTALE RIGA SUPERIORE
+  rigaCardSuperioriContainer: { flexDirection: 'row', width: '100%', gap: 10, marginBottom: 16 },
   
-  // 📐 MODIFICATO: Grazie a flex: 1 su due elementi, occupano ciascuno esattamente il 50% dello spazio orizzontale della riga
-  infoBoxStat: { flex: 1, backgroundColor: '#020204', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: COLORS.borderGlass, borderLeftWidth: 3.5, alignItems: 'flex-start' },
-  statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 11, fontWeight: '700', color: COLORS.muted, marginBottom: 4 },
-  statValue: { fontFamily: 'Space Grotesk', fontSize: 19, fontWeight: '900', color: COLORS.onSurface },
-  unitaMisuraSub: { fontSize: 10, color: COLORS.muted, fontWeight: '400' },
+  // 📐 COLONNA SINISTRA TRIMESTRE (PRENDE 2 PARTI SU 3)
+  cardSuperioreDueTerzi: { flex: 2, backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: COLORS.borderGlass, justifyContent: 'space-between' },
+  rigaBoxInterniTrimestre: { flexDirection: 'row', gap: 6, marginTop: 10, width: '100%' },
+  infoBoxStatMini: { flex: 1, backgroundColor: '#020204', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: COLORS.borderGlass, borderLeftWidth: 3, alignItems: 'flex-start', minHeight: 65 },
+  
+  // 📐 COLONNA DESTRA OGGI (PRENDE 1 PARTE SU 3)
+  cardSuperioreUnTerzo: { flex: 1, backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: COLORS.borderGlass, justifyContent: 'space-between' },
+  containerBoxInternoOggi: { marginTop: 10, width: '100%' },
+  infoBoxStatOggiCompatto: { backgroundColor: '#020204', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: COLORS.borderGlass, borderLeftWidth: 3, alignItems: 'flex-start', minHeight: 65 },
+
+  statLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 10, fontWeight: '700', color: COLORS.muted, marginBottom: 2 },
+  statValueMini: { fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: '900', color: COLORS.onSurface },
+  unitaMisuraSub: { fontSize: 9, color: COLORS.muted, fontWeight: '400' },
+  statValueOggiCentrale: { fontFamily: 'Space Grotesk', fontSize: 14, fontWeight: '900' },
   
   cardGraficoContenitore: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
   rigaTitoloGrafico: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center' },
