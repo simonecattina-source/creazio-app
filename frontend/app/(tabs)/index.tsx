@@ -113,9 +113,9 @@ export default function InserimentoScreen() {
     }
   };
 
-  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI (CON FIX SINTASSI RIGA 118)
+  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI
   const gestisciImportazioneWeb = async (evento: any) => {
-    const file = evento.target.files?.[0]; // ✓ Corretto l'errore di sintassi qui
+    const file = evento.target.files?.;
     if (!file) return;
 
     const lettore = new FileReader();
@@ -328,7 +328,7 @@ export default function InserimentoScreen() {
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
 
-      {/* 🎪 POP-UP GUIDA ALL'USO CON RIGORE DI LEGGIBILITÀ BIANCA */}
+      {/* 🎪 POP-UP GUIDA ALL'USO ALLINEATO INTEGRALMENTE ALLO STORICO */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -407,8 +407,9 @@ const styles = StyleSheet.create({
   infoBlockPremium: { marginBottom: 16, backgroundColor: '#020204', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.borderGlass },
   infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
   
-  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.onSurface, lineHeight: 22, textAlign: 'left' },
+  // 📐 MODIFICA PERFETTA: ALLINEATO AL COLORE DELLO STORICO (COLORS.muted) CON LE CORRETTE MISURE DALL'ULTIMO REFACTOR
+  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.muted, lineHeight: 22, textAlign: 'left' },
   
-  btnChiudiInfo: { backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
-  btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#0A0A0C' }
+  btnChiudiInfo: { backgroundColor: '#020204', padding: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
+  btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface }
 });
