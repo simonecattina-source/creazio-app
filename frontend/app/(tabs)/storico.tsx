@@ -23,7 +23,6 @@ const MOMENTI_COLONNE = [
   "Prima Pranzo", "Dopo Pranzo", "Merenda", 
   "Prima Cena", "Dopo Cena", "Notte"
 ];
-
 export default function StoricoScreen() {
   const [filtroAttivo, setFiltroAttivo] = useState<'7' | '14' | '30' | '90' | 'all'>('all');
   const [datiReali, setDatiReali] = useState<any[]>([]);
@@ -136,7 +135,6 @@ export default function StoricoScreen() {
       alert("Errore durante l'eliminazione.");
     }
   };
-
   const apriModificaItem = (item: any) => {
     setItemSelezionato(item);
     setModGlicemia(item.glicemia.toString());
@@ -490,7 +488,6 @@ export default function StoricoScreen() {
           </View>
         </View>
       </Modal>
-
       {/* POPUP MODAL DI MODIFICA INALTERATO */}
       <Modal visible={mostraModalModifica} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
@@ -505,19 +502,9 @@ export default function StoricoScreen() {
                   value={modDataISO}
                   onChange={(e) => setModDataISO(e.target.value)}
                   style={{
-                    fontFamily: 'sans-serif',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#00E5FF',
-                    backgroundColor: '#13131A',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    marginBottom: '8px',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    cursor: 'pointer'
+                    fontFamily: 'sans-serif', fontSize: '14px', fontWeight: '600', color: '#00E5FF', backgroundColor: '#13131A',
+                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 10px', marginBottom: '8px',
+                    width: '100%', boxSizing: 'border-box', outline: 'none', cursor: 'pointer'
                   }}
                 />
               ) : (
@@ -531,19 +518,9 @@ export default function StoricoScreen() {
                   value={modOraText}
                   onChange={(e) => setModOraText(e.target.value)}
                   style={{
-                    fontFamily: 'sans-serif',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#00E5FF',
-                    backgroundColor: '#13131A',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    marginBottom: '8px',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    cursor: 'pointer'
+                    fontFamily: 'sans-serif', fontSize: '14px', fontWeight: '600', color: '#00E5FF', backgroundColor: '#13131A',
+                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px 10px', marginBottom: '8px',
+                    width: '100%', boxSizing: 'border-box', outline: 'none', cursor: 'pointer'
                   }}
                 />
               ) : (
@@ -686,9 +663,11 @@ const styles = StyleSheet.create({
   helpIconBox: { padding: 8, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: 34, height: 34 },
   helpTextContainer: { flex: 1, alignItems: 'flex-start' },
   helpSectionHeader: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 4 },
-  helpSectionBody: { fontFamily: 'Plus Jakarta Sans', fontSize: 12.5, color: COLORS.muted, lineHeight: 18, textAlign: 'left' },
   
-  // 🛠️ PULSANTE UNIFORMATO AL 100% CON LO STILE DEI GRAFICI
+  // 📏 REFACTOR COMPLETATO ALLINEATO AL 100% ALLA HOME:
+  // Impostato a 14.5 di dimensione e 22 di interlinea per il massimo comfort visivo.
+  helpSectionBody: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.muted, lineHeight: 22, textAlign: 'left' },
+  
   btnChiudiHelp: { marginTop: 10, backgroundColor: '#1A1A24', borderWidth: 1, borderColor: COLORS.borderGlass, paddingVertical: 12, borderRadius: 12, width: '100%', alignItems: 'center' },
   btnChiudiHelpText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface }
 });
