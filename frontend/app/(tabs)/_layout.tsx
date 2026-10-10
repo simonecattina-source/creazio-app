@@ -28,10 +28,14 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Icon sf="list.bullet.rectangle" />
           <NativeTabs.Trigger.Label>Storico</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        {/* Nuovo trigger per la navigazione nativa mobile */}
-        <NativeTabs.Trigger name="strumenti">
+        <NativeTabs.Trigger name="grafici">
+          <NativeTabs.Trigger.Icon sf="chart.bar.xaxis.asending" />
+          <NativeTabs.Trigger.Label>Grafici</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        {/* Aggiornato il puntamento della rotta nativa */}
+        <NativeTabs.Trigger name="impostazioni">
           <NativeTabs.Trigger.Icon sf="gearshape.2.fill" />
-          <NativeTabs.Trigger.Label>Strumenti</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Label>Impostazioni</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       </NativeTabs>
     );
@@ -69,6 +73,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+      
       <Tabs.Screen
         name="storico"
         options={{
@@ -78,11 +83,22 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* 🛠️ NUOVA SCHEDA STRUMENTI REGISTRATA NEL NAVIGATORE */}
+
       <Tabs.Screen
-        name="strumenti"
+        name="grafici"
         options={{
-          title: "Strumenti",
+          title: "Grafici",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* ⚙️ SCHEDA STRUMENTI RINOMINATA IN IMPOSTAZIONI COME ULTIMA ROTTA */}
+      <Tabs.Screen
+        name="impostazioni"
+        options={{
+          title: "Impostazioni",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings" size={size} color={color} />
           ),
