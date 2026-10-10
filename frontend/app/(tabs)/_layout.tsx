@@ -28,6 +28,11 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Icon sf="list.bullet.rectangle" />
           <NativeTabs.Trigger.Label>Storico</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
+        {/* Nuovo trigger per la navigazione nativa mobile */}
+        <NativeTabs.Trigger name="strumenti">
+          <NativeTabs.Trigger.Icon sf="gearshape.2.fill" />
+          <NativeTabs.Trigger.Label>Strumenti</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
     );
   }
@@ -70,6 +75,16 @@ export default function TabsLayout() {
           title: "Storico",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list" size={size} color={color} />
+          ),
+        }}
+      />
+      {/* 🛠️ NUOVA SCHEDA STRUMENTI REGISTRATA NEL NAVIGATORE */}
+      <Tabs.Screen
+        name="strumenti"
+        options={{
+          title: "Strumenti",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings" size={size} color={color} />
           ),
         }}
       />
