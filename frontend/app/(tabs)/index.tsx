@@ -16,8 +16,6 @@ const COLORS = {
   error: "#FF5252",             // Rosso corallo neon
   borderGlass: "rgba(255, 255, 255, 0.08)",
   borderGlassBright: "rgba(255, 255, 255, 0.15)", // Bordo ad alto contrasto per i box principali
-  
-  // ⚙️ STILE UNIFICATO UTILITY DI MANUTENZIONE
   bgUtility: "#1A1A24",         
   borderUtility: "#3A3A4A"      
 };
@@ -111,13 +109,13 @@ export default function InserimentoScreen() {
         }
       }
     } catch (error) {
-      alert("Errore durante la creazione del file di backup.");
+      alert("Errore Aegean durante il backup.");
     }
   };
 
   // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI SOVRASCRIVENDO LA MEMORIA LOCALE
   const gestisciImportazioneWeb = async (evento: any) => {
-    const file = evento.target.files?.[0];
+    const file = evento.target.files?.;
     if (!file) return;
 
     const lettore = new FileReader();
@@ -211,7 +209,7 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ⚙️ FIX PROPRIETÀ LABEL WEB ED ELEMENTI MOBILE FORZATI IN MODO SIMMETRICO */}
+      {/* ⚙️ ZONE PULSANTI MANUTENZIONE UNIFORMATI E COMPATTI */}
       <View style={styles.containerPulsantiBackupEsterni}>
         <TouchableOpacity style={styles.btnBackupEsterno} onPress={esportaBackupJSON}>
           <Ionicons name="cloud-download-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
@@ -220,23 +218,9 @@ export default function InserimentoScreen() {
         
         {Platform.OS === 'web' ? (
           <label style={{
-            backgroundColor: COLORS.bgUtility, 
-            borderWidth: '1px', 
-            borderStyle: 'solid',
-            borderColor: COLORS.borderUtility, 
-            borderRadius: 10,
-            paddingVertical: 6, 
-            paddingHorizontal: 12, 
-            display: 'flex', 
-            flexDirection: 'row', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            cursor: 'pointer', 
-            fontFamily: 'Plus Jakarta Sans', 
-            fontSize: '11px', 
-            fontWeight: '700', 
-            color: COLORS.onSurface,
-            boxSizing: 'border-box'
+            backgroundColor: COLORS.bgUtility, borderWidth: '1px', borderStyle: 'solid', borderColor: COLORS.borderUtility, borderRadius: 10,
+            paddingVertical: 6, paddingHorizontal: 12, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '11px', fontWeight: '700', color: COLORS.onSurface, boxSizing: 'border-box'
           }}>
             <Ionicons name="cloud-upload-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
             Importa Backup
@@ -344,7 +328,7 @@ export default function InserimentoScreen() {
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
 
-      {/* 🎪 POP-UP GUIDA ALL'USO */}
+      {/* 🎪 POP-UP GUIDA ALL'USO CON RIGORE DI LEGGIBILITÀ BIANCA */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -414,6 +398,7 @@ const styles = StyleSheet.create({
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#0A0A0C' },
   notificaTendina: { backgroundColor: '#092414', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
+  
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 16 },
   modalContentPremium: { backgroundColor: '#111116', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: COLORS.borderGlass, maxHeight: '85%' },
   modalHeaderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderGlass, paddingBottom: 10 },
@@ -421,7 +406,10 @@ const styles = StyleSheet.create({
   modalScrollInfo: { marginBottom: 16 },
   infoBlockPremium: { marginBottom: 16, backgroundColor: '#020204', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.borderGlass },
   infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
-  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 13, color: COLORS.muted, lineHeight: 19, textAlign: 'left' },
+  
+  // 📐 MODIFICA PERFETTA: COLORE CONFIGURATO IN BIANCO ULTRA-NITIDO (COLORS.onSurface) PER IL MASSIMO CONTRASTO
+  infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.onSurface, lineHeight: 22, textAlign: 'left' },
+  
   btnChiudiInfo: { backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
   btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: '#0A0A0C' }
 });
