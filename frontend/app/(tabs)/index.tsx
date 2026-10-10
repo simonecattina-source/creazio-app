@@ -336,7 +336,7 @@ export default function InserimentoScreen() {
 // 📐 FOGLI DI STILE CSS AVANZATI (SIZE ED INGOMBRI DEI BOX INPUT PRESERVATI AL 100%)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background }, 
-  content: { padding: 16, paddingTop: 45, paddingBottom: 40 },
+  content: { padding: 16, paddingTop: 15, paddingBottom: 40 },
   
   headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, width: '100%' },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
