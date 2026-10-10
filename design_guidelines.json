@@ -1,7 +1,13 @@
 {
-  "app_name": "GlicoTrack",
+  "app_name": "Diabety",
   "personality": "1 iOS-Native Clean",
   "personality_one_liner": "A clinical, highly readable, and zero-friction tracking interface that prioritizes immediate data entry and clear status visibility.",
+  "project_status": {
+    "current_iteration": "6",
+    "architecture_type": "Expo (React Native) iOS-Optimized Mobile Frontend + Python Backend",
+    "storage_system": "Offline-First Local Async Storage (glicotrack_data) with Native JSON Backup and Restore Capabilities",
+    "design_system_sync": "Fully unified across Tabs, Insertion, History, and Analytics using High-Contrast OLED Dark Neon standards."
+  },
   "color": {
     "light": {
       "surface": "#FFFFFF",
@@ -34,138 +40,195 @@
       "muted": "#8E8E93"
     },
     "dark": {
-      "surface": "#000000",
-      "onSurface": "#F2F2F7",
-      "surfaceSecondary": "#1C1C1E",
-      "onSurfaceSecondary": "#E5E5EA",
-      "surfaceTertiary": "#2C2C2E",
-      "onSurfaceTertiary": "#E5E5EA",
-      "surfaceInverse": "#F2F2F7",
-      "onSurfaceInverse": "#000000",
-      "brand": "#0A84FF",
-      "onBrand": "#FFFFFF",
-      "brandPrimary": "#0A84FF",
-      "onBrandPrimary": "#FFFFFF",
-      "brandSecondary": "#1A3A5A",
-      "onBrandSecondary": "#66B2FF",
-      "brandTertiary": "#112233",
-      "onBrandTertiary": "#66B2FF",
-      "success": "#30D158",
-      "onSuccess": "#FFFFFF",
-      "warning": "#FF9F0A",
-      "onWarning": "#FFFFFF",
-      "error": "#FF453A",
-      "onError": "#FFFFFF",
-      "info": "#0A84FF",
-      "onInfo": "#FFFFFF",
-      "border": "#38383A",
-      "borderStrong": "#48484A",
-      "divider": "#38383A",
-      "muted": "#8E8E93"
+      "surface": "#0A0A0C",
+      "onSurface": "#FFFFFF",
+      "surfaceSecondary": "#13131A",
+      "surfaceTertiary": "#15151F",
+      "brandPrimary": "#00E5FF",
+      "brandSecondary": "#7D52FF",
+      "success": "#00E676",
+      "warning": "#FF9100",
+      "error": "#FF5252",
+      "muted": "#7E7E86",
+      "borderGlass": "rgba(255, 255, 255, 0.06)",
+      "borderGlassBright": "rgba(255, 255, 255, 0.15)"
     }
   },
   "typography": {
     "displayFontFamily": "Space Grotesk",
     "textFontFamily": "Plus Jakarta Sans",
     "scale": {
-      "sm": 12,
-      "base": 14,
-      "lg": 16,
-      "xl": 20,
-      "2xl": 24
+      "sm": 11,
+      "base": 12,
+      "md": 13,
+      "lg": 14,
+      "xl": 16,
+      "2xl": 20,
+      "3xl": 24,
+      "4xl": 26,
+      "5xl": 32,
+      "giant": 38
     }
   },
   "spacing": {
     "rule": "Generous vertical breathing room for forms. Safe-area clearance is mandatory. Use md (12) for inner component padding and lg (16) for screen edges.",
     "xs": 4,
-    "sm": 8,
-    "md": 12,
-    "lg": 16,
-    "xl": 24,
-    "2xl": 32,
-    "3xl": 48
+    "sm": 6,
+    "md": 8,
+    "lg": 10,
+    "xl": 12,
+    "2xl": 14,
+    "3xl": 16,
+    "4xl": 24,
+    "5xl": 15,
+    "padding_bottom_clearance": 110
   },
   "radius_tokens": {
-    "sm": 6,
-    "md": 12,
-    "lg": 20,
+    "sm": 4,
+    "md": 6,
+    "lg": 10,
+    "xl": 12,
+    "2xl": 14,
+    "3xl": 16,
+    "panels": 24,
     "pill": 999
   },
-  "shadow_tier": "1",
-  "navigation": "bottom_tabs",
-  "icon_set": "Ionicons",
-  "glassmorphism": {
-    "enabled": "true",
-    "do's": [
-      "Use frosted glass on the bottom tab bar.",
-      "Use glass for sticky sticky headers over the history timeline.",
-      "Apply to the floating 'Esporta PDF' button container if pinned over scrolling content."
-    ],
-    "dont's": [
-      "Never blur standard form inputs or list rows.",
-      "Avoid applying glassmorphism to data cards inside the timeline."
+  "shadow_tier": {
+    "elevation": 4,
+    "shadowColor": "#000000",
+    "shadowOffset": { "width": 0, "height": 4 },
+    "shadowOpacity": 0.4,
+    "shadowRadius": 6
+  },
+  "navigation_specification": {
+    "type": "bottom_tabs",
+    "icon_set": "Ionicons",
+    "bar_style": {
+      "backgroundColor": "#0A0A0C",
+      "borderTopColor": "rgba(255, 255, 255, 0.08)",
+      "borderTopWidth": 1,
+      "activeTintColor": "#00E5FF",
+      "inactiveTintColor": "#636366"
+    },
+    "tabs": [
+      { "name": "index", "title": "Inserisci", "icon": "add-circle" },
+      { "name": "storico", "title": "Storico", "icon": "list" }
     ]
   },
-  "platform_libraries": {
-    "glass": {
-      "ios": "expo-glass-effect",
-      "android": "expo-blur",
-      "low_end_android_fallback": "solid surfaceSecondary"
+  "backup_and_restore_specification": {
+    "export_mechanism": "Converts the full local AsyncStorage array into a standardized shareable JSON file using expo-sharing, allowing the user to securely save their raw database to iOS Files, Email, or personal iCloud/Drive storage.",
+    "import_mechanism": "Utilizes native document pickers to read a previously exported Diabety JSON state file, validates the data structure parameters, and rewrites it safely into the local AsyncStorage container.",
+    "conflict_resolution": "Total override upon user confirmation. Replaces the current active phone state with the uploaded backup file to prevent duplicate record collisions.",
+    "privacy_tier": "Absolute. 100% offline. The developer has zero access to data transfer states; files remain strictly in the user's custody."
+  },
+  "core_features_and_logic": {
+    "glucose_thresholds": {
+      "hypoglycemia": { "limit": "<70", "color": "#FF9100", "state": "warning" },
+      "target_range": { "limit": "70-180", "color": "#00E676", "state": "success" },
+      "hyperglycemia": { "limit": ">180", "color": "#FF5252", "state": "error" }
     },
-    "image": "expo-image",
-    "blur": "expo-blur",
-    "bottom_sheet": "@gorhom/bottom-sheet",
-    "animation": "react-native-reanimated",
-    "gesture": "react-native-gesture-handler"
+    "hba1c_estimation_algorithm": {
+      "formula_used": "ADA / eAG international standard formula: HbA1c = (Average Glucose + 46.7) / 28.7",
+      "conversion_mmol_mol": "IFCC calculation: (HbA1c - 2.15) * 10.978",
+      "data_pool": "Evaluates all historical logging elements restricted to a moving 90-day window",
+      "control_tiers": {
+        "optimal": { "range": "<7.0%", "color": "#00E676", "label": "Ottimo controllo" },
+        "moderate": { "range": "7.0% - 8.0%", "color": "#FF9100", "label": "Controllo moderato" },
+        "insufficient": { "range": ">8.0%", "color": "#FF5252", "label": "Controllo insufficiente" }
+      }
+    },
+    "timeline_continuity_logic": {
+      "graph_24h_start_point": "Automatically fetches the final measurement recorded on the previous day before midnight and injects it at minute 00:00 to provide a continuous, seamless connection trend-line"
+    },
+    "data_storage_policy": {
+      "rolling_window_days": 91,
+      "action": "Automatic purge filter executed during saves and modifications to enforce privacy and storage efficiency"
+    }
   },
   "screens": [
     {
       "name": "Inserimento (Home)",
       "purpose": "Rapid, single-screen logging of glucose, insulin, and meal context with immediate visual feedback on thresholds.",
       "states": {
-        "loading": "Centered spinner (rare, mostly instantaneous local storage).",
+        "loading": "Continuous background clock interval checking for idle status reset.",
         "empty": "N/A - This is always an actionable form.",
-        "error": "Inline validation messages below the glucose input if value is impossible."
+        "error": "Standard field-level structural block validation alerts."
       },
-      "layout": "Screen opens directly to this form. Top section: abstract medical blue header with current Date & Time pickers. Center: Massive numeric input for 'Glicemia (mg/dL)'. The text color of this input changes dynamically (Red if >180, Orange if <70, Green/Default if normal) for instant feedback. Below: Insulin units (numeric stepper or compact input). Next section: 9 Meal Moments rendered as a wrapping flex-row of pill-shaped chips (brandTertiary when selected, surfaceSecondary when inactive). Bottom: Optional text input for 'Note alimentari'. Sticky primary CTA at the bottom 'Salva Misurazione', anchored above the keyboard using KeyboardAvoidingView."
+      "layout": "Header Row: Section title 'Inserisci Nuovi Dati' positioned left, paired with an adjacent minimalist info button icon linked to a comprehensive user guide modal. Time Context Row: Dual independent columns aligning 'Data del Test' and 'Orario del Test' horizontally, embedding native HTML date/time inputs for Web layers. Center Entry Row: Symmetric side-by-side (affiancati) flex layout split (1/2 width each) built with high-contrast card blocks ('#15151F') featuring bright borders. Left input holds 'Glicemia (mg/dL)' using reactive numeric fonts that shift color dynamically (Green/Orange/Red) based on active keystrokes. Right input maps 'Insulina (Unità UI)'. Food Selection: A non-sequential horizontal chip wrap layout tracking 9 core medical columns. Footer: Optional text box for notes and a sticky full-width primary CTA 'Salva Misurazione'."
     },
     {
       "name": "Storico",
-      "purpose": "A clear, stacked timeline of all historical measurements grouped by day, with a quick export function.",
+      "purpose": "An interactive chronological medical journal grouped by date with real-time filtering, record editing, and landscape PDF generation.",
       "states": {
-        "loading": "Skeleton lines mimicking the timeline structure.",
-        "empty": "Clean clipboard illustration centered with text 'Nessuna misurazione registrata' and CTA 'Aggiungi ora'.",
-        "error": "Readable error message with a retry button to reload local data."
+        "loading": "Skeleton lines mimicking the timeline structure visualization.",
+        "empty": "Centered fallback informational text text block stating 'Nessuna misurazione salvata in questo intervallo di tempo.' inside an active padding layout context.",
+        "error": "Silent catch-block logging if local storage read operations fail."
       },
-      "layout": "Header: Title 'Storico' and a prominent 'Esporta in PDF' button. Body: SectionList grouped by Date. Each row uses a stacked timeline layout: a vertical line with a colored dot on the left (Red for high, Orange for low, Green for normal glucose) connecting to a data card. The data card (surfaceSecondary) contains the Glucose value (large text in Space Grotesk), Insulin units, Meal moment icon/text, and optional notes. Generous bottom padding to allow scrolling past the tab bar."
+      "layout": "Header Row: Top horizontal bar housing section title 'Storico' paired with an adjacent conditional information icon button '(i)' that triggers a text-aligned descriptive popup modal help screen. The right side of the header anchors two inline functional action buttons: 'Svuota' (minimalist layout trigger for total log purging) and 'Esporta PDF' (styled via a high-contrast coral neon container). Below the header, a dedicated segmented Filter Bar spans five interactive horizontal buttons ('7 GG', '14 GG', '30 GG', '90 GG', 'Tutti') to slice local data states. Main body: A native SectionList components layer sorted descending (most recent first) grouped by date subheadings. Each timeline row combines a left vertical progress line vector accented by a color-coded threshold node status indicator dot linking rightward to an active card container. The individual measurement card is fully pressable to initiate record management modals, containing large geometric text for Glucose values, aligned time strings, a compact pencil icon accent, and row descriptions mapping Meal moment context, Insulin doses, and merged timestamped notes blocks."
+    },
+    {
+      "name": "Grafici",
+      "purpose": "Visual analytics and dashboard indicators for clinical trends, metabolic overview, and estimated HbA1c tracking.",
+      "states": {
+        "loading": "Activity indicators over empty card frames.",
+        "empty": "Fallback informational text state blocks 'Nessun dato inserito' inside empty charts.",
+        "error": "Silent catch-block logging if local storage read operations fail."
+      },
+      "layout": "Header: Section title 'Analisi e Grafici'. Top layout row utilizes a rigid proportional grid split: Left column panel spans 2/3 width housing the 'Panoramica Trimestrale (90 GG)' which encapsulates two adjacent horizontal sub-boxes representing 'Media' and 'In Range (TIR)'. Right column panel spans 1/3 width hosting an isolated independent analytics block reporting the absolute arithmetic 'Media di Oggi' for the current day. Below the header grid, four independent card containers (surfaceSecondary) stack vertically. Card 1: 'Andamento sulle 24 Ore (Oggi)' showing continuous blood sugar data points via inline SVG line maps. Card 2: 'Andamento Medie Giornaliere' visualizing macroscopic 90-day multi-day charts. Card 3: 'Medie per Momento della Giornata' mapping an active horizontal 7-column histogram grid reflecting historical time slots. Card 4: 'Stima Emoglobina Glicata (HbA1c)' utilizing a dynamic horizontal progress gauge indicator tracking metabolic quality tiers."
     }
   ],
-  "images": {
-    "header_abstract_medical": {
-      "url": "https://images.unsplash.com/photo-1743046813915-94cf6d5e6942?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1lZGljYWwlMjBjbGVhbiUyMGJhY2tncm91bmQlMjB3aGl0ZSUyMGJsdWV8ZW58MHx8fHwxNzkxMTQwOTY2fDA&ixlib=rb-4.1.0&q=85",
-      "alt": "Soft abstract medical blue and white flowing background for the header"
+  "medical_pdf_export_specification": {
+    "orientation": "Landscape (Orizzontale)",
+    "structure": "Professional 10-column nested header table layout",
+    "intended_recipient": "Designed for clinical review and printing for medical practitioners/endocrinologists",
+    "rendering_algorithm": "Processes data in strict 4-day blocks per page table structures, dynamically embedding target inline styles to bypass native safety blocks on iOS Safari architectures."
+  },
+  "historical_changelog_and_modifications": [
+    {
+      "scope": "Backend Architecture",
+      "action": "Configured Python environment, server endpoints (server.py), and testing configurations (pytest.ini) to support clinical thresholds."
     },
-    "empty_clipboard": {
-      "url": "https://images.unsplash.com/photo-1651760680066-db9d32bd0357?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxlbXB0eSUyMGNsaXBib2FyZCUyMG9yJTIwZG9jdW1lbnQlMjBtZWRpY2FsJTIwY2xlYW58ZW58MHx8fHwxNzkxMTQwOTY2fDA&ixlib=rb-4.1.0&q=85",
-      "dark": "https://images.unsplash.com/photo-1651760680066-db9d32bd0357?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTB8MHwxfHNlYXJjaHwxfHxlbXB0eSUyMGNsaXBib2FyZCUyMG9yJTIwZG9jdW1lbnQlMjBtZWRpY2FsJTIwY2xlYW58ZW58MHx8fHwxNzkxMTQwOTY2fDA&ixlib=rb-4.1.0&q=85",
-      "alt": "Clean clipboard representing an empty medical history state"
+    {
+      "scope": "Navigation Layout (_layout.tsx)",
+      "action": "Implemented a unified High-Contrast OLED Dark Neon styling layer onto the bottom Expo router tab bars using borderGlass bounds."
+    },
+    {
+      "scope": "Home Screen (index.tsx)",
+      "action": "Rearranged central fields into a side-by-side (affiancati) horizontal row grid splitting Glicemia and Insulina into distinct, high-contrast card blocks."
+    },
+    {
+      "scope": "Home Screen (index.tsx)",
+      "action": "Configured a passive idle timer state that auto-updates timestamp strings unless proactive characters are keyed in."
+    },
+    {
+      "scope": "History Screen (storico.tsx)",
+      "action": "Integrated a functional dual help popup module (Modal) explaining report selections and single row pencil modifications."
+    },
+    {
+      "scope": "History Screen (storico.tsx)",
+      "action": "Bound a string merge parsing system that embeds timestamps inside brackets directly into the note content blocks to streamline database arrays."
+    },
+    {
+      "scope": "Analytics Screen (grafici.tsx)",
+      "action": "Purged the 'Test Totali' frame indicator element from Card 1 to remove visual congestion."
+    },
+    {
+      "scope": "Analytics Screen (grafici.tsx)",
+      "action": "Redesigned the top stat segment into an asymmetric proportional panel grid layout: 2/3 width assigned to the windowed Quarterly metrics (Media, TIR), and 1/3 width assigned to a real-time tracking block calculating today's current daily blood glucose mean."
+    },
+    {
+      "scope": "Backup Strategy (Iteration 6)",
+      "action": "Shifted cloud architectural layout specs toward a zero-risk 100% offline Native JSON state file import/export utility mapped via expo-sharing vectors."
     }
-  },
-  "haptics": {
-    "events": {
-      "save_measurement": "notification_success",
-      "select_meal_moment": "selection",
-      "change_glucose_value": "impact_light",
-      "export_pdf": "impact_medium"
-    }
-  },
+  ],
   "instructions_to_main_agent": [
     "Design specifically for iOS (iPhone optimized) natively, do not build web-based UI paradigms. No hover states.",
     "Implement both Light and Dark mode strictly using the provided color tokens in the JSON.",
     "On the 'Inserimento' screen, dynamically color the Glucose text input based on the value (<70 warning/orange, >180 error/red).",
-    "Use a wrapping flex-row of pill chips (flexDirection: 'row', flexWrap: 'wrap', gap: 8) for the 9 meal moments. Do not use a native picker as it takes too many taps.",
+    "Use side-by-side horizontal row grid allocations (affiancati) for Glicemia and Insulina blocks inside the Inserimento module layout.",
     "The timeline in the 'Storico' screen must have visual connecting lines between items of the same day. Use the status colors (warning, error, success) for the timeline dots.",
-    "PDF Export must generate a landscape PDF with a professional 10-column nested header table, as explicitly requested by the user. Use expo-print and expo-sharing.",
-    "Keep navigation to Bottom Tabs: 'Inserisci' and 'Storico'. The app must default to the 'Inserisci' tab on launch."
+    "The 'Grafici' dashboard layouts must render using purely native parameters or native SVG tags to eliminate third-party bundling bottlenecks, ensuring native multi-platform compatibility and structural safety.",
+    "PDF Export must generate a landscape PDF with a professional 10-column nested header table parsing strictly in 4-day structural blocks per page, as explicitly requested by the user. Use expo-print and expo-sharing.",
+    "Integrate native JSON import/export document handlers using expo-sharing frameworks to facilitate raw offline backup states."
   ]
 }
