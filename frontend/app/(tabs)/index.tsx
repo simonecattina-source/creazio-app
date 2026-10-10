@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sharing from 'expo-sharing';
 
 // 🎨 PALETTE COLORI ELEVATA PER MASSIMO STACCO IN DARK MODE
 const COLORS = {
@@ -38,6 +39,7 @@ export default function InserimentoScreen() {
     const minuti = String(oggi.getMinutes()).padStart(2, '0');
     return `${ore}:${minuti}`;
   };
+
   const [dataISO, setDataISO] = useState(ottieniDataOdiernaISO());
   const [oraInserita, setOraInserita] = useState(ottieniOraCorrente());
   const [glicemia, setGlicemia] = useState('');
@@ -45,7 +47,6 @@ export default function InserimentoScreen() {
   const [momentoSelezionato, setMomentoSelezionato] = useState('Prima Colazione');
   const [note, setNote] = useState('');
   const [mostraNotifica, setMostraNotifica] = useState(false);
-  
   const [mostraModalInfo, setMostraModalInfo] = useState(false);
 
   useEffect(() => {
@@ -78,6 +79,65 @@ export default function InserimentoScreen() {
     if (valore > 180) return COLORS.error;
     return COLORS.success;
   };
+  // 💾 ESPORTA IL BACKUP DIARIO IN UN FILE JSON CONDIVISIBILE
+  const esportaBackupJSON = async () => {
+    try {
+      const storicoEsistente = await AsyncStorage.getItem('glicotrack_data');
+      if (!storicoEsistente || JSON.parse(storicoEsistente).length === 0) {
+        alert("Non ci sono misurazioni salvate da esportare.");
+        return;
+      }
+      
+      if (Platform.OS === 'web') {
+        const blob = new Blob([storicoEsistente], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'backup_diabety_diario.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(storicoEsistente)}`;
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(dataUri, { dialogTitle: 'Salva il tuo Backup Diabety' });
+        } else {
+          alert("La condivisione non è supportata su questo dispositivo.");
+        }
+      }
+    } catch (error) {
+      alert("Errore durante la creazione del file di backup.");
+    }
+  };
+
+  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI SOVRASCRIVENDO LA MEMORIA LOCALE
+  const gestisciImportazioneWeb = async (evento: any) => {
+    const file = evento.target.files?.[0];
+    if (!file) return;
+
+    const lettore = new FileReader();
+    lettore.onload = async (e: any) => {
+      try {
+        const contenutoTesto = e.target.result;
+        const datiVerificati = JSON.parse(contenutoTesto);
+        
+        if (Array.isArray(datiVerificati)) {
+          const conferma = window.confirm("ATTENZIONE: L'importazione di questo backup sovrascriverà completamente tutti i dati attualmente presenti sul telefono. Vuoi procedere?");
+          if (conferma) {
+            await AsyncStorage.setItem('glicotrack_data', contenutoTesto);
+            alert("✓ Diario ripristinato con successo! Riavvia l'applicazione per aggiornare le schermate.");
+          }
+        } else {
+          alert("Il file selezionato non è un backup valido di Diabety.");
+        }
+      } catch (err) {
+        alert("Impossibile leggere il file. Assicurati che sia un file JSON corretto.");
+      }
+    };
+    lettore.readAsText(file);
+  };
+
   const salvaMisurazione = async () => {
     const valoreGlicemia = parseInt(glicemia);
     
@@ -128,11 +188,8 @@ export default function InserimentoScreen() {
       setInsulina('');
       setNote('');
       setOraInserita(ottieniOraCorrente());
-      
       setMostraNotifica(true);
-      setTimeout(() => {
-        setMostraNotifica(false);
-      }, 3000);
+      setTimeout(() => { setMostraNotifica(false); }, 3000);
 
     } catch (error) {
       alert("Impossibile salvare i dati localmente.");
@@ -142,16 +199,37 @@ export default function InserimentoScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      {/* 🏷️ INTESTAZIONE CON TITOLO E TASTO INFO REATTIVO AD ICONA PURA MINIMAL */}
+      {/* 🏷️ INTESTAZIONE CON TITOLO E TASTO INFO REATTIVO */}
       <View style={styles.headerForm}>
         <Text style={styles.title}>Inserisci Nuovi Dati</Text>
-        <TouchableOpacity 
-          style={styles.infoButtonMinimal} 
-          onPress={() => setMostraModalInfo(true)}
-          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-        >
+        <TouchableOpacity style={styles.infoButtonMinimal} onPress={() => setMostraModalInfo(true)} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
           <Ionicons name="information-circle-outline" size={26} color={COLORS.brandPrimary} />
         </TouchableOpacity>
+      </View>
+
+      {/* ⚙️ SEZIONE DEI TASTI DI BACKUP SOTTO IL TITOLO PRINCIPALE */}
+      <View style={styles.containerPulsantiBackupEsterni}>
+        <TouchableOpacity style={[styles.btnBackupEsterno, { backgroundColor: '#1A1A24', borderColor: COLORS.borderGlass }]} onPress={esportaBackupJSON}>
+          <Ionicons name="cloud-download-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 4 }} />
+          <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontSize: 12, fontWeight: '700' }}>Esporta JSON</Text>
+        </TouchableOpacity>
+        
+        {Platform.OS === 'web' ? (
+          <label style={{
+            flex: 1, backgroundColor: '#0C232B', borderWidth: 1, borderColor: COLORS.brandPrimary, borderRadius: 10,
+            padding: 10, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '12px', fontWeight: '700', color: COLORS.brandPrimary
+          }}>
+            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.brandPrimary} style={{ marginRight: 4 }} />
+            Importa JSON
+            <input type="file" accept=".json" onChange={gestisciImportazioneWeb} style={{ display: 'none' }} />
+          </label>
+        ) : (
+          <TouchableOpacity style={[styles.btnBackupEsterno, { backgroundColor: '#0C232B', borderColor: COLORS.brandPrimary }]}>
+            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.brandPrimary} style={{ marginRight: 4 }} />
+            <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontSize: 12, fontWeight: '700' }}>Importa JSON</Text>
+          </TouchableOpacity>
+        )}
       </View>
       
       {/* 📅⏰ RIGHE TEMPORALI INALTERATE */}
@@ -165,19 +243,9 @@ export default function InserimentoScreen() {
               max={ottieniDataOdiernaISO()} 
               onChange={(e) => setDataISO(e.target.value)}
               style={{
-                fontFamily: 'sans-serif',
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#FFFFFF', 
-                backgroundColor: '#13131A', 
-                border: '1px solid rgba(255,255,255,0.08)', 
-                borderRadius: '10px',
-                padding: '6px 10px',
-                marginTop: '4px',
-                width: 'auto', 
-                display: 'inline-block',
-                outline: 'none',
-                cursor: 'pointer'
+                fontFamily: 'sans-serif', fontSize: '15px', fontWeight: '600', color: '#FFFFFF', 
+                backgroundColor: '#13131A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
+                padding: '6px 10px', marginTop: '4px', width: 'auto', display: 'inline-block', outline: 'none', cursor: 'pointer'
               }}
             />
           ) : (
@@ -193,19 +261,9 @@ export default function InserimentoScreen() {
               value={oraInserita}
               onChange={(e) => setOraInserita(e.target.value)}
               style={{
-                fontFamily: 'sans-serif',
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#FFFFFF', 
-                backgroundColor: '#13131A', 
-                border: '1px solid rgba(255,255,255,0.08)', 
-                borderRadius: '10px',
-                padding: '6px 10px',
-                marginTop: '4px',
-                width: 'auto', 
-                display: 'inline-block',
-                outline: 'none',
-                cursor: 'pointer'
+                fontFamily: 'sans-serif', fontSize: '15px', fontWeight: '600', color: '#FFFFFF', 
+                backgroundColor: '#13131A', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
+                padding: '6px 10px', marginTop: '4px', width: 'auto', display: 'inline-block', outline: 'none', cursor: 'pointer'
               }}
             />
           ) : (
@@ -214,14 +272,13 @@ export default function InserimentoScreen() {
         </View>
       </View>
 
-      {/* 🌟 RIGHE APPORTATE CON I DUE BOX AD ALTO STACCO IN MARGINE ED EFFETTI PRESTIGIO */}
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInputHighlight, styles.metaLarghezza]}>
           <Text style={styles.labelLeftHighlight}>Glicemia (mg/dL)</Text>
           <TextInput
             style={[styles.glicemiaInput, { color: ottieniColoreGlicemia() }]}
             placeholder="00"
-            placeholderTextColor="#636366" // Placeholder hi-tech più visibile
+            placeholderTextColor="#636366" 
             keyboardType="numeric"
             value={glicemia}
             onChangeText={setGlicemia}
@@ -234,7 +291,7 @@ export default function InserimentoScreen() {
           <TextInput
             style={styles.insulinaInput}
             placeholder="0"
-            placeholderTextColor="#636366" // Placeholder hi-tech più visibile
+            placeholderTextColor="#636366" 
             keyboardType="numeric"
             value={insulina}
             onChangeText={setInsulina}
@@ -242,17 +299,12 @@ export default function InserimentoScreen() {
           />
         </View>
       </View>
-
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
           const selezionato = momentoSelezionato === m;
           return (
-            <TouchableOpacity
-              key={m}
-              style={[styles.chip, selezionato && styles.chipSelezionata]}
-              onPress={() => setMomentoSelezionato(m)}
-            >
+            <TouchableOpacity key={m} style={[styles.chip, selezionato && styles.chipSelezionata]} onPress={() => setMomentoSelezionato(m)}>
               <Text style={[styles.chipText, selezionato && styles.chipTextSelezionato]}>{m}</Text>
             </TouchableOpacity>
           );
@@ -261,13 +313,7 @@ export default function InserimentoScreen() {
 
       <View style={[styles.cardInput, { padding: 12, marginBottom: 16 }]}>
         <Text style={styles.labelLeft}>Note Alimentari / Sintomi</Text>
-        <TextInput
-          style={styles.noteInput}
-          placeholder="Es: Riso integrale, stanchezza..."
-          placeholderTextColor="#48484A"
-          value={note}
-          onChangeText={setNote}
-        />
+        <TextInput style={styles.noteInput} placeholder="Es: Riso integrale, stanchezza..." placeholderTextColor="#48484A" value={note} onChangeText={setNote} />
       </View>
 
       {mostraNotifica && (
@@ -279,7 +325,8 @@ export default function InserimentoScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
-      {/* 🎪 POP-UP GUIDA ALL'USO MODAL UNIFORME */}
+
+      {/* 🎪 POP-UP GUIDA ALL'USO MODAL NETTO E PULITO */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -291,35 +338,18 @@ export default function InserimentoScreen() {
             </View>
 
             <ScrollView style={styles.modalScrollInfo} showsVerticalScrollIndicator={false}>
-              
               <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>🛡️ Archivio Rotante di 90 Giorni</Text>
-                <Text style={styles.infoBlockText}>
-                  L'app memorizza ed esegue il calcolo dei dati basandosi sull'ultimo trimestre completo (13 settimane). Ad ogni nuovo inserimento, i log antecedenti ai 90 giorni vengono eliminati automaticamente per salvaguardare spazio e privacy.
-                </Text>
+                <Text style={styles.infoBlockText}>L'app esegue il calcolo dei dati sull'ultimo trimestre. I log antecedenti ai 90 giorni vengono eliminati automaticamente per salvaguardare spazio.</Text>
               </View>
-
               <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>⏰ Tracciamento Orario Intraday</Text>
-                <Text style={styles.infoBlockText}>
-                  L'orario selezionato viene memorizzato per ordinare cronologicamente la timeline e viene fuso automaticamente tra parentesi quadre all'inizio delle tue Note. In questo modo rimarrà impresso in modo chiaro anche nell'esportazione.
-                </Text>
+                <Text style={styles.infoBlockText}>L'orario viene memorizzato per ordinare cronologicamente la timeline e viene fuso automaticamente tra parentesi quadre all'inizio delle tue Note.</Text>
               </View>
-
               <View style={styles.infoBlockPremium}>
                 <Text style={styles.infoBlockTitle}>📊 Codici Colore Medici</Text>
-                <Text style={styles.infoBlockText}>
-                  I valori inseriti assumono colori diversi in base alle soglie cliniche standard: Verde per valori normali (70-180 mg/dL), Arancione in caso di ipoglicemia (&lt;70 mg/dL) e Rosso per iperglicemia (&gt;180 mg/dL).
-                </Text>
+                <Text style={styles.infoBlockText}>Verde per valori normali (70-180 mg/dL), Arancione in caso di ipoglicemia (&lt;70 mg/dL) e Rosso per iperglicemia (&gt;180 mg/dL).</Text>
               </View>
-
-              <View style={styles.infoBlockPremium}>
-                <Text style={styles.infoBlockTitle}>📄 Esportazione PDF Griglia Orizzontale</Text>
-                <Text style={styles.infoBlockText}>
-                  Dalla sezione "Storico" puoi applicare i filtri rapidi (7, 14, 30, 90 giorni) e generare un report a griglia orizzontale strutturato pronto per la stampa o l'invio diretto al tuo medico diabetologo.
-                </Text>
-              </View>
-
             </ScrollView>
 
             <TouchableOpacity style={styles.btnChiudiInfo} onPress={() => setMostraModalInfo(false)}>
@@ -333,46 +363,40 @@ export default function InserimentoScreen() {
   );
 }
 
-// 📐 FOGLI DI STILE CSS AVANZATI (SIZE ED INGOMBRI DEI BOX INPUT PRESERVATI AL 100%)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background }, 
   content: { padding: 16, paddingTop: 15, paddingBottom: 40 },
-  
-  headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, width: '100%' },
+  headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, width: '100%' },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
   infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
+  
+  // 📐 NUOVA RIGIDA E COMPATTA STRUTTURA PER I COMPONENTI DI BACKUP ESTERNI
+  containerPulsantiBackupEsterni: { flexDirection: 'row', gap: 10, width: '100%', marginBottom: 16 },
+  btnBackupEsterno: { flex: 1, flexDirection: 'row', padding: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
 
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 14, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
   labelLeft: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '600', color: COLORS.muted, marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
   containerRigaTemporale: { flexDirection: 'row', gap: 16, marginBottom: 16, alignSelf: 'flex-start' },
   dataCardSinistra: { width: 'auto', backgroundColor: 'transparent', padding: 0, alignItems: 'flex-start' },
-  
   rigaDatiPrincipali: { flexDirection: 'row', gap: 12, marginBottom: 12, width: '100%' },
   metaLarghezza: { flex: 1 }, 
-
   dataInput: { fontFamily: 'Space Grotesk', fontSize: 18, fontWeight: '600', color: COLORS.onSurface, textAlign: 'left', paddingLeft: 2 },
   timeInputBackup: { fontFamily: 'Space Grotesk', fontSize: 16, color: COLORS.onSurface, backgroundColor: COLORS.surfaceSecondary, borderRadius: 10, padding: 6, width: 70, textAlign: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
-  
-  // 🌟 NUOVO STILE AD ALTO STACCO PER I DUE CONTENITORI GLICEMIA E INSULINA (Bordo brillante + Leggera profondità)
   cardInputHighlight: { backgroundColor: "#15151F", borderRadius: 16, padding: 16, alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlassBright, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 4 },
   labelLeftHighlight: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, fontWeight: '700', color: "#A4A4AA", marginBottom: 4, textAlign: 'left', alignSelf: 'flex-start', paddingLeft: 2 },
-
   glicemiaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   insulinaInput: { fontFamily: 'Space Grotesk', fontSize: 38, fontWeight: '700', color: COLORS.onSurface, textAlign: 'left', width: '100%', paddingVertical: 2, paddingLeft: 2 },
   noteInput: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, color: COLORS.onSurface, paddingVertical: 2, textAlign: 'left', paddingLeft: 2, width: '100%' },
-  
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   chip: { backgroundColor: COLORS.surfaceSecondary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: 'transparent' },
   chipSelezionata: { backgroundColor: "#0C232B", borderWidth: 1, borderColor: COLORS.brandPrimary }, 
   chipText: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, fontWeight: '500' },
   chipTextSelezionato: { color: COLORS.onSurface, fontWeight: '700' },
-  
   saveButton: { backgroundColor: COLORS.brandPrimary, paddingVertical: 14, borderRadius: 14, alignItems: 'center', width: '100%' },
   saveButtonText: { fontFamily: 'Plus Jakarta Sans', fontSize: 15, fontWeight: '700', color: '#0A0A0C' },
   notificaTendina: { backgroundColor: '#092414', borderColor: COLORS.success, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center', width: '100%' },
   notificaTesto: { fontFamily: 'Plus Jakarta Sans', color: COLORS.success, fontWeight: '600', fontSize: 14 },
-
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 16 },
   modalContentPremium: { backgroundColor: '#111116', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: COLORS.borderGlass, maxHeight: '85%' },
   modalHeaderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: COLORS.borderGlass, paddingBottom: 10 },
