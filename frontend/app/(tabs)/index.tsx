@@ -25,7 +25,6 @@ const MOMENTI = [
   "Prima Pranzo", "Dopo Pranzo", "Merenda", 
   "Prima Cena", "Dopo Cena", "Notte"
 ];
-
 export default function InserimentoScreen() {
   const ottieniDataOdiernaISO = () => {
     const oggi = new Date();
@@ -59,7 +58,6 @@ export default function InserimentoScreen() {
     }, 1000);
     return () => clearInterval(timer);
   }, [glicemia, insulina, note]);
-
   const ottieniDataFormattataStorico = (stringaISO: string) => {
     if (!stringaISO) return "";
     const [anno, mese, giorno] = stringaISO.split('-');
@@ -81,6 +79,7 @@ export default function InserimentoScreen() {
     if (valore > 180) return COLORS.error;
     return COLORS.success;
   };
+
   // 💾 ESPORTA IL BACKUP DIARIO IN UN FILE JSON CONDIVISIBILE
   const esportaBackupJSON = async () => {
     try {
@@ -112,7 +111,6 @@ export default function InserimentoScreen() {
       alert("Errore Aegean durante il backup.");
     }
   };
-
   // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI LOCALI (✓ SINTASSI CORRETTA AL 100%)
   const gestisciImportazioneWeb = async (evento: any) => {
     const file = evento.target.files?.[0]; 
@@ -197,15 +195,14 @@ export default function InserimentoScreen() {
       alert("Impossibile salvare i dati localmente.");
     }
   };
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      {/* 🏷️ INTESTAZIONE CON TITOLO E TASTO INFO REATTIVO */}
+      {/* 🏷️ INTESTAZIONE CON TITOLO E TASTO INFO ANCORATO DI FIANCO A DESTRA */}
       <View style={styles.headerForm}>
         <Text style={styles.title}>Inserisci Nuovi Dati</Text>
         <TouchableOpacity style={styles.infoButtonMinimal} onPress={() => setMostraModalInfo(true)} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
-          <Ionicons name="information-circle-outline" size={26} color={COLORS.brandPrimary} />
+          <Ionicons name="information-circle-outline" size={20} color={COLORS.brandPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -364,13 +361,21 @@ export default function InserimentoScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background }, 
   content: { padding: 16, paddingTop: 15, paddingBottom: 40 },
-  headerForm: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, width: '100%' },
+  
+  // 📐 STRUTTURA FLUIDA CON JUSTIFYCONTENT FLEX-START ED ANCORAGGIO ALL'ICONA
+  headerForm: { 
+    flexDirection: 'row', 
+    justifyContent: 'flex-start', 
+    alignItems: 'center', 
+    gap: 6,
+    marginBottom: 12, 
+    width: '100%' 
+  },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
-  infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
+  infoButtonMinimal: { justifyContent: 'center', alignItems: 'center', padding: 2, marginTop: 2 },
   
   containerPulsantiBackupEsterni: { flexDirection: 'row', gap: 8, width: '100%', marginBottom: 16, justifyContent: 'flex-start' },
   btnBackupEsterno: { flexDirection: 'row', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: COLORS.bgUtility, borderColor: COLORS.borderUtility },
@@ -406,11 +411,7 @@ const styles = StyleSheet.create({
   modalScrollInfo: { marginBottom: 16 },
   infoBlockPremium: { marginBottom: 16, backgroundColor: '#020204', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.borderGlass },
   infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
-  
-  // 📐 MODIFICA COMPLETA E COORDINATA AL 100% CON LA SCHEDA STORICO:
-  // Colore grigio scuro tech originale ("COLORS.muted"), dimensione a 14.5 e interlinea a 22.
   infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.muted, lineHeight: 22, textAlign: 'left' },
-  
   btnChiudiInfo: { backgroundColor: '#020204', padding: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
   btnChiudiInfoText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface }
 });
