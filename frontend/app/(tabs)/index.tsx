@@ -17,9 +17,9 @@ const COLORS = {
   borderGlass: "rgba(255, 255, 255, 0.08)",
   borderGlassBright: "rgba(255, 255, 255, 0.15)", // Bordo ad alto contrasto per i box principali
   
-  // ⚙️ GRIGI COMPATIBILI PER AREA MANUTENZIONE
-  bgUtility: "#1A1A24",         // Grigio scuro per l'interno dei pulsanti
-  borderUtility: "#3A3A4A"      // Grigio chiaro per il contorno dei pulsanti
+  // ⚙️ STILE UNIFICATO UTILITY DI MANUTENZIONE
+  bgUtility: "#1A1A24",         
+  borderUtility: "#3A3A4A"      
 };
 
 const MOMENTI = [
@@ -211,7 +211,7 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ⚙️ ZONE PULSANTI MANUTENZIONE - CONTORNO E TESTO UNIFORMATI AL 100% */}
+      {/* ⚙️ FIX PROPRIETÀ LABEL WEB ED ELEMENTI MOBILE FORZATI IN MODO SIMMETRICO */}
       <View style={styles.containerPulsantiBackupEsterni}>
         <TouchableOpacity style={styles.btnBackupEsterno} onPress={esportaBackupJSON}>
           <Ionicons name="cloud-download-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
@@ -220,9 +220,23 @@ export default function InserimentoScreen() {
         
         {Platform.OS === 'web' ? (
           <label style={{
-            backgroundColor: COLORS.bgUtility, borderWidth: 1, borderColor: COLORS.borderUtility, borderRadius: 10,
-            paddingVertical: 6, paddingHorizontal: 12, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '11px', fontWeight: '700', color: COLORS.onSurface
+            backgroundColor: COLORS.bgUtility, 
+            borderWidth: '1px', 
+            borderStyle: 'solid',
+            borderColor: COLORS.borderUtility, 
+            borderRadius: 10,
+            paddingVertical: 6, 
+            paddingHorizontal: 12, 
+            display: 'flex', 
+            flexDirection: 'row', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            cursor: 'pointer', 
+            fontFamily: 'Plus Jakarta Sans', 
+            fontSize: '11px', 
+            fontWeight: '700', 
+            color: COLORS.onSurface,
+            boxSizing: 'border-box'
           }}>
             <Ionicons name="cloud-upload-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
             Importa Backup
@@ -375,8 +389,6 @@ const styles = StyleSheet.create({
   infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
   
   containerPulsantiBackupEsterni: { flexDirection: 'row', gap: 8, width: '100%', marginBottom: 16, justifyContent: 'flex-start' },
-  
-  // 📐 MODIFICA: ENTRAMBI I PULSANTI CONDIVIDONO LO STESSO STILE AD ALTO RIGORE GRAFICO
   btnBackupEsterno: { flexDirection: 'row', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: COLORS.bgUtility, borderColor: COLORS.borderUtility },
 
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 14, marginBottom: 10 },
