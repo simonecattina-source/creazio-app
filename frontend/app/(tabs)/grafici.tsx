@@ -564,7 +564,7 @@ export default function GraficiScreen() {
 }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 16, paddingTop: 45, paddingBottom: 40 },
+  content: { padding: 16, paddingTop: 15, paddingBottom: 40 },
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '800', color: COLORS.onSurface, marginBottom: 16, letterSpacing: -0.5 },
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, letterSpacing: -0.2 },
   subLabelSpiegazione: { fontFamily: 'Plus Jakarta Sans', fontSize: 12, color: COLORS.muted, marginTop: 4, marginBottom: 16 },
