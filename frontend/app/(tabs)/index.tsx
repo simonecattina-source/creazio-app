@@ -109,13 +109,13 @@ export default function InserimentoScreen() {
         }
       }
     } catch (error) {
-      alert("Errore Aegean durante il backup.");
+      alert("Errore durante il backup.");
     }
   };
 
-  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI SOVRASCRIVENDO LA MEMORIA LOCALE
+  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI (CON FIX SINTASSI RIGA 118)
   const gestisciImportazioneWeb = async (evento: any) => {
-    const file = evento.target.files?.;
+    const file = evento.target.files?.[0]; // ✓ Corretto l'errore di sintassi qui
     if (!file) return;
 
     const lettore = new FileReader();
@@ -407,7 +407,6 @@ const styles = StyleSheet.create({
   infoBlockPremium: { marginBottom: 16, backgroundColor: '#020204', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.borderGlass },
   infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
   
-  // 📐 MODIFICA PERFETTA: COLORE CONFIGURATO IN BIANCO ULTRA-NITIDO (COLORS.onSurface) PER IL MASSIMO CONTRASTO
   infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.onSurface, lineHeight: 22, textAlign: 'left' },
   
   btnChiudiInfo: { backgroundColor: COLORS.brandPrimary, padding: 12, borderRadius: 12, alignItems: 'center' },
