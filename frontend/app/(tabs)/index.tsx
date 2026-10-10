@@ -16,7 +16,10 @@ const COLORS = {
   error: "#FF5252",             // Rosso corallo neon
   borderGlass: "rgba(255, 255, 255, 0.08)",
   borderGlassBright: "rgba(255, 255, 255, 0.15)", // Bordo ad alto contrasto per i box principali
-  maintenanceGold: "#FFB300"    // 🌟 Oro brunito specifico per l'area Manutenzione/Backup
+  
+  // ⚙️ GRIGI COMPATIBILI PER AREA MANUTENZIONE
+  bgUtility: "#1A1A24",         // Grigio scuro per l'interno dei pulsanti
+  borderUtility: "#3A3A4A"      // Grigio chiaro per il contorno dei pulsanti
 };
 
 const MOMENTI = [
@@ -208,27 +211,27 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ⚙️ ZONE PRIVATA UTILITY: STACCO VISIVO ASSOLUTO (Antracite Tech + Oro di Sicurezza) */}
+      {/* ⚙️ ZONE PULSANTI MANUTENZIONE - CONTORNO E TESTO UNIFORMATI AL 100% */}
       <View style={styles.containerPulsantiBackupEsterni}>
         <TouchableOpacity style={styles.btnBackupEsterno} onPress={esportaBackupJSON}>
-          <Ionicons name="cloud-download-outline" size={13} color={COLORS.maintenanceGold} style={{ marginRight: 5 }} />
-          <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.maintenanceGold, fontSize: 11, fontWeight: '700' }}>Esporta Backup</Text>
+          <Ionicons name="cloud-download-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
+          <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontSize: 11, fontWeight: '700' }}>Esporta Backup</Text>
         </TouchableOpacity>
         
         {Platform.OS === 'web' ? (
           <label style={{
-            backgroundColor: "#242430", borderWidth: 1, borderColor: COLORS.maintenanceGold, borderRadius: 10,
+            backgroundColor: COLORS.bgUtility, borderWidth: 1, borderColor: COLORS.borderUtility, borderRadius: 10,
             paddingVertical: 6, paddingHorizontal: 12, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '11px', fontWeight: '700', color: COLORS.maintenanceGold
+            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '11px', fontWeight: '700', color: COLORS.onSurface
           }}>
-            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.maintenanceGold} style={{ marginRight: 5 }} />
+            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
             Importa Backup
             <input type="file" accept=".json" onChange={gestisciImportazioneWeb} style={{ display: 'none' }} />
           </label>
         ) : (
           <TouchableOpacity style={styles.btnBackupEsterno}>
-            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.maintenanceGold} style={{ marginRight: 5 }} />
-            <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.maintenanceGold, fontSize: 11, fontWeight: '700' }}>Importa Backup</Text>
+            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 5 }} />
+            <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontSize: 11, fontWeight: '700' }}>Importa Backup</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -371,11 +374,10 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
   infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
   
-  // 📐 ALLINEAMENTO A SINISTRA COMPATTO
   containerPulsantiBackupEsterni: { flexDirection: 'row', gap: 8, width: '100%', marginBottom: 16, justifyContent: 'flex-start' },
   
-  // 🎨 STILE UTILITY: Sfondo antracite scuro discreto, ma contorno e dettagli oro brunito ad indicare area protetta/tecnica
-  btnBackupEsterno: { flexDirection: 'row', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: "#242430", borderColor: "#FFB300" },
+  // 📐 MODIFICA: ENTRAMBI I PULSANTI CONDIVIDONO LO STESSO STILE AD ALTO RIGORE GRAFICO
+  btnBackupEsterno: { flexDirection: 'row', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: COLORS.bgUtility, borderColor: COLORS.borderUtility },
 
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 14, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
