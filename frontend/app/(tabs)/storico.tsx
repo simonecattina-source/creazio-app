@@ -617,7 +617,7 @@ export default function StoricoScreen() {
 }
 // 📐 CONFIGURAZIONI CSS STABILI CON DESIGN SYSTEM NEON
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 50 },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 15 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
   title: { fontFamily: 'Space Grotesk', fontSize: 26, fontWeight: '700', color: COLORS.onSurface },
   
