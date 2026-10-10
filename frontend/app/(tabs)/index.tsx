@@ -324,8 +324,7 @@ export default function InserimentoScreen() {
       <TouchableOpacity style={styles.saveButton} onPress={salvaMisurazione}>
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
-
-      {/* 🎪 POP-UP GUIDA ALL'USO ALLINEATO INTEGRALMENTE ALLO STORICO */}
+      {/* 🎪 POP-UP GUIDA ALL'USO AGGIORNATO CON 5 NUOVE SEZIONI PREMIUM */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -337,18 +336,37 @@ export default function InserimentoScreen() {
             </View>
 
             <ScrollView style={styles.modalScrollInfo} showsVerticalScrollIndicator={false}>
+              
+              {/* SEZIONE 1: DATA E ORA */}
               <View style={styles.infoBlockPremium}>
-                <Text style={styles.infoBlockTitle}>🛡️ Archivio Rotante di 90 Giorni</Text>
-                <Text style={styles.infoBlockText}>L'app esegue il calcolo dei dati sull'ultimo trimestre. I log antecedenti ai 90 giorni vengono eliminati automaticamente per salvaguardare spazio.</Text>
+                <Text style={styles.infoBlockTitle}>📅 Data e Ora del Test</Text>
+                <Text style={styles.infoBlockText}>L'applicazione imposta automaticamente il giorno corrente e l'orario attuale. Se hai dimenticato di registrare un test precedente, puoi modificarli liberamente per mantenere coerente il tuo diario.</Text>
               </View>
+
+              {/* SEZIONE 2: GLICEMIA */}
               <View style={styles.infoBlockPremium}>
-                <Text style={styles.infoBlockTitle}>⏰ Tracciamento Orario Intraday</Text>
-                <Text style={styles.infoBlockText}>L'orario viene memorizzato per ordinare cronologicamente la timeline e viene fuso automaticamente tra parentesi quadre all'inizio delle tue Note.</Text>
+                <Text style={styles.infoBlockTitle}>🩸 Inserimento Glicemia</Text>
+                <Text style={styles.infoBlockText}>Digita il valore espresso in mg/dL rilevato dal tuo glucometro. Il testo cambierà colore in tempo reale seguendo le linee guida mediche standard: verde per i valori normali, arancione per l'ipoglicemia e rosso per l'iperglicemia.</Text>
               </View>
+
+              {/* SEZIONE 3: INSULINA */}
               <View style={styles.infoBlockPremium}>
-                <Text style={styles.infoBlockTitle}>📊 Codici Colore Medici</Text>
-                <Text style={styles.infoBlockText}>Verde per valori normali (70-180 mg/dL), Arancione in caso di ipoglicemia (&lt;70 mg/dL) e Rosso per iperglicemia (&gt;180 mg/dL).</Text>
+                <Text style={styles.infoBlockTitle}>💉 Inserimento Insulina</Text>
+                <Text style={styles.infoBlockText}>Indica il numero di Unità (UI) di insulina rapida o lenta che hai somministrato. Se per questo controllo non hai assunto alcuna dose, lascia pure il campo vuoto: il sistema registrerà automaticamente un trattino.</Text>
               </View>
+
+              {/* SEZIONE 4: MOMENTI DELLA GIORNATA */}
+              <View style={styles.infoBlockPremium}>
+                <Text style={styles.infoBlockTitle}>⏰ Momenti della Giornata</Text>
+                <Text style={styles.infoBlockText}>Seleziona il bottone corrispondente al blocco temporale della misurazione. Questo parametro è fondamentale perché permette all'algoritmo di inserire i dati nella giusta colonna durante l'esportazione del report clinico.</Text>
+              </View>
+
+              {/* SEZIONE 5: NOTE E FUSIONE ORARIO */}
+              <View style={styles.infoBlockPremium}>
+                <Text style={styles.infoBlockTitle}>📝 Note Alimentari e Sintomi</Text>
+                <Text style={styles.infoBlockText}>Usa questo spazio per annotare cosa hai mangiato o come ti senti. Salvando la misurazione, l'orario del test verrà fuso in automatico tra parentesi quadre all'inizio del testo, creando una cronologia perfetta.</Text>
+              </View>
+
             </ScrollView>
 
             <TouchableOpacity style={styles.btnChiudiInfo} onPress={() => setMostraModalInfo(false)}>
