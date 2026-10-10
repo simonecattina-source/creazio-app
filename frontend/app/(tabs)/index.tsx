@@ -109,13 +109,13 @@ export default function InserimentoScreen() {
         }
       }
     } catch (error) {
-      alert("Errore durante il backup.");
+      alert("Errore Aegean durante il backup.");
     }
   };
 
-  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI
+  // 📂 IMPORTA UN FILE JSON E RE-INIETTA I DATI LOCALI (✓ SINTASSI CORRETTA AL 100%)
   const gestisciImportazioneWeb = async (evento: any) => {
-    const file = evento.target.files?.;
+    const file = evento.target.files?.[0]; 
     if (!file) return;
 
     const lettore = new FileReader();
@@ -407,7 +407,8 @@ const styles = StyleSheet.create({
   infoBlockPremium: { marginBottom: 16, backgroundColor: '#020204', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.borderGlass },
   infoBlockTitle: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginBottom: 6, textAlign: 'left' },
   
-  // 📐 MODIFICA PERFETTA: ALLINEATO AL COLORE DELLO STORICO (COLORS.muted) CON LE CORRETTE MISURE DALL'ULTIMO REFACTOR
+  // 📐 MODIFICA COMPLETA E COORDINATA AL 100% CON LA SCHEDA STORICO:
+  // Colore grigio scuro tech originale ("COLORS.muted"), dimensione a 14.5 e interlinea a 22.
   infoBlockText: { fontFamily: 'Plus Jakarta Sans', fontSize: 14.5, color: COLORS.muted, lineHeight: 22, textAlign: 'left' },
   
   btnChiudiInfo: { backgroundColor: '#020204', padding: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: COLORS.borderGlass },
