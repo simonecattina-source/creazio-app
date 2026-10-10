@@ -15,7 +15,8 @@ const COLORS = {
   warning: "#FF9100",           // Arancione vivo
   error: "#FF5252",             // Rosso corallo neon
   borderGlass: "rgba(255, 255, 255, 0.08)",
-  borderGlassBright: "rgba(255, 255, 255, 0.15)" // Bordo ad alto contrasto per i box principali
+  borderGlassBright: "rgba(255, 255, 255, 0.15)", // Bordo ad alto contrasto per i box principali
+  maintenanceGold: "#FFB300"    // 🌟 Oro brunito specifico per l'area Manutenzione/Backup
 };
 
 const MOMENTI = [
@@ -207,32 +208,32 @@ export default function InserimentoScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ⚙️ SEZIONE DEI TASTI DI BACKUP SOTTO IL TITOLO PRINCIPALE */}
+      {/* ⚙️ ZONE PRIVATA UTILITY: STACCO VISIVO ASSOLUTO (Antracite Tech + Oro di Sicurezza) */}
       <View style={styles.containerPulsantiBackupEsterni}>
-        <TouchableOpacity style={[styles.btnBackupEsterno, { backgroundColor: '#1A1A24', borderColor: COLORS.borderGlass }]} onPress={esportaBackupJSON}>
-          <Ionicons name="cloud-download-outline" size={13} color={COLORS.onSurface} style={{ marginRight: 4 }} />
-          <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.onSurface, fontSize: 12, fontWeight: '700' }}>Esporta JSON</Text>
+        <TouchableOpacity style={styles.btnBackupEsterno} onPress={esportaBackupJSON}>
+          <Ionicons name="cloud-download-outline" size={13} color={COLORS.maintenanceGold} style={{ marginRight: 5 }} />
+          <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.maintenanceGold, fontSize: 11, fontWeight: '700' }}>Esporta Backup</Text>
         </TouchableOpacity>
         
         {Platform.OS === 'web' ? (
           <label style={{
-            flex: 1, backgroundColor: '#0C232B', borderWidth: 1, borderColor: COLORS.brandPrimary, borderRadius: 10,
-            padding: 10, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '12px', fontWeight: '700', color: COLORS.brandPrimary
+            backgroundColor: "#242430", borderWidth: 1, borderColor: COLORS.maintenanceGold, borderRadius: 10,
+            paddingVertical: 6, paddingHorizontal: 12, display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+            cursor: 'pointer', fontFamily: 'Plus Jakarta Sans', fontSize: '11px', fontWeight: '700', color: COLORS.maintenanceGold
           }}>
-            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.brandPrimary} style={{ marginRight: 4 }} />
-            Importa JSON
+            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.maintenanceGold} style={{ marginRight: 5 }} />
+            Importa Backup
             <input type="file" accept=".json" onChange={gestisciImportazioneWeb} style={{ display: 'none' }} />
           </label>
         ) : (
-          <TouchableOpacity style={[styles.btnBackupEsterno, { backgroundColor: '#0C232B', borderColor: COLORS.brandPrimary }]}>
-            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.brandPrimary} style={{ marginRight: 4 }} />
-            <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.brandPrimary, fontSize: 12, fontWeight: '700' }}>Importa JSON</Text>
+          <TouchableOpacity style={styles.btnBackupEsterno}>
+            <Ionicons name="cloud-upload-outline" size={13} color={COLORS.maintenanceGold} style={{ marginRight: 5 }} />
+            <Text style={{ fontFamily: 'Plus Jakarta Sans', color: COLORS.maintenanceGold, fontSize: 11, fontWeight: '700' }}>Importa Backup</Text>
           </TouchableOpacity>
         )}
       </View>
       
-      {/* 📅⏰ RIGHE TEMPORALI INALTERATE */}
+      {/* 📅⏰ RIGHE TEMPORALI */}
       <View style={styles.containerRigaTemporale}>
         <View style={styles.dataCardSinistra}>
           <Text style={styles.labelLeft}>Data del Test</Text>
@@ -271,7 +272,6 @@ export default function InserimentoScreen() {
           )}
         </View>
       </View>
-
       <View style={styles.rigaDatiPrincipali}>
         <View style={[styles.cardInputHighlight, styles.metaLarghezza]}>
           <Text style={styles.labelLeftHighlight}>Glicemia (mg/dL)</Text>
@@ -299,6 +299,7 @@ export default function InserimentoScreen() {
           />
         </View>
       </View>
+
       <Text style={styles.sectionLabel}>Momento della Giornata</Text>
       <View style={styles.chipsContainer}>
         {MOMENTI.map((m) => {
@@ -326,7 +327,7 @@ export default function InserimentoScreen() {
         <Text style={styles.saveButtonText}>Salva Misurazione</Text>
       </TouchableOpacity>
 
-      {/* 🎪 POP-UP GUIDA ALL'USO MODAL NETTO E PULITO */}
+      {/* 🎪 POP-UP GUIDA ALL'USO */}
       <Modal visible={mostraModalInfo} animationType="fade" transparent={true} onRequestClose={() => setMostraModalInfo(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentPremium}>
@@ -370,9 +371,11 @@ const styles = StyleSheet.create({
   title: { fontFamily: 'Space Grotesk', fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
   infoButtonMinimal: { width: 38, height: 36, justifyContent: 'center', alignItems: 'center' },
   
-  // 📐 NUOVA RIGIDA E COMPATTA STRUTTURA PER I COMPONENTI DI BACKUP ESTERNI
-  containerPulsantiBackupEsterni: { flexDirection: 'row', gap: 10, width: '100%', marginBottom: 16 },
-  btnBackupEsterno: { flex: 1, flexDirection: 'row', padding: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  // 📐 ALLINEAMENTO A SINISTRA COMPATTO
+  containerPulsantiBackupEsterni: { flexDirection: 'row', gap: 8, width: '100%', marginBottom: 16, justifyContent: 'flex-start' },
+  
+  // 🎨 STILE UTILITY: Sfondo antracite scuro discreto, ma contorno e dettagli oro brunito ad indicare area protetta/tecnica
+  btnBackupEsterno: { flexDirection: 'row', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: "#242430", borderColor: "#FFB300" },
 
   sectionLabel: { fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: '700', color: COLORS.onSurface, marginTop: 14, marginBottom: 10 },
   cardInput: { backgroundColor: COLORS.surfaceSecondary, borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: COLORS.borderGlass },
